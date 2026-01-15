@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Player, Tournament } from '../types'
-import { loadPlayers } from './PlayersScreen'
+import { Tournament } from '../types'
+import { usePlayers } from '../hooks/usePlayers'
+import { loadSettings } from './SettingsScreen'
 import { generateTournament } from '../lib/bracket'
 
 const styles = `
@@ -260,19 +261,22 @@ export function clearTournament(): void {
 
 export function TournamentSetupScreen() {
   const navigate = useNavigate()
-  const [players, setPlayers] = useState<Player[]>([])
+  const settings = loadSettings()
+  const { players: allPlayers, loading } = usePlayers(settings.namespace)
+  const players = allPlayers.filter(p => !p.archived)
   const [tournamentName, setTournamentName] = useState('')
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set())
   const [elimination, setElimination] = useState<'single_elimination' | 'double_elimination'>('double_elimination')
+  const [initialized, setInitialized] = useState(false)
 
+  // Select all players by default once loaded
   useEffect(() => {
-    const allPlayers = loadPlayers()
-    const activePlayers = allPlayers.filter(p => !p.archived)
-    setPlayers(activePlayers)
-    // Select all players by default (up to 16)
-    const initialSelected = new Set(activePlayers.slice(0, 16).map(p => p.id))
-    setSelectedPlayerIds(initialSelected)
-  }, [])
+    if (!loading && players.length > 0 && !initialized) {
+      const initialSelected = new Set(players.slice(0, 16).map(p => p.id))
+      setSelectedPlayerIds(initialSelected)
+      setInitialized(true)
+    }
+  }, [loading, players, initialized])
 
   const selectAll = () => {
     const allIds = new Set(players.slice(0, 16).map(p => p.id))

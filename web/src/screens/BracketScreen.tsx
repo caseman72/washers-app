@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Tournament, Player } from '../types'
-import { loadPlayers } from './PlayersScreen'
+import { usePlayers } from '../hooks/usePlayers'
+import { loadSettings } from './SettingsScreen'
 import { loadTournament, saveTournament, clearTournament } from './TournamentSetupScreen'
 import { MatchCard } from '../components/MatchCard'
 import { getMatchesByRound, advanceWinner } from '../lib/bracket'
@@ -188,20 +189,23 @@ const styles = `
 export function BracketScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const settings = loadSettings()
+  const { players: playerList } = usePlayers(settings.namespace)
   const [tournament, setTournament] = useState<Tournament | null>(null)
-  const [players, setPlayers] = useState<Map<string, Player>>(new Map())
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
+
+  // Convert player list to Map for easy lookup
+  const players = useMemo(() => {
+    const playerMap = new Map<string, Player>()
+    playerList.forEach(p => playerMap.set(p.id, p))
+    return playerMap
+  }, [playerList])
 
   useEffect(() => {
     const t = loadTournament()
     if (t && (id === t.id || id === 'current')) {
       setTournament(t)
     }
-
-    const playerList = loadPlayers()
-    const playerMap = new Map<string, Player>()
-    playerList.forEach(p => playerMap.set(p.id, p))
-    setPlayers(playerMap)
   }, [id])
 
   const winnersRounds = useMemo(() => {

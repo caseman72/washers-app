@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Player } from '../types'
+import { usePlayers } from '../hooks/usePlayers'
+import { loadSettings } from './SettingsScreen'
 
 const styles = `
   .players-screen {
@@ -190,66 +191,114 @@ const styles = `
     font-size: 0.875rem;
     color: #888;
   }
+
+  .namespace-display {
+    font-size: 0.75rem;
+    color: #d35400;
+    margin-left: 0.5rem;
+  }
+
+  .loading-state {
+    text-align: center;
+    color: #888;
+    padding: 3rem 1rem;
+  }
+
+  .error-state {
+    text-align: center;
+    color: #e74c3c;
+    padding: 3rem 1rem;
+  }
+
+  .no-namespace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .no-namespace-title {
+    font-size: 1.25rem;
+    color: #d35400;
+    margin-bottom: 0.5rem;
+  }
+
+  .settings-link {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: #d35400;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  .settings-link:hover {
+    background: #e55d00;
+  }
 `
-
-const STORAGE_KEY = 'washers-players'
-
-function loadPlayers(): Player[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      return JSON.parse(stored)
-    }
-  } catch (e) {
-    console.error('Failed to load players:', e)
-  }
-  return []
-}
-
-function savePlayers(players: Player[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(players))
-  } catch (e) {
-    console.error('Failed to save players:', e)
-  }
-}
 
 export function PlayersScreen() {
   const navigate = useNavigate()
-  const [players, setPlayers] = useState<Player[]>([])
+  const settings = loadSettings()
+  const { players, loading, error, addPlayer, deletePlayer } = usePlayers(settings.namespace)
   const [showAddModal, setShowAddModal] = useState(false)
   const [newPlayerName, setNewPlayerName] = useState('')
 
-  useEffect(() => {
-    setPlayers(loadPlayers())
-  }, [])
-
-  const handleAddPlayer = () => {
+  const handleAddPlayer = async () => {
     if (!newPlayerName.trim()) return
 
-    const newPlayer: Player = {
-      id: Math.random().toString(36).substring(2, 9),
-      name: newPlayerName.trim(),
-      createdAt: new Date(),
-      archived: false,
+    try {
+      await addPlayer(newPlayerName.trim())
+      setNewPlayerName('')
+      setShowAddModal(false)
+    } catch (err) {
+      console.error('Failed to add player:', err)
+      alert('Failed to add player')
     }
-
-    const updated = [...players, newPlayer]
-    setPlayers(updated)
-    savePlayers(updated)
-    setNewPlayerName('')
-    setShowAddModal(false)
   }
 
-  const handleDeletePlayer = (playerId: string) => {
+  const handleDeletePlayer = async (playerId: string) => {
     if (!confirm('Delete this player?')) return
 
-    const updated = players.filter(p => p.id !== playerId)
-    setPlayers(updated)
-    savePlayers(updated)
+    try {
+      await deletePlayer(playerId)
+    } catch (err) {
+      console.error('Failed to delete player:', err)
+      alert('Failed to delete player')
+    }
   }
 
   const activePlayers = players.filter(p => !p.archived)
+  const hasNamespace = settings.namespace.trim().length > 0
+
+  if (!hasNamespace) {
+    return (
+      <div className="players-screen">
+        <div className="players-header">
+          <span className="players-title">Players</span>
+        </div>
+        <div className="no-namespace">
+          <div className="no-namespace-title">No Namespace Configured</div>
+          <div>Go to Settings to enter your namespace</div>
+          <button className="settings-link" onClick={() => navigate('/settings')}>
+            Open Settings
+          </button>
+        </div>
+        <div className="players-footer">
+          <button className="back-btn" onClick={() => navigate('/')}>
+            Back to Menu
+          </button>
+        </div>
+        <style>{styles}</style>
+      </div>
+    )
+  }
 
   return (
     <div className="players-screen">
@@ -257,6 +306,7 @@ export function PlayersScreen() {
         <div>
           <span className="players-title">Players</span>
           <span className="player-count"> ({activePlayers.length})</span>
+          <span className="namespace-display">{settings.namespace}</span>
         </div>
         <button className="add-btn" onClick={() => setShowAddModal(true)}>
           + Add
@@ -264,7 +314,11 @@ export function PlayersScreen() {
       </div>
 
       <div className="players-content">
-        {activePlayers.length === 0 ? (
+        {loading ? (
+          <div className="loading-state">Loading players...</div>
+        ) : error ? (
+          <div className="error-state">{error}</div>
+        ) : activePlayers.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-title">No Players Yet</div>
             <div>Add players to create tournaments</div>
@@ -328,5 +382,3 @@ export function PlayersScreen() {
     </div>
   )
 }
-
-export { loadPlayers, savePlayers }

@@ -120,7 +120,7 @@ cd web && npm install && npm run dev
 **✅ Tournament Bracket (Complete)**
 
 ### Completed
-- Player management screen (add/delete players)
+- Player management screen (add/delete players, Firebase realtime sync)
 - Tournament setup screen (name, player selection 2-16, single/double elimination)
 - Bracket generation algorithm (BYE handling, proper seeding)
 - Bracket display (winner's bracket, loser's bracket columns)
@@ -131,6 +131,7 @@ cd web && npm install && npm run dev
 - BYE match auto-advance uses crossover logic for correct slot placement
 - Game numbering by round (WB + LB together per round)
 - Round labels for all finals columns
+- Players stored in Firebase (`/players/{namespace}/`)
 
 ### Future
 - [ ] Firebase sync for brackets (currently localStorage only)
@@ -280,7 +281,7 @@ Rounds checked:
 - [x] Color picker
 - [x] Win/bust logic
 - [x] Firebase realtime sync (anonymous auth)
-- [x] Player management (add/delete players, localStorage)
+- [x] Player management (add/delete players, Firebase realtime sync)
 - [x] Tournament setup (name, player selection, single/double elimination)
 - [x] Bracket generation (single & double elimination, BYE handling)
 - [x] Bracket display (winner's bracket, loser's bracket, grand finals)
