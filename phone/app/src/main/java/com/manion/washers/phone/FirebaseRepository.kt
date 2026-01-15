@@ -50,8 +50,8 @@ object FirebaseRepository {
             "player2Rounds" to gameState.player2Rounds,
             "player1Color" to gameState.player1Color.name,
             "player2Color" to gameState.player2Color.name,
-            "player1Name" to gameState.player1Name,
-            "player2Name" to gameState.player2Name,
+            "player1Name" to SettingsRepository.player1Name.value,
+            "player2Name" to SettingsRepository.player2Name.value,
             "format" to gameState.format,
             "updatedAt" to ServerValue.TIMESTAMP
         )

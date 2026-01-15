@@ -399,7 +399,10 @@ export function advanceWinner(
           if (loserMatch.nextMatchId) {
             const nextLbMatch = updatedBracket.find(m => m.id === loserMatch.nextMatchId)
             if (nextLbMatch) {
-              if (loserMatch.position % 2 === 0) {
+              // Use same crossover logic: if positions match, it's crossover → player1
+              if (loserMatch.position === nextLbMatch.position) {
+                nextLbMatch.player1Id = loserMatch.winnerId
+              } else if (loserMatch.position % 2 === 0) {
                 nextLbMatch.player1Id = loserMatch.winnerId
               } else {
                 nextLbMatch.player2Id = loserMatch.winnerId

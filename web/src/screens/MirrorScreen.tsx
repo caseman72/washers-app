@@ -37,19 +37,31 @@ const styles = `
     flex-direction: row;
     gap: 0.5rem;
     padding: 0.5rem;
+    align-items: flex-start;
+    justify-content: center;
   }
 
   @media (max-width: 768px) {
     .mirror-container {
       flex-direction: column;
+      align-items: center;
     }
   }
 
   .mirror-panel {
-    flex: 1;
+    flex: 0 1 auto;
     display: flex;
     flex-direction: column;
-    min-height: 300px;
+    width: calc(50% - 0.5rem);
+    max-width: 400px;
+    aspect-ratio: 1;
+  }
+
+  @media (max-width: 768px) {
+    .mirror-panel {
+      width: 100%;
+      max-width: 400px;
+    }
   }
 
   .game-number-label {

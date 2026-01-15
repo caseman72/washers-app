@@ -87,7 +87,6 @@ const styles = `
     align-items: center;
     justify-content: center;
     border-radius: 0.5rem;
-    min-height: 120px;
   }
 
   .score-value {

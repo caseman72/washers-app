@@ -128,6 +128,7 @@ cd web && npm install && npm run dev
 - Grand Finals handling (Game 1, conditional Game 2 if LB winner wins)
 - Champion display on tournament completion
 - Correct loser bracket routing (WB dropdowns → player2, LB winners → player1)
+- BYE match auto-advance uses crossover logic for correct slot placement
 - Game numbering by round (WB + LB together per round)
 - Round labels for all finals columns
 
