@@ -37,6 +37,7 @@ class DataLayerManager private constructor(context: Context) {
         const val GAME_STATE_PATH = "/game_state"
         const val MESSAGE_PATH = "/game_state"
         const val REQUEST_STATE_PATH = "/request_state"
+        const val REQUEST_SETTINGS_PATH = "/request_settings"
         const val FORMAT_PATH = "/format"
         const val SHOW_ROUNDS_PATH = "/show_rounds"
 
@@ -143,6 +144,23 @@ class DataLayerManager private constructor(context: Context) {
                 Log.d(TAG, "Resent game state on request: ${state.toJson()}")
             } catch (e: Exception) {
                 Log.e(TAG, "Error resending game state", e)
+            }
+        }
+    }
+
+    /**
+     * Request settings from Phone (called on Watch startup).
+     */
+    fun requestSettingsFromPhone() {
+        scope.launch {
+            try {
+                val nodes = nodeClient.connectedNodes.await()
+                nodes.forEach { node ->
+                    messageClient.sendMessage(node.id, REQUEST_SETTINGS_PATH, byteArrayOf()).await()
+                    Log.d(TAG, "Requested settings from phone: ${node.displayName}")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to request settings from phone", e)
             }
         }
     }

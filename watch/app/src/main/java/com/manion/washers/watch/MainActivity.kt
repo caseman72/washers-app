@@ -42,6 +42,9 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
         super.onResume()
         messageClient.addListener(this)
         Log.d(TAG, "Registered message listener")
+
+        // Request settings from Phone
+        DataLayerManager.getInstance(this).requestSettingsFromPhone()
     }
 
     override fun onPause() {

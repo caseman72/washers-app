@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Mess
         private const val TAG = "MainActivity"
         private const val GAME_STATE_PATH = "/game_state"
         private const val REQUEST_STATE_PATH = "/request_state"
+        private const val REQUEST_SETTINGS_PATH = "/request_settings"
     }
 
     private lateinit var dataClient: DataClient
@@ -122,13 +123,20 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Mess
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
         Log.d(TAG, "onMessageReceived: ${messageEvent.path}")
-        if (messageEvent.path == GAME_STATE_PATH) {
-            try {
-                val json = String(messageEvent.data)
-                Log.d(TAG, "Received message: $json")
-                WearableRepository.updateFromJson(json)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error parsing message", e)
+        when (messageEvent.path) {
+            GAME_STATE_PATH -> {
+                try {
+                    val json = String(messageEvent.data)
+                    Log.d(TAG, "Received message: $json")
+                    WearableRepository.updateFromJson(json)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error parsing message", e)
+                }
+            }
+            REQUEST_SETTINGS_PATH -> {
+                Log.d(TAG, "Watch requested settings, sending...")
+                WearableSender.sendFormat(SettingsRepository.format.value)
+                WearableSender.sendShowRounds(SettingsRepository.showRounds.value)
             }
         }
     }
