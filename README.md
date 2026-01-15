@@ -50,6 +50,21 @@
    FIREBASE_DATABASE_URL=https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com
    ```
 
+8. Create `web/.env.local` from the example:
+   ```bash
+   cp web/.env.example web/.env.local
+   ```
+9. Edit `web/.env.local` with your Firebase config (from Firebase Console → Project Settings):
+   ```
+   VITE_FIREBASE_API_KEY=your-api-key
+   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   VITE_FIREBASE_DATABASE_URL=https://your-project-default-rtdb.firebaseio.com
+   VITE_FIREBASE_PROJECT_ID=your-project
+   VITE_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+   VITE_FIREBASE_APP_ID=your-app-id
+   ```
+
 ### Build
 
 ```bash
@@ -84,23 +99,43 @@ cd web && npm install && npm run dev
 
 ## Development Roadmap
 
-### Phase 1: Core Apps
+### Phase 1: Core Apps ✅
 1. [x] Watch App
 2. [x] Phone App (MVP)
 3. [x] Watch → Phone (Data Layer API)
 4. [x] Phone → Firebase (Realtime Database)
-5. [ ] Web App enhancements (Firebase read)
+5. [x] Web App (Firebase read - Mirror mode)
 
 ### Phase 2: Features
-- [ ] Player/Team names
-- [ ] Authentication (namespace)
-- [ ] Player management
-- [ ] Bracket creation
-- [ ] Tournament play
+- [x] Player/Team names
+- [x] Authentication (namespace)
+- [x] Player management
+- [x] Bracket creation
+- [x] Tournament play (local)
 
 ---
 
 ## Current Task
+
+**✅ Tournament Bracket (Complete)**
+
+### Completed
+- Player management screen (add/delete players)
+- Tournament setup screen (name, player selection 2-16, single/double elimination)
+- Bracket generation algorithm (BYE handling, proper seeding)
+- Bracket display (winner's bracket, loser's bracket columns)
+- Match cards with tap-to-select winner modal
+- Grand Finals handling (Game 1, conditional Game 2 if LB winner wins)
+- Champion display on tournament completion
+- Correct loser bracket routing (WB dropdowns → player2, LB winners → player1)
+- Game numbering by round (WB + LB together per round)
+- Round labels for all finals columns
+
+### Future
+- [ ] Firebase sync for brackets (currently localStorage only)
+- [ ] Live game tiles view
+
+---
 
 **✅ Phone → Firebase Integration (Complete)**
 
@@ -237,14 +272,19 @@ Rounds checked:
 - [x] Firebase round history logging on round win
 
 ### Web App (React/TypeScript)
-- [x] Scoreboard UI (clone of Watch)
+- [x] Home screen (mode picker - Mirror / Keep Score / Settings)
+- [x] Settings screen (namespace, mirror game selector 1-8)
+- [x] Mirror mode - dual game display with Firebase realtime sync
+- [x] Keep Score mode - standalone scoring (clone of Watch)
 - [x] Color picker
 - [x] Win/bust logic
-- [ ] Authentication/login
-- [ ] Firebase realtime sync
-- [ ] Tournament bracket
-- [ ] Live game tiles
-- [ ] Player management
+- [x] Firebase realtime sync (anonymous auth)
+- [x] Player management (add/delete players, localStorage)
+- [x] Tournament setup (name, player selection, single/double elimination)
+- [x] Bracket generation (single & double elimination, BYE handling)
+- [x] Bracket display (winner's bracket, loser's bracket, grand finals)
+- [x] Match cards with winner selection modal
+- [ ] Live game tiles (all 8 games at once)
 
 ---
 
@@ -278,11 +318,34 @@ Rounds checked:
 - Works in both Mirror and Keep Score modes
 
 ### Web App
-- Display for Phone App(s)
-- More info - tournament
-- Knows format (double elim, etc)
-- Has current games as tiles with live scores
-- Knows players and tournament (bracket)
-- Randomizes playing players for tournament
-- Specific to login
+
+**Layout**:
+- Mimics Phone app structure (Home → Mirror / Keep Score / Settings)
+- Square game displays (aspect-ratio 1:1)
+- Responsive (side-by-side on desktop, stacked on mobile)
+
+**Screens**:
+1. Home screen (mode picker)
+2. Mirror mode - displays 2 games from Firebase (configurable game numbers 1-8)
+3. Keep Score mode - standalone scoring (clone of Watch)
+4. Settings - namespace (email), mirror game selectors
+5. Players - add/delete player roster
+6. Tournament Setup - create new bracket (name, players, elimination type)
+7. Bracket - interactive tournament bracket display
+
+**Firebase Integration**:
+- Reads from `/games/{namespace}/{table}/current`
+- Anonymous authentication (auto sign-in)
+- Real-time updates via Firebase subscriptions
+
+**Tournament Features**:
+- Player management (add/delete, localStorage persistence)
+- Tournament setup (2-16 players, single/double elimination)
+- Bracket generation with BYE handling
+- Interactive bracket display with winner selection
+- Grand Finals with conditional Game 2
+
+**Future**:
+- Live game tiles (all 8 games at once)
+- Firebase sync for brackets
     

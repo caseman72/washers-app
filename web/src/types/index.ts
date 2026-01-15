@@ -24,11 +24,13 @@ export interface Tournament {
   id: string
   name: string
   type: 'singles' | 'doubles'
-  format: 'double_elimination'
+  format: 'single_elimination' | 'double_elimination'
+  bestOf: number
   status: 'setup' | 'active' | 'complete'
   playerIds: string[]
   bracket: BracketNode[]
   createdAt: Date
+  winnerId?: string
 }
 
 // Bracket node (single match in a tournament)
@@ -43,6 +45,7 @@ export interface BracketNode {
   gameId?: string
   nextMatchId?: string
   loserNextMatchId?: string  // for double elimination
+  isByeMatch?: boolean  // LB match that only receives 1 player (other feeder was a BYE)
 }
 
 // Session state (for scoreboard)
