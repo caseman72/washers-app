@@ -90,6 +90,11 @@ Phone app sends game state to Firebase Realtime Database. Web mirroring comes la
 - Simple: Phone settings has namespace field (email like `casey@manion.com`)
 - No password, honor system for v1
 
+### Namespace Convention
+- **Solo game**: `casey@manion.com` or `casey@manion.com/1`
+- **Tournament (8 tables)**: `casey@manion.com/1` through `casey@manion.com/8`
+- Slashes are sanitized to underscores in Firebase paths
+
 ### Data Model
 
 **Live State** `/games/{namespace}/current`:
