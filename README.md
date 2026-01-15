@@ -50,6 +50,7 @@ cd web && npm install && npm run dev
 - Update README.md with task and breadcrumbs to restart if needed
 - Do task
 - Update README.md complete task, remove breadcrumbs
+- Commit and push all changes
 - Iterate (repeat)
 - The overall goal is to reduce session drop and context switching
 
