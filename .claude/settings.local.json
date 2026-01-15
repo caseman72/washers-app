@@ -14,7 +14,8 @@
       "Edit(watch/**)",
       "Edit(web/**)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nAllow git commands in Claude settings\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
