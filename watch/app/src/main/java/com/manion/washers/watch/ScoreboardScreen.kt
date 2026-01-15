@@ -633,7 +633,7 @@ fun SeriesWinDialog(
     onOk: () -> Unit
 ) {
     // Use white text for dark colors, player color for light colors
-    val textColor = if (playerColor == PlayerColor.BLACK || playerColor == PlayerColor.NAVY) {
+    val textColor = if (playerColor == PlayerColor.BLACK || playerColor == PlayerColor.BROWN) {
         Color.White
     } else {
         playerColor.background
