@@ -5,6 +5,9 @@ export interface Player {
   photoUrl?: string
   createdAt: Date
   archived: boolean
+  wins: number
+  losses: number
+  tournamentWins: number
 }
 
 // Game (single match result)

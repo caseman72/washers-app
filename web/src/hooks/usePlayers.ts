@@ -5,6 +5,8 @@ import {
   subscribeToPlayers,
   addPlayer as firebaseAddPlayer,
   deletePlayer as firebaseDeletePlayer,
+  recordGameResult as firebaseRecordGameResult,
+  recordTournamentWin as firebaseRecordTournamentWin,
 } from '../lib/firebase-players'
 
 export interface UsePlayersResult {
@@ -13,6 +15,8 @@ export interface UsePlayersResult {
   error: string | null
   addPlayer: (name: string) => Promise<void>
   deletePlayer: (playerId: string) => Promise<void>
+  recordGameResult: (winnerId: string, loserId: string) => Promise<void>
+  recordTournamentWin: (playerId: string) => Promise<void>
 }
 
 export function usePlayers(namespace: string): UsePlayersResult {
@@ -68,5 +72,19 @@ export function usePlayers(namespace: string): UsePlayersResult {
     await firebaseDeletePlayer(namespace, playerId)
   }
 
-  return { players, loading, error, addPlayer, deletePlayer }
+  const recordGameResult = async (winnerId: string, loserId: string) => {
+    if (!namespace.trim()) {
+      throw new Error('No namespace configured')
+    }
+    await firebaseRecordGameResult(namespace, winnerId, loserId)
+  }
+
+  const recordTournamentWin = async (playerId: string) => {
+    if (!namespace.trim()) {
+      throw new Error('No namespace configured')
+    }
+    await firebaseRecordTournamentWin(namespace, playerId)
+  }
+
+  return { players, loading, error, addPlayer, deletePlayer, recordGameResult, recordTournamentWin }
 }

@@ -1,4 +1,4 @@
-import { ref, onValue, off, push, set, remove } from 'firebase/database'
+import { ref, onValue, off, push, set, remove, update, increment } from 'firebase/database'
 import { database, ensureAuth, sanitizeEmail } from './firebase'
 import { Player } from '../types'
 
@@ -7,6 +7,9 @@ export interface FirebasePlayer {
   name: string
   createdAt: number
   archived: boolean
+  wins: number
+  losses: number
+  tournamentWins: number
 }
 
 // Subscribe to players for a namespace
@@ -39,6 +42,9 @@ export function subscribeToPlayers(
           name: p.name,
           createdAt: new Date(p.createdAt),
           archived: p.archived || false,
+          wins: p.wins || 0,
+          losses: p.losses || 0,
+          tournamentWins: p.tournamentWins || 0,
         }
       })
 
@@ -72,6 +78,9 @@ export async function addPlayer(namespace: string, name: string): Promise<string
     name: name.trim(),
     createdAt: Date.now(),
     archived: false,
+    wins: 0,
+    losses: 0,
+    tournamentWins: 0,
   }
 
   await set(newPlayerRef, playerData)
@@ -102,4 +111,58 @@ export async function archivePlayer(namespace: string, playerId: string): Promis
 
   await set(archivedRef, true)
   console.log(`Archived player ${playerId}`)
+}
+
+// Record a game win for a player
+export async function recordWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    wins: increment(1)
+  })
+  console.log(`Recorded win for player ${playerId}`)
+}
+
+// Record a game loss for a player
+export async function recordLoss(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    losses: increment(1)
+  })
+  console.log(`Recorded loss for player ${playerId}`)
+}
+
+// Record a tournament win for a player
+export async function recordTournamentWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    tournamentWins: increment(1)
+  })
+  console.log(`Recorded tournament win for player ${playerId}`)
+}
+
+// Record game result (win for winner, loss for loser)
+export async function recordGameResult(
+  namespace: string,
+  winnerId: string,
+  loserId: string
+): Promise<void> {
+  await Promise.all([
+    recordWin(namespace, winnerId),
+    recordLoss(namespace, loserId)
+  ])
 }
