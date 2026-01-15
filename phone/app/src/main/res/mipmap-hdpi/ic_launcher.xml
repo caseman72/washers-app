@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+
+    <!-- Background -->
+    <path
+        android:fillColor="#1A1A1A"
+        android:pathData="M0,0h72v72h-72z"/>
+
+    <!-- Washer ring (orange) -->
+    <path
+        android:fillColor="#D35400"
+        android:pathData="M36,36m-28,0a28,28 0,1 1,56 0a28,28 0,1 1,-56 0"/>
+
+    <!-- Inner hole -->
+    <path
+        android:fillColor="#1A1A1A"
+        android:pathData="M36,36m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0"/>
+</vector>

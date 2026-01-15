@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Washer body (orange ring) -->
+  <circle cx="256" cy="256" r="240" fill="#D35400"/>
+
+  <!-- Inner hole (black center) -->
+  <circle cx="256" cy="256" r="100" fill="#1A1A1A"/>
+</svg>

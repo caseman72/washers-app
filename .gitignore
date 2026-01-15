@@ -1,0 +1,29 @@
+# Firebase secrets
+**/google-services.json
+secrets.properties
+
+# Keystores
+*.keystore
+*.jks
+
+# Build outputs
+**/build/
+**/out/
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Gradle
+.gradle/
+local.properties
+
+# Node
+node_modules/
+dist/
+
+# Misc
+*.log
+.env
+.env.local

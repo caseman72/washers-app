@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for:*)",
+      "Bash(do sed -i '' 's/^package com\\\\.manion\\\\.washers$/package com.manion.washers.watch/' \"$f\")",
+      "Bash(done)",
+      "Bash(head:*)",
+      "Skill(refactor)",
+      "Read(phone/**)",
+      "Read(watch/**)",
+      "Read(web/**)",
+      "Edit(phone/**)",
+      "Edit(watch/**)",
+      "Edit(web/**)"
+    ]
+  }
+}
