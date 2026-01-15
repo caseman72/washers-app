@@ -661,14 +661,14 @@ fun SeriesWinDialog(
                 onClick = onOk,
                 modifier = Modifier.width(80.dp),
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = playerColor.background
+                    backgroundColor = Color(0xFF4CAF50)
                 )
             ) {
                 Text(
                     text = "OK",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = playerColor.text
+                    color = Color.White
                 )
             }
         }
