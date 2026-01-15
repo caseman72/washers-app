@@ -17,14 +17,35 @@
 ### Firebase Configuration
 
 1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-2. Enable Realtime Database
-3. Download `google-services.json` from Firebase Console → Project Settings → Your Apps
-4. Copy to `phone/app/google-services.json`
-5. Create `phone/secrets.properties` from the example:
+2. Enable **Authentication** → Sign-in method → **Anonymous** (enable it)
+3. Enable **Realtime Database** and set these rules:
+   ```json
+   {
+     "rules": {
+       "games": {
+         "$email": {
+           "$table": {
+             "current": {
+               ".read": "auth != null",
+               ".write": "auth != null"
+             },
+             "history": {
+               ".read": "auth != null",
+               ".write": "auth != null"
+             }
+           }
+         }
+       }
+     }
+   }
+   ```
+4. Download `google-services.json` from Firebase Console → Project Settings → Your Apps
+5. Copy to `phone/app/google-services.json`
+6. Create `phone/secrets.properties` from the example:
    ```bash
    cp phone/secrets.properties.example phone/secrets.properties
    ```
-6. Edit `phone/secrets.properties` with your Firebase database URL:
+7. Edit `phone/secrets.properties` with your Firebase database URL:
    ```
    FIREBASE_DATABASE_URL=https://YOUR-PROJECT-ID-default-rtdb.firebaseio.com
    ```
@@ -87,8 +108,9 @@ cd web && npm install && npm run dev
 Phone app sends game state to Firebase Realtime Database. Web mirroring comes later.
 
 ### Authentication
-- Simple: Phone settings has namespace field (email like `casey@manion.com`)
-- No password, honor system for v1
+- Phone app uses Firebase Anonymous Auth (auto sign-in, no user action required)
+- Namespace field in settings (email like `casey@manion.com`) identifies the game owner
+- Database rules require authentication but don't verify identity (prevents casual abuse)
 
 ### Namespace Convention
 - **Solo game**: `casey@manion.com` or `casey@manion.com/1`

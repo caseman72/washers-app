@@ -49,6 +49,11 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Mess
         // Initialize settings repository
         SettingsRepository.initialize(this)
 
+        // Sign in anonymously for Firebase access
+        scope.launch {
+            AuthRepository.signInAnonymously()
+        }
+
         setContent {
             WashersPhoneTheme {
                 NavGraph()
