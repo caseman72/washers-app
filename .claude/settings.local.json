@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(git *)",
       "Bash(for:*)",
       "Bash(do sed -i '' 's/^package com\\\\.manion\\\\.washers$/package com.manion.washers.watch/' \"$f\")",
       "Bash(done)",
@@ -11,7 +12,8 @@
       "Read(web/**)",
       "Edit(phone/**)",
       "Edit(watch/**)",
-      "Edit(web/**)"
+      "Edit(web/**)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAllow git commands in Claude settings\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
