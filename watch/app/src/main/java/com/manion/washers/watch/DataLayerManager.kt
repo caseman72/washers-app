@@ -44,11 +44,11 @@ class DataLayerManager private constructor(context: Context) {
         private var instance: DataLayerManager? = null
         private var lastGameState: GameState? = null
 
-        // Current applied settings
-        private val _formatFromPhone = MutableStateFlow<Int?>(null)
+        // Current applied settings (initialized to Watch defaults)
+        private val _formatFromPhone = MutableStateFlow<Int?>(1)  // Default: single game
         val formatFromPhone: StateFlow<Int?> = _formatFromPhone.asStateFlow()
 
-        private val _showRoundsFromPhone = MutableStateFlow<Boolean?>(null)
+        private val _showRoundsFromPhone = MutableStateFlow<Boolean?>(false)  // Default: games only
         val showRoundsFromPhone: StateFlow<Boolean?> = _showRoundsFromPhone.asStateFlow()
 
         // Pending settings awaiting user confirmation
@@ -66,12 +66,8 @@ class DataLayerManager private constructor(context: Context) {
         fun getLastGameState(): GameState? = lastGameState
 
         fun setFormatFromPhone(format: Int) {
-            Log.d(TAG, "Format received from phone: $format")
-            val currentFormat = _formatFromPhone.value
-            if (currentFormat == null) {
-                // First time - apply directly
-                _formatFromPhone.value = format
-            } else if (format != currentFormat) {
+            Log.d(TAG, "Format received from phone: $format, current: ${_formatFromPhone.value}")
+            if (format != _formatFromPhone.value) {
                 // Different from current - queue as pending
                 pendingFormat = format
                 updatePendingSettings()
@@ -79,12 +75,8 @@ class DataLayerManager private constructor(context: Context) {
         }
 
         fun setShowRoundsFromPhone(showRounds: Boolean) {
-            Log.d(TAG, "ShowRounds received from phone: $showRounds")
-            val currentShowRounds = _showRoundsFromPhone.value
-            if (currentShowRounds == null) {
-                // First time - apply directly
-                _showRoundsFromPhone.value = showRounds
-            } else if (showRounds != currentShowRounds) {
+            Log.d(TAG, "ShowRounds received from phone: $showRounds, current: ${_showRoundsFromPhone.value}")
+            if (showRounds != _showRoundsFromPhone.value) {
                 // Different from current - queue as pending
                 pendingShowRounds = showRounds
                 updatePendingSettings()
@@ -92,8 +84,8 @@ class DataLayerManager private constructor(context: Context) {
         }
 
         private fun updatePendingSettings() {
-            val format = pendingFormat ?: _formatFromPhone.value ?: return
-            val showRounds = pendingShowRounds ?: _showRoundsFromPhone.value ?: return
+            val format = pendingFormat ?: _formatFromPhone.value ?: 1
+            val showRounds = pendingShowRounds ?: _showRoundsFromPhone.value ?: false
 
             // Only show dialog if something is actually pending
             if (pendingFormat != null || pendingShowRounds != null) {
