@@ -632,6 +632,13 @@ fun SeriesWinDialog(
     playerColor: PlayerColor,
     onOk: () -> Unit
 ) {
+    // Use white text for dark colors, player color for light colors
+    val textColor = if (playerColor == PlayerColor.BLACK || playerColor == PlayerColor.NAVY) {
+        Color.White
+    } else {
+        playerColor.background
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -643,7 +650,7 @@ fun SeriesWinDialog(
         ) {
             Text(
                 text = "Player $winner Won!",
-                color = playerColor.background,
+                color = textColor,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
