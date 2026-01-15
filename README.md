@@ -93,11 +93,11 @@ Phone app sends game state to Firebase Realtime Database. Web mirroring comes la
 ### Namespace Convention
 - **Solo game**: `casey@manion.com` or `casey@manion.com/1`
 - **Tournament (8 tables)**: `casey@manion.com/1` through `casey@manion.com/8`
-- Slashes are sanitized to underscores in Firebase paths
+- Firebase path: `/games/{email}/{table}/current` (e.g., `/games/casey@manion_com/1/current`)
 
 ### Data Model
 
-**Live State** `/games/{namespace}/current`:
+**Live State** `/games/{email}/{table}/current`:
 ```
 player1Score: 0
 player1Rounds: 1
@@ -113,7 +113,7 @@ format: 3
 updatedAt: timestamp
 ```
 
-**Round History** `/games/{namespace}/history/{timestamp}`:
+**Round History** `/games/{email}/{table}/history/{timestamp}`:
 ```
 startedAt: timestamp
 endedAt: timestamp

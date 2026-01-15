@@ -36,8 +36,8 @@ object FirebaseRepository {
             return
         }
 
-        val sanitizedNamespace = sanitizeEmail(namespace)
-        val path = "games/$sanitizedNamespace/current"
+        val (email, table) = parseNamespace(namespace)
+        val path = "games/$email/$table/current"
         Log.d(TAG, "Writing to path: $path")
         val ref = database.getReference(path)
 
@@ -86,9 +86,9 @@ object FirebaseRepository {
             return
         }
 
-        val sanitizedNamespace = sanitizeEmail(namespace)
+        val (email, table) = parseNamespace(namespace)
         val timestamp = System.currentTimeMillis()
-        val ref = database.getReference("games/$sanitizedNamespace/history/$timestamp")
+        val ref = database.getReference("games/$email/$table/history/$timestamp")
 
         val data = mapOf(
             "startedAt" to startedAt,
@@ -110,6 +110,18 @@ object FirebaseRepository {
             .addOnFailureListener { e ->
                 Log.e(TAG, "Failed to log session history", e)
             }
+    }
+
+    /**
+     * Parse namespace into email and table number.
+     * "casey@manion.com/1" → ("casey@manion_com", "1")
+     * "casey@manion.com" → ("casey@manion_com", "1")
+     */
+    private fun parseNamespace(namespace: String): Pair<String, String> {
+        val parts = namespace.split("/", limit = 2)
+        val email = sanitizeEmail(parts[0])
+        val table = if (parts.size > 1) parts[1] else "1"
+        return Pair(email, table)
     }
 
     /**
