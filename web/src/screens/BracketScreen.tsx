@@ -190,7 +190,7 @@ export function BracketScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
   const settings = loadSettings()
-  const { players: playerList } = usePlayers(settings.namespace)
+  const { players: playerList, recordGameResult, recordTournamentWin } = usePlayers(settings.namespace)
   const [tournament, setTournament] = useState<Tournament | null>(null)
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
 
@@ -283,13 +283,34 @@ export function BracketScreen() {
     return numbers
   }, [tournament, winnersRounds, losersRounds, finalsGame1, finalsGame2])
 
-  const handleSelectWinner = (matchId: string, winnerId: string) => {
+  const handleSelectWinner = async (matchId: string, winnerId: string) => {
     if (!tournament) return
+
+    // Find the match to get the loser
+    const match = tournament.bracket.find(m => m.id === matchId)
+    if (match && match.player1Id && match.player2Id) {
+      const loserId = match.player1Id === winnerId ? match.player2Id : match.player1Id
+      // Record game result (win for winner, loss for loser)
+      try {
+        await recordGameResult(winnerId, loserId)
+      } catch (err) {
+        console.error('Failed to record game result:', err)
+      }
+    }
 
     const updated = advanceWinner(tournament, matchId, winnerId)
     setTournament(updated)
     saveTournament(updated)
     setActiveMatchId(null)
+
+    // Check if tournament just completed
+    if (updated.winnerId && !tournament.winnerId) {
+      try {
+        await recordTournamentWin(updated.winnerId)
+      } catch (err) {
+        console.error('Failed to record tournament win:', err)
+      }
+    }
   }
 
   const handleReset = () => {
