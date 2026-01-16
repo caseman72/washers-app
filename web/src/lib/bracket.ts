@@ -37,40 +37,52 @@ function generateWinnersBracket(
 ): BracketNode[] {
   const numPlayers = playerIds.length
   const bracketSize = nextPowerOf2(numPlayers)
-  const numByes = bracketSize - numPlayers
   const numRounds = calculateRounds(numPlayers)
   const nodes: BracketNode[] = []
 
   // Shuffle players
   const shuffledPlayers = shuffleArray(playerIds)
 
-  // Create seeding with byes distributed
-  // Byes go to top seeds (first positions)
-  const seeding: (string | null)[] = []
+  // Create seeding with byes distributed properly
+  // BYEs should be spread across matches so no match has double-BYE
+  // Put players in first positions of each match, BYEs fill remaining second positions
+  const seeding: (string | null)[] = new Array(bracketSize).fill(null)
+  const numMatches = bracketSize / 2
+
+  // Distribute players across matches
+  // First, fill player1 slots (even indices), then player2 slots (odd indices)
   let playerIndex = 0
 
-  for (let i = 0; i < bracketSize; i++) {
-    if (i < numByes) {
-      // This position gets a bye - the opponent slot will be null
-      seeding.push(shuffledPlayers[playerIndex++])
-    } else {
-      seeding.push(shuffledPlayers[playerIndex++] || null)
-    }
+  // Fill player1 slots first (positions 0, 2, 4, 6, ...)
+  for (let i = 0; i < numMatches && playerIndex < numPlayers; i++) {
+    seeding[i * 2] = shuffledPlayers[playerIndex++]
   }
 
-  // Generate round 1 matches
+  // Fill player2 slots (positions 1, 3, 5, 7, ...)
+  for (let i = 0; i < numMatches && playerIndex < numPlayers; i++) {
+    seeding[i * 2 + 1] = shuffledPlayers[playerIndex++]
+  }
+
+  // Generate round 1 matches (skip matches with no players)
   const round1Matches: BracketNode[] = []
   for (let i = 0; i < bracketSize / 2; i++) {
     const player1Idx = i * 2
     const player2Idx = i * 2 + 1
+    const player1 = seeding[player1Idx] || undefined
+    const player2 = seeding[player2Idx] || undefined
+
+    // Skip matches with no players (double BYE)
+    if (!player1 && !player2) {
+      continue
+    }
 
     const match: BracketNode = {
       id: `w-r1-${i}`,
       round: 1,
       position: i,
       bracket: 'winners',
-      player1Id: seeding[player1Idx] || undefined,
-      player2Id: seeding[player2Idx] || undefined,
+      player1Id: player1,
+      player2Id: player2,
     }
 
     // Handle byes - if only one player, they auto-advance
