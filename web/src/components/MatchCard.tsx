@@ -243,6 +243,9 @@ export function MatchCard({
   // Track which match we've already triggered winner selection for
   const winnerTriggeredRef = useRef<string | null>(null)
 
+  // Track previous rounds to detect INCREASES (not just >= 1)
+  const prevRoundsRef = useRef<{ p1: number; p2: number } | null>(null)
+
   // Get display names for Firebase
   const player1DisplayName = isDoubles ? (team1Name || 'TBD') : (player1?.name || 'TBD')
   const player2DisplayName = isDoubles ? (team2Name || 'TBD') : (player2?.name || 'TBD')
@@ -280,25 +283,46 @@ export function MatchCard({
     return unsubscribe
   }, [shouldSubscribe, namespace, gameNumber, match.id, player1DisplayName, player2DisplayName, hasWinner])
 
-  // Auto-detect winner when a round is won (player1Rounds or player2Rounds >= 1)
-  // With best of 1, winning a game = winning a round, and everything resets to 0
-  // Only trigger if game data is fresh (updated after tournament started)
+  // Reset rounds tracking when game number or match changes
+  useEffect(() => {
+    prevRoundsRef.current = null
+  }, [gameNumber, match.id])
+
+  // Auto-detect winner when rounds INCREASE (not just >= 1)
+  // This prevents false triggers from stale data when switching namespaces
   useEffect(() => {
     if (!liveGame || hasWinner || !onSelectWinner || !match.player1Id || !match.player2Id) return
 
     // Ignore stale data from before the tournament started
-    if (tournamentStartedAt && liveGame.updatedAt < tournamentStartedAt) return
+    if (tournamentStartedAt && liveGame.updatedAt < tournamentStartedAt) {
+      prevRoundsRef.current = null
+      return
+    }
 
-    // Prevent duplicate triggers (effect can fire multiple times before state updates)
+    // Prevent duplicate triggers
     if (winnerTriggeredRef.current === match.id) return
 
-    // Check if either player has won a round (for tournament, first to 1 round wins)
-    if (liveGame.player1Rounds >= 1) {
+    const currentRounds = { p1: liveGame.player1Rounds, p2: liveGame.player2Rounds }
+    const prevRounds = prevRoundsRef.current
+
+    // First time seeing data for this game - just store it, don't trigger
+    if (prevRounds === null) {
+      prevRoundsRef.current = currentRounds
+      return
+    }
+
+    // Check if rounds INCREASED (indicating a win just happened)
+    if (currentRounds.p1 > prevRounds.p1) {
       winnerTriggeredRef.current = match.id
+      prevRoundsRef.current = currentRounds
       onSelectWinner(match.id, match.player1Id)
-    } else if (liveGame.player2Rounds >= 1) {
+    } else if (currentRounds.p2 > prevRounds.p2) {
       winnerTriggeredRef.current = match.id
+      prevRoundsRef.current = currentRounds
       onSelectWinner(match.id, match.player2Id)
+    } else {
+      // Update stored rounds even if no win
+      prevRoundsRef.current = currentRounds
     }
   }, [liveGame?.player1Rounds, liveGame?.player2Rounds, liveGame?.updatedAt, tournamentStartedAt, hasWinner, onSelectWinner, match.id, match.player1Id, match.player2Id])
 
