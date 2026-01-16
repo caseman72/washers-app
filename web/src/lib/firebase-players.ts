@@ -10,6 +10,10 @@ export interface FirebasePlayer {
   wins: number
   losses: number
   tournamentWins: number
+  // Team stats
+  teamWins: number
+  teamLosses: number
+  teamTournamentWins: number
 }
 
 // Subscribe to players for a namespace
@@ -45,6 +49,9 @@ export function subscribeToPlayers(
           wins: p.wins || 0,
           losses: p.losses || 0,
           tournamentWins: p.tournamentWins || 0,
+          teamWins: p.teamWins || 0,
+          teamLosses: p.teamLosses || 0,
+          teamTournamentWins: p.teamTournamentWins || 0,
         }
       })
 
@@ -81,6 +88,9 @@ export async function addPlayer(namespace: string, name: string): Promise<string
     wins: 0,
     losses: 0,
     tournamentWins: 0,
+    teamWins: 0,
+    teamLosses: 0,
+    teamTournamentWins: 0,
   }
 
   await set(newPlayerRef, playerData)
@@ -165,4 +175,66 @@ export async function recordGameResult(
     recordWin(namespace, winnerId),
     recordLoss(namespace, loserId)
   ])
+}
+
+// Record a team game win for a player
+export async function recordTeamWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    teamWins: increment(1)
+  })
+  console.log(`Recorded team win for player ${playerId}`)
+}
+
+// Record a team game loss for a player
+export async function recordTeamLoss(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    teamLosses: increment(1)
+  })
+  console.log(`Recorded team loss for player ${playerId}`)
+}
+
+// Record a team tournament win for a player
+export async function recordTeamTournamentWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    teamTournamentWins: increment(1)
+  })
+  console.log(`Recorded team tournament win for player ${playerId}`)
+}
+
+// Record team game result (win for winning team players, loss for losing team players)
+export async function recordTeamGameResult(
+  namespace: string,
+  winnerPlayerIds: string[],
+  loserPlayerIds: string[]
+): Promise<void> {
+  await Promise.all([
+    ...winnerPlayerIds.map(id => recordTeamWin(namespace, id)),
+    ...loserPlayerIds.map(id => recordTeamLoss(namespace, id))
+  ])
+}
+
+// Record team tournament win for all players on winning team
+export async function recordTeamTournamentWinForTeam(
+  namespace: string,
+  playerIds: string[]
+): Promise<void> {
+  await Promise.all(playerIds.map(id => recordTeamTournamentWin(namespace, id)))
 }

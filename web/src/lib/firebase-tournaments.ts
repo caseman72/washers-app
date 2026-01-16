@@ -1,6 +1,6 @@
 import { ref, onValue, off, push, set, update, remove } from 'firebase/database'
 import { database, ensureAuth, sanitizeEmail } from './firebase'
-import { Tournament, BracketNode } from '../types'
+import { Tournament, BracketNode, Team } from '../types'
 
 // Firebase tournament data structure
 export interface FirebaseTournament {
@@ -10,6 +10,7 @@ export interface FirebaseTournament {
   bestOf: number
   status: 'setup' | 'active' | 'complete'
   playerIds: string[]
+  teams?: Team[]
   bracket: BracketNode[]
   createdAt: number
   winnerId?: string
@@ -49,6 +50,7 @@ export function subscribeTournaments(
           bestOf: t.bestOf,
           status: t.status,
           playerIds: t.playerIds || [],
+          teams: t.teams,
           bracket: t.bracket || [],
           createdAt: new Date(t.createdAt),
           winnerId: t.winnerId,
@@ -105,6 +107,7 @@ export function subscribeTournament(
         bestOf: t.bestOf,
         status: t.status,
         playerIds: t.playerIds || [],
+        teams: t.teams,
         bracket: t.bracket || [],
         createdAt: new Date(t.createdAt),
         winnerId: t.winnerId,
@@ -145,6 +148,7 @@ export async function createTournament(namespace: string, tournament: Tournament
     bestOf: tournament.bestOf,
     status: tournament.status,
     playerIds: tournament.playerIds,
+    teams: tournament.teams,
     bracket: tournament.bracket,
     createdAt: tournament.createdAt.getTime(),
     archived: false,

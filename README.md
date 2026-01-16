@@ -138,12 +138,15 @@ cd web && npm install && npm run dev
 ### Features
 - Player management (add/delete, Firebase realtime sync)
 - Player stats tracking (wins, losses, tournament wins)
+- Team stats tracking (teamWins, teamLosses, teamTournamentWins)
 - Tournament setup (name, player selection 2-16, single/double elimination)
+- Singles or Teams mode (Teams: randomly pairs players into teams)
 - Bracket generation algorithm (BYE handling, proper seeding)
 - Bracket display (winner's bracket, loser's bracket columns)
 - Match cards with tap-to-select winner modal
+- Team names displayed as "Player1 & Player2" in brackets
 - Grand Finals handling (Game 1, conditional Game 2 if LB winner wins)
-- Champion display on tournament completion
+- Champion display on tournament completion (shows team name for doubles)
 - Correct loser bracket routing (WB dropdowns → player2, LB winners → player1)
 - BYE match auto-advance uses crossover logic for correct slot placement
 - Game numbering by round (WB + LB together per round)
@@ -303,10 +306,12 @@ Rounds checked:
 - [x] Firebase realtime sync (anonymous auth)
 - [x] Player management (add/delete players, Firebase realtime sync)
 - [x] Player stats (wins, losses, tournament wins - auto-tracked)
+- [x] Team stats (teamWins, teamLosses, teamTournamentWins - auto-tracked)
 - [x] Tournament setup (name, player selection, single/double elimination)
+- [x] Singles/Teams mode (random team pairing for doubles)
 - [x] Bracket generation (single & double elimination, BYE handling)
 - [x] Bracket display (winner's bracket, loser's bracket, grand finals)
-- [x] Match cards with winner selection modal
+- [x] Match cards with winner selection modal (shows team names for doubles)
 - [x] Tournament Firebase sync (create, update, archive)
 - [x] Tournament navigation (current/archived views)
 - [ ] Live game tiles (all 8 games at once)
@@ -366,9 +371,12 @@ Rounds checked:
 **Tournament Features**:
 - Player management (add/delete, Firebase realtime sync)
 - Player stats tracking (wins, losses, tournament wins)
+- Team stats tracking (teamWins, teamLosses, teamTournamentWins)
 - Tournament setup (2-16 players, single/double elimination)
+- Singles or Teams mode (random pairing for doubles)
 - Bracket generation with BYE handling
 - Interactive bracket display with winner selection
+- Team names displayed as "Player1 & Player2"
 - Grand Finals with conditional Game 2
 - Full Firebase sync for tournaments
 - Archive completed tournaments

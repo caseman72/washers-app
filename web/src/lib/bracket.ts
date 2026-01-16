@@ -1,4 +1,4 @@
-import { Tournament, BracketNode } from '../types'
+import { Tournament, BracketNode, Team } from '../types'
 
 // Generate a unique ID
 function generateId(): string {
@@ -13,6 +13,22 @@ function shuffleArray<T>(array: T[]): T[] {
     ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
   return shuffled
+}
+
+// Generate random teams from player IDs
+function generateTeams(playerIds: string[]): Team[] {
+  const shuffled = shuffleArray(playerIds)
+  const teams: Team[] = []
+
+  for (let i = 0; i < shuffled.length; i += 2) {
+    teams.push({
+      id: `team-${generateId()}`,
+      player1Id: shuffled[i],
+      player2Id: shuffled[i + 1],
+    })
+  }
+
+  return teams
 }
 
 // Get next power of 2 >= n
@@ -108,7 +124,7 @@ function generateWinnersBracket(
   let prevRoundMatches = round1Matches
   for (let round = 2; round <= numRounds; round++) {
     const roundMatches: BracketNode[] = []
-    const matchesInRound = prevRoundMatches.length / 2
+    const matchesInRound = Math.floor(prevRoundMatches.length / 2)
 
     for (let i = 0; i < matchesInRound; i++) {
       const match: BracketNode = {
@@ -122,16 +138,20 @@ function generateWinnersBracket(
       // Link previous round matches to this one
       const prevMatch1 = prevRoundMatches[i * 2]
       const prevMatch2 = prevRoundMatches[i * 2 + 1]
-      prevMatch1.nextMatchId = match.id
-      prevMatch2.nextMatchId = match.id
+      if (prevMatch1) {
+        prevMatch1.nextMatchId = match.id
+      }
+      if (prevMatch2) {
+        prevMatch2.nextMatchId = match.id
+      }
 
       // If previous matches have winners (byes), propagate them
-      if (prevMatch1.winnerId && prevMatch2.winnerId) {
+      if (prevMatch1?.winnerId && prevMatch2?.winnerId) {
         match.player1Id = prevMatch1.winnerId
         match.player2Id = prevMatch2.winnerId
-      } else if (prevMatch1.winnerId) {
+      } else if (prevMatch1?.winnerId) {
         match.player1Id = prevMatch1.winnerId
-      } else if (prevMatch2.winnerId) {
+      } else if (prevMatch2?.winnerId) {
         match.player2Id = prevMatch2.winnerId
       }
     }
@@ -298,14 +318,26 @@ export function generateTournament(
   name: string,
   playerIds: string[],
   format: 'single_elimination' | 'double_elimination',
-  bestOf: number = 1
+  bestOf: number = 1,
+  type: 'singles' | 'doubles' = 'singles'
 ): Tournament {
-  const winnersBracket = generateWinnersBracket(playerIds, format)
+  // For doubles, generate teams and use team IDs in the bracket
+  let teams: Team[] | undefined
+  let bracketParticipantIds: string[]
+
+  if (type === 'doubles') {
+    teams = generateTeams(playerIds)
+    bracketParticipantIds = teams.map(t => t.id)
+  } else {
+    bracketParticipantIds = playerIds
+  }
+
+  const winnersBracket = generateWinnersBracket(bracketParticipantIds, format)
 
   let fullBracket = winnersBracket
 
   if (format === 'double_elimination') {
-    const losersBracket = generateLosersBracket(winnersBracket, playerIds.length)
+    const losersBracket = generateLosersBracket(winnersBracket, bracketParticipantIds.length)
     fullBracket = [...winnersBracket, ...losersBracket]
 
     // Mark LB matches that will be BYEs
@@ -315,11 +347,12 @@ export function generateTournament(
   return {
     id: generateId(),
     name,
-    type: 'singles',
+    type,
     format,
     bestOf,
     status: 'active',
     playerIds,
+    teams,
     bracket: fullBracket,
     createdAt: new Date(),
   }

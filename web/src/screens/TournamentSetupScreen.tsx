@@ -241,6 +241,7 @@ export function TournamentSetupScreen() {
   const players = allPlayers.filter(p => !p.archived)
   const [tournamentName, setTournamentName] = useState('')
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set())
+  const [tournamentType, setTournamentType] = useState<'singles' | 'doubles'>('singles')
   const [elimination, setElimination] = useState<'single_elimination' | 'double_elimination'>('double_elimination')
   const [initialized, setInitialized] = useState(false)
 
@@ -274,7 +275,12 @@ export function TournamentSetupScreen() {
     setSelectedPlayerIds(newSelected)
   }
 
-  const canCreate = selectedPlayerIds.size >= 2 && selectedPlayerIds.size <= 16
+  // Validation: singles needs 2-16 players, doubles needs 4-16 players (even number for team pairing)
+  const isValidPlayerCount = tournamentType === 'singles'
+    ? selectedPlayerIds.size >= 2 && selectedPlayerIds.size <= 16
+    : selectedPlayerIds.size >= 4 && selectedPlayerIds.size <= 16 && selectedPlayerIds.size % 2 === 0
+
+  const canCreate = isValidPlayerCount
 
   const handleCreate = async () => {
     if (!canCreate) return
@@ -284,7 +290,8 @@ export function TournamentSetupScreen() {
       name,
       Array.from(selectedPlayerIds),
       elimination,
-      1 // bestOf
+      1, // bestOf
+      tournamentType
     )
 
     try {
@@ -314,8 +321,28 @@ export function TournamentSetupScreen() {
         </div>
 
         <div className="form-section">
+          <label className="form-label">Tournament Type</label>
+          <div className="elimination-toggle">
+            <button
+              className={`toggle-btn ${tournamentType === 'singles' ? 'active' : ''}`}
+              onClick={() => setTournamentType('singles')}
+            >
+              Singles
+            </button>
+            <button
+              className={`toggle-btn ${tournamentType === 'doubles' ? 'active' : ''}`}
+              onClick={() => setTournamentType('doubles')}
+            >
+              Teams
+            </button>
+          </div>
+        </div>
+
+        <div className="form-section">
           <div className="selection-header">
-            <label className="form-label">Select Players (2-16)</label>
+            <label className="form-label">
+              Select Players ({tournamentType === 'singles' ? '2-16' : '4-16, even'})
+            </label>
             {players.length > 0 && (
               <div className="selection-buttons">
                 <button className="select-btn" onClick={selectAll}>All</button>
@@ -350,10 +377,21 @@ export function TournamentSetupScreen() {
                   </label>
                 ))}
               </div>
-              <div className={`selection-count ${selectedPlayerIds.size < 2 ? 'error' : ''}`}>
+              <div className={`selection-count ${!isValidPlayerCount ? 'error' : ''}`}>
                 {selectedPlayerIds.size} selected
-                {selectedPlayerIds.size < 2 && ' (minimum 2)'}
-                {selectedPlayerIds.size > 16 && ' (maximum 16)'}
+                {tournamentType === 'singles' ? (
+                  <>
+                    {selectedPlayerIds.size < 2 && ' (minimum 2)'}
+                    {selectedPlayerIds.size > 16 && ' (maximum 16)'}
+                  </>
+                ) : (
+                  <>
+                    {selectedPlayerIds.size < 4 && ' (minimum 4 for teams)'}
+                    {selectedPlayerIds.size > 16 && ' (maximum 16)'}
+                    {selectedPlayerIds.size >= 4 && selectedPlayerIds.size % 2 !== 0 && ' (need even number for teams)'}
+                    {isValidPlayerCount && ` → ${selectedPlayerIds.size / 2} teams`}
+                  </>
+                )}
               </div>
             </>
           )}

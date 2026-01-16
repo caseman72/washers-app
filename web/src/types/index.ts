@@ -8,6 +8,10 @@ export interface Player {
   wins: number
   losses: number
   tournamentWins: number
+  // Team stats (for doubles tournaments)
+  teamWins: number
+  teamLosses: number
+  teamTournamentWins: number
 }
 
 // Game (single match result)
@@ -22,6 +26,13 @@ export interface Game {
   timestamp: Date
 }
 
+// Team (pair of players for doubles)
+export interface Team {
+  id: string
+  player1Id: string
+  player2Id: string
+}
+
 // Tournament
 export interface Tournament {
   id: string
@@ -31,9 +42,10 @@ export interface Tournament {
   bestOf: number
   status: 'setup' | 'active' | 'complete'
   playerIds: string[]
+  teams?: Team[]  // For doubles - teams created from playerIds
   bracket: BracketNode[]
   createdAt: Date
-  winnerId?: string
+  winnerId?: string  // For doubles, this is a team ID
   archived?: boolean
 }
 

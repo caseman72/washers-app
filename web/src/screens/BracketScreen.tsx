@@ -212,7 +212,7 @@ export function BracketScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
   const settings = loadSettings()
-  const { players: playerList, recordGameResult, recordTournamentWin } = usePlayers(settings.namespace)
+  const { players: playerList, recordGameResult, recordTournamentWin, recordTeamGameResult, recordTeamTournamentWin } = usePlayers(settings.namespace)
   const { tournament, loading, updateTournament, archiveTournament, deleteTournament } = useTournament(settings.namespace, id)
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
 
@@ -298,8 +298,17 @@ export function BracketScreen() {
     return numbers
   }, [tournament, winnersRounds, losersRounds, finalsGame1, finalsGame2])
 
+  // Helper to get player IDs from a team ID
+  const getTeamPlayerIds = (teamId: string): string[] => {
+    if (!tournament?.teams) return []
+    const team = tournament.teams.find(t => t.id === teamId)
+    return team ? [team.player1Id, team.player2Id] : []
+  }
+
   const handleSelectWinner = async (matchId: string, winnerId: string) => {
     if (!tournament) return
+
+    const isDoubles = tournament.type === 'doubles'
 
     // Find the match to get the loser
     const match = tournament.bracket.find(m => m.id === matchId)
@@ -307,7 +316,16 @@ export function BracketScreen() {
       const loserId = match.player1Id === winnerId ? match.player2Id : match.player1Id
       // Record game result (win for winner, loss for loser)
       try {
-        await recordGameResult(winnerId, loserId)
+        if (isDoubles) {
+          // For teams, get player IDs and record team game result
+          const winnerPlayerIds = getTeamPlayerIds(winnerId)
+          const loserPlayerIds = getTeamPlayerIds(loserId)
+          if (winnerPlayerIds.length > 0 && loserPlayerIds.length > 0) {
+            await recordTeamGameResult(winnerPlayerIds, loserPlayerIds)
+          }
+        } else {
+          await recordGameResult(winnerId, loserId)
+        }
       } catch (err) {
         console.error('Failed to record game result:', err)
       }
@@ -330,7 +348,15 @@ export function BracketScreen() {
     // Check if tournament just completed
     if (updated.winnerId && !tournament.winnerId) {
       try {
-        await recordTournamentWin(updated.winnerId)
+        if (isDoubles) {
+          // For teams, get player IDs and record team tournament win
+          const winnerPlayerIds = getTeamPlayerIds(updated.winnerId)
+          if (winnerPlayerIds.length > 0) {
+            await recordTeamTournamentWin(winnerPlayerIds)
+          }
+        } else {
+          await recordTournamentWin(updated.winnerId)
+        }
       } catch (err) {
         console.error('Failed to record tournament win:', err)
       }
@@ -357,7 +383,22 @@ export function BracketScreen() {
     }
   }
 
-  const champion = tournament?.winnerId ? players.get(tournament.winnerId) : null
+  // For singles, get player directly. For doubles, get team name.
+  const getChampionName = (): string | null => {
+    if (!tournament?.winnerId) return null
+    if (tournament.type === 'doubles') {
+      const team = tournament.teams?.find(t => t.id === tournament.winnerId)
+      if (!team) return null
+      const p1 = players.get(team.player1Id)
+      const p2 = players.get(team.player2Id)
+      if (!p1 || !p2) return null
+      return `${p1.name} & ${p2.name}`
+    }
+    const player = players.get(tournament.winnerId)
+    return player?.name || null
+  }
+
+  const championName = getChampionName()
 
   const getRoundLabel = (round: number, bracket: 'winners' | 'losers') => {
     if (bracket === 'winners') {
@@ -419,10 +460,10 @@ export function BracketScreen() {
       </div>
 
       <div className="bracket-content">
-        {champion && (
+        {championName && (
           <div className="champion-display">
             <div className="champion-label">Champion</div>
-            <div className="champion-name">{champion.name}</div>
+            <div className="champion-name">{championName}</div>
           </div>
         )}
 
@@ -444,6 +485,8 @@ export function BracketScreen() {
                         key={match.id}
                         match={match}
                         players={players}
+                        teams={tournament.teams}
+                        tournamentType={tournament.type}
                         onSelectWinner={handleSelectWinner}
                         showModal={activeMatchId === match.id}
                         onOpenModal={() => setActiveMatchId(match.id)}
@@ -463,6 +506,8 @@ export function BracketScreen() {
                   <MatchCard
                     match={finalsGame1}
                     players={players}
+                    teams={tournament.teams}
+                    tournamentType={tournament.type}
                     onSelectWinner={handleSelectWinner}
                     showModal={activeMatchId === finalsGame1.id}
                     onOpenModal={() => setActiveMatchId(finalsGame1.id)}
@@ -481,6 +526,8 @@ export function BracketScreen() {
                   <MatchCard
                     match={finalsGame2}
                     players={players}
+                    teams={tournament.teams}
+                    tournamentType={tournament.type}
                     onSelectWinner={handleSelectWinner}
                     showModal={activeMatchId === finalsGame2.id}
                     onOpenModal={() => setActiveMatchId(finalsGame2.id)}
@@ -512,6 +559,8 @@ export function BracketScreen() {
                           key={match.id}
                           match={match}
                           players={players}
+                          teams={tournament.teams}
+                          tournamentType={tournament.type}
                           onSelectWinner={handleSelectWinner}
                           showModal={activeMatchId === match.id}
                           onOpenModal={() => setActiveMatchId(match.id)}

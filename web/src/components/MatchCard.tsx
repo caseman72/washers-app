@@ -1,4 +1,4 @@
-import { BracketNode, Player } from '../types'
+import { BracketNode, Player, Team } from '../types'
 import { isMatchReady, isByeMatch } from '../lib/bracket'
 
 const styles = `
@@ -162,6 +162,8 @@ const styles = `
 interface MatchCardProps {
   match: BracketNode
   players: Map<string, Player>
+  teams?: Team[]
+  tournamentType?: 'singles' | 'doubles'
   onSelectWinner?: (matchId: string, winnerId: string) => void
   showModal?: boolean
   onCloseModal?: () => void
@@ -171,9 +173,22 @@ interface MatchCardProps {
   player2Losses?: number
 }
 
+// Helper to get team name from team ID
+function getTeamName(teamId: string, teams: Team[] | undefined, players: Map<string, Player>): string | null {
+  if (!teams) return null
+  const team = teams.find(t => t.id === teamId)
+  if (!team) return null
+  const p1 = players.get(team.player1Id)
+  const p2 = players.get(team.player2Id)
+  if (!p1 || !p2) return null
+  return `${p1.name} & ${p2.name}`
+}
+
 export function MatchCard({
   match,
   players,
+  teams,
+  tournamentType = 'singles',
   onSelectWinner,
   showModal,
   onCloseModal,
@@ -182,8 +197,13 @@ export function MatchCard({
   player1Losses,
   player2Losses,
 }: MatchCardProps) {
+  const isDoubles = tournamentType === 'doubles'
+
+  // For singles: get player directly. For doubles: get team and display both player names
   const player1 = match.player1Id ? players.get(match.player1Id) : null
   const player2 = match.player2Id ? players.get(match.player2Id) : null
+  const team1Name = isDoubles && match.player1Id ? getTeamName(match.player1Id, teams, players) : null
+  const team2Name = isDoubles && match.player2Id ? getTeamName(match.player2Id, teams, players) : null
 
   const ready = isMatchReady(match)
   const isBye = isByeMatch(match)
@@ -223,8 +243,11 @@ export function MatchCard({
         )}
         <div className={`match-player ${getPlayerClass(match.player1Id)}`}>
           <span className="player-name">
-            {player1 ? player1.name : (match.player1Id ? 'Unknown' : 'TBD')}
-            {player1 && player1Losses !== undefined && (
+            {isDoubles
+              ? (team1Name || (match.player1Id ? 'Unknown' : 'TBD'))
+              : (player1 ? player1.name : (match.player1Id ? 'Unknown' : 'TBD'))
+            }
+            {!isDoubles && player1 && player1Losses !== undefined && (
               <sub className="loss-count">{player1Losses}</sub>
             )}
           </span>
@@ -234,8 +257,11 @@ export function MatchCard({
         </div>
         <div className={`match-player ${getPlayerClass(match.player2Id)} ${!match.player2Id && isBye ? 'bye-slot' : ''}`}>
           <span className="player-name">
-            {player2 ? player2.name : (match.player2Id ? 'Unknown' : (isBye ? 'BYE' : 'TBD'))}
-            {player2 && player2Losses !== undefined && (
+            {isDoubles
+              ? (team2Name || (match.player2Id ? 'Unknown' : (isBye ? 'BYE' : 'TBD')))
+              : (player2 ? player2.name : (match.player2Id ? 'Unknown' : (isBye ? 'BYE' : 'TBD')))
+            }
+            {!isDoubles && player2 && player2Losses !== undefined && (
               <sub className="loss-count">{player2Losses}</sub>
             )}
           </span>
@@ -249,21 +275,44 @@ export function MatchCard({
         <div className="match-modal-overlay" onClick={onCloseModal}>
           <div className="match-modal" onClick={e => e.stopPropagation()}>
             <div className="match-modal-title">Select Winner</div>
-            {player1 && (
-              <button
-                className="winner-btn"
-                onClick={() => handleSelectWinner(player1.id)}
-              >
-                {player1.name}
-              </button>
-            )}
-            {player2 && (
-              <button
-                className="winner-btn"
-                onClick={() => handleSelectWinner(player2.id)}
-              >
-                {player2.name}
-              </button>
+            {isDoubles ? (
+              <>
+                {match.player1Id && team1Name && (
+                  <button
+                    className="winner-btn"
+                    onClick={() => handleSelectWinner(match.player1Id!)}
+                  >
+                    {team1Name}
+                  </button>
+                )}
+                {match.player2Id && team2Name && (
+                  <button
+                    className="winner-btn"
+                    onClick={() => handleSelectWinner(match.player2Id!)}
+                  >
+                    {team2Name}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                {player1 && (
+                  <button
+                    className="winner-btn"
+                    onClick={() => handleSelectWinner(player1.id)}
+                  >
+                    {player1.name}
+                  </button>
+                )}
+                {player2 && (
+                  <button
+                    className="winner-btn"
+                    onClick={() => handleSelectWinner(player2.id)}
+                  >
+                    {player2.name}
+                  </button>
+                )}
+              </>
             )}
             <button className="cancel-winner-btn" onClick={onCloseModal}>
               Cancel
