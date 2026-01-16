@@ -282,7 +282,8 @@ export function BracketScreen() {
     // (both feeder matches are BYEs, so players are known immediately)
     const isImmediatelyPlayable = (match: BracketNode) => {
       if (isStructuralBye(match)) return false
-      if (match.round === 1) return true // R1 non-BYE matches are always playable first
+      // Only WB R1 non-BYE matches are playable first (LB R1 needs WB losers)
+      if (match.round === 1 && match.bracket === 'winners') return true
 
       // For later rounds, check if ALL feeder matches are structural BYEs
       const feeders = tournament.bracket.filter(m => m.nextMatchId === match.id)
