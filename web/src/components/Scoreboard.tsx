@@ -690,14 +690,14 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Header: always show games counter */}
+      {/* Header: show rounds.games when format > 1, otherwise just games */}
       <div className="games-counter">
         <span className="games" style={{ background: p1.bg, color: p1.text }}>
-          {session.player1Games}
+          {format > 1 ? `${session.player1Rounds}.${session.player1Games}` : session.player1Games}
         </span>
         <span className="games-label">Games</span>
         <span className="games" style={{ background: p2.bg, color: p2.text, border: player2Color === 'white' ? '2px solid #ccc' : player2Color === 'black' ? '2px solid #333' : 'none' }}>
-          {session.player2Games}
+          {format > 1 ? `${session.player2Rounds}.${session.player2Games}` : session.player2Games}
         </span>
       </div>
 

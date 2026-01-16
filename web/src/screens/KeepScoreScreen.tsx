@@ -290,17 +290,26 @@ export function KeepScoreScreen() {
     return () => clearTimeout(timer)
   }, [gameNumber, settings.gameNumber])
 
-  // Sync to Firebase when session changes
+  // Sync to Firebase when session or format changes
   useEffect(() => {
-    if (!hasNamespace || !lastSession) return
+    if (!hasNamespace) return
+
+    const session = lastSession || {
+      player1Score: 0,
+      player2Score: 0,
+      player1Games: 0,
+      player2Games: 0,
+      player1Rounds: 0,
+      player2Rounds: 0,
+    }
 
     writeGameState(baseNamespace, gameNumber, {
-      player1Score: lastSession.player1Score,
-      player2Score: lastSession.player2Score,
-      player1Games: lastSession.player1Games,
-      player2Games: lastSession.player2Games,
-      player1Rounds: lastSession.player1Rounds,
-      player2Rounds: lastSession.player2Rounds,
+      player1Score: session.player1Score,
+      player2Score: session.player2Score,
+      player1Games: session.player1Games,
+      player2Games: session.player2Games,
+      player1Rounds: session.player1Rounds,
+      player2Rounds: session.player2Rounds,
       player1Color: lastColors.p1,
       player2Color: lastColors.p2,
       player1Name: player1Name || undefined,
