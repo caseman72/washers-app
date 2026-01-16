@@ -175,49 +175,55 @@ fun GameDisplayScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Status text
-                val statusText = when {
-                    mode != AppMode.MIRROR -> ""
-                    isConnected -> "Connected to watch"
-                    else -> "Waiting for watch..."
+                // Status text (Mirror mode) or Player names (Keep Score mode)
+                if (mode == AppMode.MIRROR) {
+                    val statusText = if (isConnected) "Connected to watch" else "Waiting for watch..."
+                    Text(
+                        text = statusText,
+                        color = if (isConnected) WatchColors.Secondary else WatchColors.OnSurfaceDisabled,
+                        fontSize = 16.sp
+                    )
+                } else if (mode == AppMode.KEEP_SCORE) {
+                    // Player name labels - clickable, side by side under score cards
+                    val player1Name by SettingsRepository.player1Name.collectAsState()
+                    val player2Name by SettingsRepository.player2Name.collectAsState()
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Player 1 name
+                        Text(
+                            text = player1Name.ifEmpty { "Player 1" },
+                            color = if (player1Name.isEmpty()) WatchColors.OnSurfaceDisabled else WatchColors.OnSurface,
+                            fontSize = 16.sp,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { showPlayerPicker = 1 }
+                                .padding(vertical = 8.dp),
+                            textAlign = TextAlign.Center
+                        )
+
+                        // Player 2 name
+                        Text(
+                            text = player2Name.ifEmpty { "Player 2" },
+                            color = if (player2Name.isEmpty()) WatchColors.OnSurfaceDisabled else WatchColors.OnSurface,
+                            fontSize = 16.sp,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { showPlayerPicker = 2 }
+                                .padding(vertical = 8.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
-                Text(
-                    text = statusText,
-                    color = if (isConnected) WatchColors.Secondary else WatchColors.OnSurfaceDisabled,
-                    fontSize = 16.sp
-                )
 
                 Spacer(modifier = Modifier.weight(1f))
 
                 // Namespace and Format fields (Mirror and Keep Score modes)
                 if (mode == AppMode.MIRROR || mode == AppMode.KEEP_SCORE) {
                     val format by SettingsRepository.format.collectAsState()
-                    val player1Name by SettingsRepository.player1Name.collectAsState()
-                    val player2Name by SettingsRepository.player2Name.collectAsState()
                     val isTournament = SettingsRepository.isTournamentGame()
-
-                    // Player selectors for Keep Score mode
-                    if (mode == AppMode.KEEP_SCORE) {
-                        // Player 1 selector
-                        PlayerSelectorRow(
-                            playerNumber = 1,
-                            playerName = player1Name,
-                            playerColor = localGameState.player1Color,
-                            onTap = { showPlayerPicker = 1 }
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Player 2 selector
-                        PlayerSelectorRow(
-                            playerNumber = 2,
-                            playerName = player2Name,
-                            playerColor = localGameState.player2Color,
-                            onTap = { showPlayerPicker = 2 }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -988,59 +994,6 @@ private fun KeepScoreGameScreen(
         }
 
         Spacer(modifier = Modifier.height(30.dp))
-    }
-}
-
-/**
- * Tappable row for selecting a player (used in Keep Score below the fold)
- */
-@Composable
-private fun PlayerSelectorRow(
-    playerNumber: Int,
-    playerName: String,
-    playerColor: PlayerColor,
-    onTap: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .background(WatchColors.Surface, RoundedCornerShape(8.dp))
-            .clickable { onTap() }
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Color indicator
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .background(playerColor.background)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // Player label and name
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Player $playerNumber",
-                color = WatchColors.OnSurfaceDisabled,
-                fontSize = 12.sp
-            )
-            Text(
-                text = playerName.ifEmpty { "Tap to select" },
-                color = if (playerName.isEmpty()) WatchColors.OnSurfaceDisabled else WatchColors.OnSurface,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        // Arrow indicator
-        Text(
-            text = "›",
-            color = WatchColors.OnSurfaceDisabled,
-            fontSize = 24.sp
-        )
     }
 }
 
