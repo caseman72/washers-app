@@ -148,7 +148,9 @@ cd web && npm install && npm run dev
 - Grand Finals handling (Game 1, conditional Game 2 if LB winner wins)
 - Champion display on tournament completion (shows team name for doubles)
 - Correct loser bracket routing (WB dropdowns → player2, LB winners → player1)
-- BYE match auto-advance uses crossover logic for correct slot placement
+- LB crossover rounds handle mismatched counts (more WB losers than LB winners)
+- Fair BYE distribution: teams that played real WB matches get LB BYEs
+- BYE match auto-advance for both LB R1 and crossover rounds
 - Game numbering by round (WB + LB together per round)
 - Round labels for all finals columns
 - Full Firebase sync for tournaments (`/tournaments/{namespace}/`)
@@ -374,7 +376,8 @@ Rounds checked:
 - Team stats tracking (teamWins, teamLosses, teamTournamentWins)
 - Tournament setup (2-16 players, single/double elimination)
 - Singles or Teams mode (random pairing for doubles)
-- Bracket generation with BYE handling
+- Bracket generation with smart BYE handling
+- Fair BYE distribution (teams that fought get LB BYEs)
 - Interactive bracket display with winner selection
 - Team names displayed as "Player1 & Player2"
 - Grand Finals with conditional Game 2
