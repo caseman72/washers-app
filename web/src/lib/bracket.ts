@@ -252,9 +252,12 @@ function generateLosersBracket(
           prevMatches[i].nextMatchId = match.id
         }
 
-        // Link dropdowns from winners
-        if (winnersRoundMatches[i]) {
-          winnersRoundMatches[i].loserNextMatchId = match.id
+        // Link dropdowns from winners (reversed so teams that played real matches get BYEs)
+        // Early WB matches had real opponents, late WB matches had BYE opponents
+        // Early WB losers should get LB BYEs, late WB losers play real LB matches
+        const wbMatchIndex = winnersRoundMatches.length - 1 - i
+        if (wbMatchIndex >= 0 && winnersRoundMatches[wbMatchIndex]) {
+          winnersRoundMatches[wbMatchIndex].loserNextMatchId = match.id
         }
       }
 
