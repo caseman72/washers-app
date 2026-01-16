@@ -928,6 +928,13 @@ private fun WinConfirmationDialog(
     onConfirm: () -> Unit,
     onDeny: () -> Unit
 ) {
+    // Use white for dark colors (BLACK, BROWN) so text is visible on dark dialog
+    val titleColor = if (playerColor == PlayerColor.BLACK || playerColor == PlayerColor.BROWN) {
+        Color.White
+    } else {
+        playerColor.background
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -943,7 +950,7 @@ private fun WinConfirmationDialog(
         ) {
             Text(
                 text = "Player $player Won?",
-                color = playerColor.background,
+                color = titleColor,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -971,18 +978,18 @@ private fun WinConfirmationDialog(
                     )
                 }
 
-                // Yes button
+                // Yes button (green background)
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
-                        .background(playerColor.background, RoundedCornerShape(8.dp))
+                        .background(Color(0xFF27AE60), RoundedCornerShape(8.dp))
                         .clickable { onConfirm() },
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "Yes",
-                        color = playerColor.text,
+                        color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -998,6 +1005,13 @@ private fun SeriesWinDialog(
     playerColor: PlayerColor,
     onOk: () -> Unit
 ) {
+    // Use white for dark colors (BLACK, BROWN) so text is visible on dark dialog
+    val titleColor = if (playerColor == PlayerColor.BLACK || playerColor == PlayerColor.BROWN) {
+        Color.White
+    } else {
+        playerColor.background
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -1013,25 +1027,25 @@ private fun SeriesWinDialog(
         ) {
             Text(
                 text = "Player $player Won!",
-                color = playerColor.background,
+                color = titleColor,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // OK button
+            // OK button (green background)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
-                    .background(playerColor.background, RoundedCornerShape(8.dp))
+                    .background(Color(0xFF27AE60), RoundedCornerShape(8.dp))
                     .clickable { onOk() },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "OK",
-                    color = playerColor.text,
+                    color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
