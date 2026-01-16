@@ -402,15 +402,58 @@ export function advanceWinner(
   matchId: string,
   winnerId: string
 ): Tournament {
+  // Find the current match to check if winner is changing
+  const currentMatch = tournament.bracket.find(m => m.id === matchId)
+  const previousWinnerId = currentMatch?.winnerId
+  const winnerChanged = previousWinnerId && previousWinnerId !== winnerId
+
   const updatedBracket = tournament.bracket.map(match => {
     if (match.id === matchId) {
-      return { ...match, winnerId }
+      return { ...match, winnerId, completedAt: Date.now() }
     }
     return match
   })
 
   // Find the match and propagate winner
   const match = updatedBracket.find(m => m.id === matchId)
+
+  // If winner changed, clear the old advancement before setting new one
+  if (winnerChanged && currentMatch) {
+    const previousLoserId = currentMatch.player1Id === previousWinnerId
+      ? currentMatch.player2Id
+      : currentMatch.player1Id
+
+    // Clear old winner from next match
+    if (currentMatch.nextMatchId) {
+      const nextMatch = updatedBracket.find(m => m.id === currentMatch.nextMatchId)
+      if (nextMatch) {
+        if (nextMatch.player1Id === previousWinnerId) {
+          nextMatch.player1Id = undefined
+        } else if (nextMatch.player2Id === previousWinnerId) {
+          nextMatch.player2Id = undefined
+        }
+      }
+    }
+
+    // Clear old loser from loser bracket (double elimination)
+    if (currentMatch.loserNextMatchId && previousLoserId) {
+      const loserMatch = updatedBracket.find(m => m.id === currentMatch.loserNextMatchId)
+      if (loserMatch) {
+        if (loserMatch.player1Id === previousLoserId) {
+          loserMatch.player1Id = undefined
+          // Also clear winnerId if it was auto-advanced BYE
+          if (loserMatch.winnerId === previousLoserId) {
+            loserMatch.winnerId = undefined
+          }
+        } else if (loserMatch.player2Id === previousLoserId) {
+          loserMatch.player2Id = undefined
+          if (loserMatch.winnerId === previousLoserId) {
+            loserMatch.winnerId = undefined
+          }
+        }
+      }
+    }
+  }
 
   // Special handling for Finals Game 1 result
   if (matchId === 'grand-finals') {
@@ -568,9 +611,23 @@ export function getMatchesByRound(
   return matchesByRound
 }
 
-// Check if a match is ready to be played
+// Edit window in milliseconds (60 seconds)
+const EDIT_WINDOW_MS = 60 * 1000
+
+// Check if a match is ready to be played (or editable within 60s window)
 export function isMatchReady(match: BracketNode): boolean {
-  return !!(match.player1Id && match.player2Id && !match.winnerId)
+  // Both players must be present
+  if (!match.player1Id || !match.player2Id) return false
+
+  // No winner yet - ready to play
+  if (!match.winnerId) return true
+
+  // Has winner but within edit window - still editable
+  if (match.completedAt && (Date.now() - match.completedAt) < EDIT_WINDOW_MS) {
+    return true
+  }
+
+  return false
 }
 
 // Check if a match is a bye (auto-win)

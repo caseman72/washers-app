@@ -58,6 +58,7 @@ export interface BracketNode {
   player1Id?: string
   player2Id?: string
   winnerId?: string
+  completedAt?: number  // timestamp when winner was selected (allows 60s edit window)
   gameId?: string
   nextMatchId?: string
   loserNextMatchId?: string  // for double elimination
