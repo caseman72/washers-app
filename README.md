@@ -280,6 +280,7 @@ Rounds checked:
 - [x] Format support (best of 1/3/5/7, default: 1)
 - [x] Receive format from Phone via MessageClient
 - [x] Receive showRounds from Phone via MessageClient
+- [x] Receive reset from Phone via MessageClient (preserves colors)
 - [x] Series win celebration dialog ("Player X Won!")
 - [x] Settings sync prompt (Apply/Ignore when Phone sends different settings)
 
@@ -302,6 +303,7 @@ Rounds checked:
 - [x] Firebase write on state changes (Mirror + Keep Score modes)
 - [x] Firebase round history logging on round win
 - [x] Firebase read player names on namespace change (Mirror mode)
+- [x] Reset Watch state on namespace change (preserves colors, prevents stale rounds)
 
 ### Web App (React/TypeScript)
 - [x] Home screen (mode picker - Mirror / Keep Score / Settings)
@@ -322,8 +324,9 @@ Rounds checked:
 - [x] Tournament Firebase sync (create, update, archive)
 - [x] Tournament navigation (current/archived views)
 - [x] Live scores on bracket cards (Firebase realtime sync)
-- [x] Auto-detect winners from Firebase (round win detection)
+- [x] Auto-detect winners from Firebase (detects rounds INCREASE, not absolute value)
 - [x] Initialize game tables with player names from bracket
+- [x] Stable game numbering (based on structural playability, not dynamic state)
 - [ ] Live game tiles (all 8 games at once)
 
 ---
