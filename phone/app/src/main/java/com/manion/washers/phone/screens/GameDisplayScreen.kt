@@ -1361,7 +1361,7 @@ private fun ScorePanelWithPlayerPicker(
 }
 
 /**
- * Player picker dialog - scrollable list of players
+ * Player picker dialog - full screen scrollable list (matches ColorPickerDialog style)
  */
 @Composable
 private fun PlayerPickerDialog(
@@ -1373,106 +1373,134 @@ private fun PlayerPickerDialog(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xCC000000))
-            .clickable { onDismiss() },
+            .background(Color(0xFF1A1A1A)),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .fillMaxHeight(0.7f)
-                .background(WatchColors.Surface, RoundedCornerShape(16.dp))
-                .clickable(enabled = false) {} // Prevent dismissing when clicking on dialog
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Select Player",
-                color = WatchColors.OnSurface,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            if (players.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "No Players",
-                            color = WatchColors.OnSurfaceDisabled,
-                            fontSize = 16.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Add players from the Players screen",
-                            color = WatchColors.OnSurfaceDisabled,
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(players, key = { it.id }) { player ->
-                        val isSelected = player.name == currentName
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    if (isSelected) WatchColors.Primary else WatchColors.Background,
-                                    RoundedCornerShape(8.dp)
-                                )
-                                .clickable { onPlayerSelected(player) }
-                                .padding(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = player.name,
-                                    color = WatchColors.OnSurface,
-                                    fontSize = 16.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                                if (isSelected) {
-                                    Text(
-                                        text = "✓",
-                                        color = Color.White,
-                                        fontSize = 18.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Cancel button
-            Spacer(modifier = Modifier.height(16.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .background(WatchColors.Background, RoundedCornerShape(8.dp))
-                    .clickable { onDismiss() },
-                contentAlignment = Alignment.Center
+        if (players.isEmpty()) {
+            // Empty state
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Cancel",
+                    text = "No Players",
                     color = WatchColors.OnSurfaceDisabled,
-                    fontSize = 16.sp
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Add players from the Players screen",
+                    color = WatchColors.OnSurfaceDisabled,
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .height(56.dp)
+                        .background(Color(0xFF333333), RoundedCornerShape(8.dp))
+                        .clickable { onDismiss() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Back",
+                        color = Color.White,
+                        fontSize = 18.sp
+                    )
+                }
             }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(players, key = { it.id }) { player ->
+                    val isSelected = player.name == currentName
+
+                    PlayerPickerItem(
+                        name = player.name,
+                        isSelected = isSelected,
+                        onClick = { onPlayerSelected(player) }
+                    )
+                }
+
+                // Back button at the end
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .height(56.dp)
+                            .background(Color(0xFF333333), RoundedCornerShape(8.dp))
+                            .clickable { onDismiss() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Back",
+                            color = Color.White,
+                            fontSize = 18.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerPickerItem(
+    name: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(0.85f)
+            .height(56.dp)
+            .background(
+                if (isSelected) Color(0xFF333333) else Color.Transparent,
+                RoundedCornerShape(8.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Player icon circle
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(WatchColors.Primary),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = name.take(1).uppercase(),
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Text(
+            text = name,
+            color = Color.White,
+            fontSize = 18.sp,
+            modifier = Modifier.weight(1f)
+        )
+
+        if (isSelected) {
+            Text(
+                text = "✓",
+                color = Color(0xFF4CAF50),
+                fontSize = 20.sp
+            )
         }
     }
 }
