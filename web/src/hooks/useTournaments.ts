@@ -7,6 +7,7 @@ import {
   createTournament as firebaseCreateTournament,
   updateTournament as firebaseUpdateTournament,
   archiveTournament as firebaseArchiveTournament,
+  deleteTournament as firebaseDeleteTournament,
 } from '../lib/firebase-tournaments'
 
 export interface UseTournamentsResult {
@@ -88,6 +89,7 @@ export interface UseTournamentResult {
   error: string | null
   updateTournament: (updates: Partial<Tournament>) => Promise<void>
   archiveTournament: () => Promise<void>
+  deleteTournament: () => Promise<void>
 }
 
 export function useTournament(namespace: string, tournamentId: string | undefined): UseTournamentResult {
@@ -149,5 +151,15 @@ export function useTournament(namespace: string, tournamentId: string | undefine
     await firebaseArchiveTournament(namespace, tournamentId)
   }
 
-  return { tournament, loading, error, updateTournament, archiveTournament }
+  const deleteTournament = async () => {
+    if (!namespace.trim()) {
+      throw new Error('No namespace configured')
+    }
+    if (!tournamentId) {
+      throw new Error('No tournament ID')
+    }
+    await firebaseDeleteTournament(namespace, tournamentId)
+  }
+
+  return { tournament, loading, error, updateTournament, archiveTournament, deleteTournament }
 }

@@ -1,4 +1,4 @@
-import { ref, onValue, off, push, set, update } from 'firebase/database'
+import { ref, onValue, off, push, set, update, remove } from 'firebase/database'
 import { database, ensureAuth, sanitizeEmail } from './firebase'
 import { Tournament, BracketNode } from '../types'
 
@@ -190,4 +190,16 @@ export async function updateTournament(
 export async function archiveTournament(namespace: string, tournamentId: string): Promise<void> {
   await updateTournament(namespace, tournamentId, { archived: true })
   console.log(`Archived tournament ${tournamentId}`)
+}
+
+// Delete a tournament permanently
+export async function deleteTournament(namespace: string, tournamentId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `tournaments/${sanitized}/${tournamentId}`
+  const tournamentRef = ref(database, path)
+
+  await remove(tournamentRef)
+  console.log(`Deleted tournament ${tournamentId}`)
 }

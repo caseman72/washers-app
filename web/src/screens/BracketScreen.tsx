@@ -213,7 +213,7 @@ export function BracketScreen() {
   const { id } = useParams()
   const settings = loadSettings()
   const { players: playerList, recordGameResult, recordTournamentWin } = usePlayers(settings.namespace)
-  const { tournament, loading, updateTournament, archiveTournament } = useTournament(settings.namespace, id)
+  const { tournament, loading, updateTournament, archiveTournament, deleteTournament } = useTournament(settings.namespace, id)
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
 
   // Convert player list to Map for easy lookup
@@ -344,6 +344,16 @@ export function BracketScreen() {
       navigate('/tournament/list')
     } catch (err) {
       console.error('Failed to archive tournament:', err)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!confirm('Delete this tournament? This cannot be undone.')) return
+    try {
+      await deleteTournament()
+      navigate('/tournament')
+    } catch (err) {
+      console.error('Failed to delete tournament:', err)
     }
   }
 
@@ -520,13 +530,19 @@ export function BracketScreen() {
       </div>
 
       <div className="bracket-footer">
-        <button className="back-btn" onClick={() => navigate('/tournament/list')}>
+        <button className="back-btn" onClick={() => navigate('/tournament')}>
           Back
         </button>
         {!tournament.archived && (
-          <button className="archive-btn" onClick={handleArchive}>
-            Archive
-          </button>
+          tournament.status === 'complete' ? (
+            <button className="archive-btn" onClick={handleArchive}>
+              Archive
+            </button>
+          ) : (
+            <button className="delete-btn" onClick={handleDelete}>
+              Delete
+            </button>
+          )
         )}
       </div>
 
