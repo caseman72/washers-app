@@ -4,20 +4,27 @@ import { useNavigate } from 'react-router-dom'
 const STORAGE_KEY = 'washers-settings'
 
 export interface Settings {
-  namespace: string      // Base namespace (e.g., "casey@manion.com")
-  gameNamespace: string  // Full namespace with game (e.g., "casey@manion.com/2")
+  namespace: string   // Base namespace (e.g., "casey@manion.com")
+  gameNumber: number  // Game number (0-64)
 }
 
 const defaultSettings: Settings = {
   namespace: '',
-  gameNamespace: '',
+  gameNumber: 0,
 }
 
 export function loadSettings(): Settings {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
-      return { ...defaultSettings, ...JSON.parse(stored) }
+      const parsed = JSON.parse(stored)
+      // Migrate from old format if needed
+      if ('gameNamespace' in parsed && !('gameNumber' in parsed)) {
+        const gameNumber = getGameNumberFromLegacy(parsed.gameNamespace)
+        const namespace = getBaseNamespaceFromLegacy(parsed.gameNamespace)
+        return { namespace, gameNumber }
+      }
+      return { ...defaultSettings, ...parsed }
     }
   } catch (e) {
     console.error('Failed to load settings:', e)
@@ -29,39 +36,40 @@ export function saveSettings(settings: Settings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
 }
 
-// Extract base namespace (strip /game suffix if present)
-// e.g., "casey@manion.com/2" -> "casey@manion.com"
-export function getBaseNamespace(ns: string): string {
+// Legacy migration helpers
+function getBaseNamespaceFromLegacy(ns: string): string {
   const match = ns.match(/^(.+?)\/\d+$/)
   return match ? match[1] : ns
 }
 
-// Extract game number from namespace
-// e.g., "casey@manion.com/2" -> 2
-export function getGameNumber(ns: string): number {
+function getGameNumberFromLegacy(ns: string): number {
   const match = ns.match(/\/(\d+)$/)
-  return match ? parseInt(match[1], 10) : 1
+  return match ? parseInt(match[1], 10) : 0
 }
 
-// Update namespace and sync to gameNamespace (preserving game number)
+// Get full namespace (for Firebase paths)
+export function getFullNamespace(settings: Settings): string {
+  if (!settings.namespace) return ''
+  return `${settings.namespace}/${settings.gameNumber}`
+}
+
+// Update base namespace only
 export function updateNamespace(newNamespace: string): Settings {
   const settings = loadSettings()
-  const gameNumber = getGameNumber(settings.gameNamespace)
-  const newGameNamespace = newNamespace ? `${newNamespace}/${gameNumber}` : ''
   const newSettings = {
+    ...settings,
     namespace: newNamespace,
-    gameNamespace: newGameNamespace,
   }
   saveSettings(newSettings)
   return newSettings
 }
 
-// Update gameNamespace and sync to namespace (extracting base)
-export function updateGameNamespace(newGameNamespace: string): Settings {
-  const newNamespace = getBaseNamespace(newGameNamespace)
+// Update game number only
+export function updateGameNumber(newGameNumber: number): Settings {
+  const settings = loadSettings()
   const newSettings = {
-    namespace: newNamespace,
-    gameNamespace: newGameNamespace,
+    ...settings,
+    gameNumber: Math.max(0, Math.min(64, newGameNumber)),
   }
   saveSettings(newSettings)
   return newSettings

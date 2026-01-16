@@ -227,40 +227,22 @@ export function GameDisplay({
 
   return (
     <div className="game-display">
-      {/* Header: show player names when format=1, games counter when format>1 */}
-      {format === 1 ? (
-        <div className="game-header names-header">
-          <div
-            className="name-badge"
-            style={{ background: p1Color.bg, color: p1Color.text }}
-          >
-            {state.player1Name || 'Player 1'}
-          </div>
-          <span className="games-label">vs</span>
-          <div
-            className="name-badge"
-            style={{ background: p2Color.bg, color: p2Color.text }}
-          >
-            {state.player2Name || 'Player 2'}
-          </div>
+      {/* Header: always show games counter */}
+      <div className="game-header">
+        <div
+          className="games-badge"
+          style={{ background: p1Color.bg, color: p1Color.text }}
+        >
+          {p1GamesDisplay}
         </div>
-      ) : (
-        <div className="game-header">
-          <div
-            className="games-badge"
-            style={{ background: p1Color.bg, color: p1Color.text }}
-          >
-            {p1GamesDisplay}
-          </div>
-          <span className="games-label">GAMES</span>
-          <div
-            className="games-badge"
-            style={{ background: p2Color.bg, color: p2Color.text }}
-          >
-            {p2GamesDisplay}
-          </div>
+        <span className="games-label">GAMES</span>
+        <div
+          className="games-badge"
+          style={{ background: p2Color.bg, color: p2Color.text }}
+        >
+          {p2GamesDisplay}
         </div>
-      )}
+      </div>
 
       {/* Score panels with names inside */}
       <div className="scores-container">

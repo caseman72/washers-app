@@ -690,28 +690,16 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Header: show player names when format=1, games counter when format>1 */}
-      {format === 1 ? (
-        <div className="games-counter">
-          <span className="games names" style={{ background: p1.bg, color: p1.text }}>
-            {player1Name || 'Player 1'}
-          </span>
-          <span className="games-label">vs</span>
-          <span className="games names" style={{ background: p2.bg, color: p2.text, border: player2Color === 'white' ? '2px solid #ccc' : player2Color === 'black' ? '2px solid #333' : 'none' }}>
-            {player2Name || 'Player 2'}
-          </span>
-        </div>
-      ) : (
-        <div className="games-counter">
-          <span className="games" style={{ background: p1.bg, color: p1.text }}>
-            {`${session.player1Rounds}.${session.player1Games}`}
-          </span>
-          <span className="games-label">Games</span>
-          <span className="games" style={{ background: p2.bg, color: p2.text, border: player2Color === 'white' ? '2px solid #ccc' : player2Color === 'black' ? '2px solid #333' : 'none' }}>
-            {`${session.player2Rounds}.${session.player2Games}`}
-          </span>
-        </div>
-      )}
+      {/* Header: always show games counter */}
+      <div className="games-counter">
+        <span className="games" style={{ background: p1.bg, color: p1.text }}>
+          {session.player1Games}
+        </span>
+        <span className="games-label">Games</span>
+        <span className="games" style={{ background: p2.bg, color: p2.text, border: player2Color === 'white' ? '2px solid #ccc' : player2Color === 'black' ? '2px solid #333' : 'none' }}>
+          {session.player2Games}
+        </span>
+      </div>
 
       {/* Main scores - NO onClick on panels, only on buttons */}
       <div className="scores">
