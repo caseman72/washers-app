@@ -14,25 +14,56 @@ const styles = `
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
-  .mirror-header {
+  .mirror-game-area {
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+  }
+
+  .mirror-bottom {
+    flex: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: #111;
-    font-size: 0.75rem;
+    flex-direction: column;
+    padding: 1rem;
+    background: #2a2a2a;
+  }
+
+  .status-text {
+    text-align: center;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .status-text.connected {
+    color: #27ae60;
+  }
+
+  .status-text.waiting {
     color: #888;
   }
 
-  .namespace-input {
+  .spacer {
     flex: 1;
-    max-width: 250px;
-    padding: 0.4rem 0.75rem;
-    font-size: 0.875rem;
-    background: #333;
+  }
+
+  .namespace-field {
+    margin-bottom: 0.75rem;
+  }
+
+  .namespace-label {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 0.25rem;
+  }
+
+  .namespace-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    background: #1a1a1a;
     border: 1px solid #444;
-    border-radius: 0.25rem;
+    border-radius: 0.5rem;
     color: white;
   }
 
@@ -41,56 +72,20 @@ const styles = `
     border-color: #d35400;
   }
 
-  .game-number-input {
-    width: 4rem;
-    padding: 0.4rem 0.5rem;
-    font-size: 0.875rem;
-    background: #333;
-    border: 1px solid #444;
-    border-radius: 0.25rem;
-    color: white;
-    text-align: center;
-  }
-
-  .game-number-input:focus {
-    outline: none;
-    border-color: #d35400;
-  }
-
-  .mirror-container {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-  }
-
-  .mirror-panel {
-    width: 100%;
-    max-width: 400px;
-    aspect-ratio: 1;
-  }
-
-  .mirror-footer {
-    display: flex;
-    justify-content: center;
-    padding: 0.75rem;
-    background: #111;
-  }
-
   .back-btn {
-    padding: 0.5rem 1.5rem;
-    font-size: 0.875rem;
-    background: #333;
-    color: #aaa;
+    width: 100%;
+    padding: 0.875rem;
+    font-size: 1rem;
+    font-weight: 500;
+    background: #3a3a3a;
+    color: white;
     border: none;
     border-radius: 0.5rem;
     cursor: pointer;
   }
 
   .back-btn:hover {
-    background: #444;
-    color: white;
+    background: #4a4a4a;
   }
 `
 
@@ -99,7 +94,14 @@ export function MirrorScreen() {
   const settings = loadSettings()
 
   const [namespace, setNamespace] = useState(settings.namespace)
-  const [gameNumber, setGameNumber] = useState(1)
+
+  // Extract game number from namespace (e.g., "casey@manion.com/19" -> 19)
+  const getGameNumber = (ns: string): number => {
+    const match = ns.match(/\/(\d+)$/)
+    return match ? parseInt(match[1], 10) : 1
+  }
+
+  const gameNumber = getGameNumber(namespace)
 
   // Save namespace to settings when it changes (debounced)
   useEffect(() => {
@@ -111,47 +113,42 @@ export function MirrorScreen() {
     return () => clearTimeout(timer)
   }, [namespace, settings])
 
-  const handleGameNumberChange = (value: string) => {
-    const num = parseInt(value, 10)
-    if (!isNaN(num) && num >= 1) {
-      setGameNumber(num)
-    }
-  }
-
   const game = useGameState(namespace, gameNumber)
+
+  const hasData = game.state !== null
+  const isConnected = hasData && !game.loading
 
   return (
     <div className="mirror-screen">
-      <div className="mirror-header">
-        <input
-          type="text"
-          className="namespace-input"
-          value={namespace}
-          onChange={(e) => setNamespace(e.target.value)}
-          placeholder="namespace (e.g., casey@manion.com/1)"
-        />
-        <span>/</span>
-        <input
-          type="number"
-          className="game-number-input"
-          value={gameNumber}
-          onChange={(e) => handleGameNumberChange(e.target.value)}
-          min="1"
+      {/* Square game display area */}
+      <div className="mirror-game-area">
+        <GameDisplay
+          state={game.state}
+          loading={game.loading}
+          error={game.error}
+          gameNumber={gameNumber}
         />
       </div>
 
-      <div className="mirror-container">
-        <div className="mirror-panel">
-          <GameDisplay
-            state={game.state}
-            loading={game.loading}
-            error={game.error}
-            gameNumber={gameNumber}
+      {/* Bottom area - matches Phone layout */}
+      <div className="mirror-bottom">
+        <div className={`status-text ${isConnected ? 'connected' : 'waiting'}`}>
+          {isConnected ? 'Connected' : 'Waiting for data...'}
+        </div>
+
+        <div className="spacer" />
+
+        <div className="namespace-field">
+          <div className="namespace-label">Namespace</div>
+          <input
+            type="text"
+            className="namespace-input"
+            value={namespace}
+            onChange={(e) => setNamespace(e.target.value)}
+            placeholder="casey@manion.com/1"
           />
         </div>
-      </div>
 
-      <div className="mirror-footer">
         <button className="back-btn" onClick={() => navigate('/')}>
           Back to Menu
         </button>
