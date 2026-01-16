@@ -20,6 +20,7 @@ import com.manion.washers.phone.ui.theme.WatchColors
 enum class AppMode {
     MIRROR,
     KEEP_SCORE,
+    PLAYERS,
     SETTINGS
 }
 
@@ -71,8 +72,18 @@ fun ModePickerScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             ModeOption(
+                title = "Players",
+                description = "Manage player roster",
+                selected = initialMode == AppMode.PLAYERS,
+                enabled = true,
+                onClick = { onModeSelected(AppMode.PLAYERS) }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ModeOption(
                 title = "Settings",
-                description = "Format, names, sync",
+                description = "Namespace config",
                 selected = initialMode == AppMode.SETTINGS,
                 enabled = true,
                 onClick = { onModeSelected(AppMode.SETTINGS) }

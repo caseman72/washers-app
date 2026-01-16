@@ -30,8 +30,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.manion.washers.phone.FirebasePlayersRepository
 import com.manion.washers.phone.FirebaseRepository
 import com.manion.washers.phone.GameState
+import com.manion.washers.phone.Player
 import com.manion.washers.phone.PlayerColor
 import com.manion.washers.phone.SettingsRepository
 import com.manion.washers.phone.WearableRepository
@@ -88,7 +90,7 @@ fun GameDisplayScreen(
     val displayState = when (mode) {
         AppMode.MIRROR -> watchGameState ?: GameState()
         AppMode.KEEP_SCORE -> localGameState
-        AppMode.SETTINGS -> GameState()
+        AppMode.SETTINGS, AppMode.PLAYERS -> GameState() // Not used for these modes
     }
 
     val configuration = LocalConfiguration.current
@@ -114,7 +116,7 @@ fun GameDisplayScreen(
                         gameState = localGameState,
                         onGameStateChange = { localGameState = it }
                     )
-                    AppMode.SETTINGS -> { /* Not used */ }
+                    AppMode.SETTINGS, AppMode.PLAYERS -> { /* Not used */ }
                 }
             }
 
@@ -142,22 +144,39 @@ fun GameDisplayScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Namespace field (Mirror and Keep Score modes)
+                // Namespace and Format fields (Mirror and Keep Score modes)
                 if (mode == AppMode.MIRROR || mode == AppMode.KEEP_SCORE) {
-                    OutlinedTextField(
-                        value = namespace,
-                        onValueChange = { SettingsRepository.setNamespace(it) },
-                        label = { Text("Namespace") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    val format by SettingsRepository.format.collectAsState()
+                    val isTournament = SettingsRepository.isTournamentGame()
+
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = WatchColors.Primary,
-                            unfocusedBorderColor = WatchColors.Surface,
-                            focusedLabelColor = WatchColors.Primary,
-                            unfocusedLabelColor = WatchColors.OnSurfaceDisabled
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Namespace field
+                        OutlinedTextField(
+                            value = namespace,
+                            onValueChange = { SettingsRepository.setNamespace(it) },
+                            label = { Text("Namespace") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = WatchColors.Primary,
+                                unfocusedBorderColor = WatchColors.Surface,
+                                focusedLabelColor = WatchColors.Primary,
+                                unfocusedLabelColor = WatchColors.OnSurfaceDisabled
+                            )
                         )
-                    )
+
+                        // Format selector
+                        FormatSelector(
+                            format = if (isTournament) 1 else format,
+                            enabled = !isTournament,
+                            onFormatChange = { SettingsRepository.setFormat(it) }
+                        )
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
@@ -187,9 +206,26 @@ fun GameDisplayScreen(
  */
 @Composable
 private fun MirrorDisplay(gameState: GameState) {
-    val showRounds by SettingsRepository.showRounds.collectAsState()
+    val format by SettingsRepository.format.collectAsState()
+    val namespace by SettingsRepository.namespace.collectAsState()
     val player1Name by SettingsRepository.player1Name.collectAsState()
     val player2Name by SettingsRepository.player2Name.collectAsState()
+    // Derive showRounds from format > 1 (tournament games 1-64 have format locked to 1)
+    val showRounds = SettingsRepository.shouldShowRounds()
+
+    // Player picker state
+    var showPlayerPicker by remember { mutableStateOf<Int?>(null) }
+    val players by FirebasePlayersRepository.players.collectAsState()
+
+    // Subscribe to players when namespace is set
+    LaunchedEffect(namespace) {
+        if (namespace.isNotBlank()) {
+            FirebasePlayersRepository.subscribeToPlayers(namespace)
+        }
+    }
+
+    // Filter to active players only
+    val activePlayers = players.filter { !it.archived }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -198,7 +234,7 @@ private fun MirrorDisplay(gameState: GameState) {
         // Top padding
         Spacer(modifier = Modifier.height(30.dp))
 
-        // Games counter with colored badges
+        // Games counter with colored badges (or names when format=1)
         GamesCounterWithBadges(
             player1Games = gameState.player1Games,
             player2Games = gameState.player2Games,
@@ -206,12 +242,14 @@ private fun MirrorDisplay(gameState: GameState) {
             player2Rounds = gameState.player2Rounds,
             player1Color = gameState.player1Color,
             player2Color = gameState.player2Color,
-            showRounds = showRounds
+            showRounds = showRounds,
+            player1Name = if (format == 1) player1Name else null,
+            player2Name = if (format == 1) player2Name else null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Score panels with editable names in the top area
+        // Score panels with player picker in the top area
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -219,26 +257,43 @@ private fun MirrorDisplay(gameState: GameState) {
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            ScorePanelWithName(
+            ScorePanelWithPlayerPicker(
                 score = gameState.player1Score,
                 color = gameState.player1Color,
                 name = player1Name,
                 placeholder = "Player 1",
-                onNameChange = { SettingsRepository.setPlayer1Name(it) },
+                onTap = { showPlayerPicker = 1 },
                 modifier = Modifier.weight(1f)
             )
 
-            ScorePanelWithName(
+            ScorePanelWithPlayerPicker(
                 score = gameState.player2Score,
                 color = gameState.player2Color,
                 name = player2Name,
                 placeholder = "Player 2",
-                onNameChange = { SettingsRepository.setPlayer2Name(it) },
+                onTap = { showPlayerPicker = 2 },
                 modifier = Modifier.weight(1f)
             )
         }
 
         Spacer(modifier = Modifier.height(30.dp))
+    }
+
+    // Player picker dialog overlay
+    showPlayerPicker?.let { playerNum ->
+        PlayerPickerDialog(
+            players = activePlayers,
+            currentName = if (playerNum == 1) player1Name else player2Name,
+            onPlayerSelected = { player ->
+                if (playerNum == 1) {
+                    SettingsRepository.setPlayer1Name(player.name)
+                } else {
+                    SettingsRepository.setPlayer2Name(player.name)
+                }
+                showPlayerPicker = null
+            },
+            onDismiss = { showPlayerPicker = null }
+        )
     }
 }
 
@@ -358,6 +413,7 @@ private fun ScoreControlPanel(
 
 /**
  * Games counter with colored badges (matches watch layout)
+ * When player names are provided (format=1), shows names instead of games counter
  */
 @Composable
 private fun GamesCounterWithBadges(
@@ -367,50 +423,104 @@ private fun GamesCounterWithBadges(
     player2Rounds: Int = 0,
     player1Color: PlayerColor,
     player2Color: PlayerColor,
-    showRounds: Boolean = false
+    showRounds: Boolean = false,
+    player1Name: String? = null,
+    player2Name: String? = null
 ) {
-    val badgeWidth = if (showRounds) 64.dp else 50.dp
-    val fontSize = if (showRounds) 28.sp else 32.sp
-
-    Row(
-        modifier = Modifier.height(50.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        // Player 1 badge
-        Box(
-            modifier = Modifier
-                .size(width = badgeWidth, height = 50.dp)
-                .background(player1Color.background, RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center
+    // When names are provided (format=1), show names header instead of games
+    if (player1Name != null && player2Name != null) {
+        Row(
+            modifier = Modifier.height(50.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
+            // Player 1 name badge
+            Box(
+                modifier = Modifier
+                    .widthIn(min = 80.dp)
+                    .height(50.dp)
+                    .background(player1Color.background, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = player1Name.ifEmpty { "Player 1" },
+                    color = player1Color.text,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
+
             Text(
-                text = if (showRounds) "$player1Rounds.$player1Games" else "$player1Games",
-                color = player1Color.text,
-                fontSize = fontSize,
-                fontWeight = FontWeight.Bold
+                text = "  vs  ",
+                color = WatchColors.OnSurfaceDisabled,
+                fontSize = 16.sp
             )
+
+            // Player 2 name badge
+            Box(
+                modifier = Modifier
+                    .widthIn(min = 80.dp)
+                    .height(50.dp)
+                    .background(player2Color.background, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = player2Name.ifEmpty { "Player 2" },
+                    color = player2Color.text,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
         }
+    } else {
+        // Show games counter (rounds.games or just games)
+        val badgeWidth = if (showRounds) 64.dp else 50.dp
+        val fontSize = if (showRounds) 28.sp else 32.sp
 
-        Text(
-            text = " GAMES ",
-            color = WatchColors.OnSurfaceDisabled,
-            fontSize = 18.sp
-        )
-
-        // Player 2 badge
-        Box(
-            modifier = Modifier
-                .size(width = badgeWidth, height = 50.dp)
-                .background(player2Color.background, RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.height(50.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
+            // Player 1 badge
+            Box(
+                modifier = Modifier
+                    .size(width = badgeWidth, height = 50.dp)
+                    .background(player1Color.background, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (showRounds) "$player1Rounds.$player1Games" else "$player1Games",
+                    color = player1Color.text,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
             Text(
-                text = if (showRounds) "$player2Rounds.$player2Games" else "$player2Games",
-                color = player2Color.text,
-                fontSize = fontSize,
-                fontWeight = FontWeight.Bold
+                text = " GAMES ",
+                color = WatchColors.OnSurfaceDisabled,
+                fontSize = 18.sp
             )
+
+            // Player 2 badge
+            Box(
+                modifier = Modifier
+                    .size(width = badgeWidth, height = 50.dp)
+                    .background(player2Color.background, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (showRounds) "$player2Rounds.$player2Games" else "$player2Games",
+                    color = player2Color.text,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -561,7 +671,6 @@ private fun KeepScorePager(
     var seriesWinFor by remember { mutableStateOf<Int?>(null) }
     var sessionStartTime by remember { mutableStateOf(System.currentTimeMillis()) }
     val format by SettingsRepository.format.collectAsState()
-    val showRounds by SettingsRepository.showRounds.collectAsState()
     val player1Name by SettingsRepository.player1Name.collectAsState()
     val player2Name by SettingsRepository.player2Name.collectAsState()
     val pagerState = rememberPagerState(pageCount = { 2 })
@@ -678,7 +787,11 @@ private fun KeepScoreGameScreen(
     onGameStateChange: (GameState) -> Unit,
     onPlayerWin: (Int) -> Unit
 ) {
-    val showRounds by SettingsRepository.showRounds.collectAsState()
+    val format by SettingsRepository.format.collectAsState()
+    val player1Name by SettingsRepository.player1Name.collectAsState()
+    val player2Name by SettingsRepository.player2Name.collectAsState()
+    // Derive showRounds from format > 1 (tournament games 1-64 have format locked to 1)
+    val showRounds = SettingsRepository.shouldShowRounds()
 
     Column(
         modifier = Modifier
@@ -695,7 +808,9 @@ private fun KeepScoreGameScreen(
             player2Rounds = gameState.player2Rounds,
             player1Color = gameState.player1Color,
             player2Color = gameState.player2Color,
-            showRounds = showRounds
+            showRounds = showRounds,
+            player1Name = if (format == 1) player1Name else null,
+            player2Name = if (format == 1) player2Name else null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -1068,6 +1183,234 @@ private fun SeriesWinDialog(
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Format selector - cycles through format options (1, 3, 5, 7)
+ * Disabled for tournament games (1-64)
+ */
+@Composable
+private fun FormatSelector(
+    format: Int,
+    enabled: Boolean,
+    onFormatChange: (Int) -> Unit
+) {
+    val formats = listOf(1, 3, 5, 7)
+    val alpha = if (enabled) 1f else 0.5f
+
+    Box(
+        modifier = Modifier
+            .width(56.dp)
+            .height(56.dp)
+            .background(
+                color = if (enabled) WatchColors.Surface else WatchColors.SurfaceDisabled,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable(enabled = enabled) {
+                val currentIndex = formats.indexOf(format)
+                val nextIndex = (currentIndex + 1) % formats.size
+                onFormatChange(formats[nextIndex])
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Bo$format",
+                color = WatchColors.OnSurface.copy(alpha = alpha),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            if (!enabled) {
+                Text(
+                    text = "locked",
+                    color = WatchColors.OnSurfaceDisabled,
+                    fontSize = 10.sp
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Score panel with tappable name for player picker (for Mirror mode)
+ */
+@Composable
+private fun ScorePanelWithPlayerPicker(
+    score: Int,
+    color: PlayerColor,
+    name: String,
+    placeholder: String,
+    onTap: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(8.dp)),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Top area with tappable name
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.7f)
+                .background(color.darker)
+                .clickable { onTap() },
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = name.ifEmpty { placeholder },
+                color = if (name.isEmpty()) color.text.copy(alpha = 0.5f) else color.text,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        }
+
+        // Score (main color)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1.4f)
+                .background(color.background),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "$score",
+                color = color.text,
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        // Bottom area (darker)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.7f)
+                .background(color.darker)
+        )
+    }
+}
+
+/**
+ * Player picker dialog - scrollable list of players
+ */
+@Composable
+private fun PlayerPickerDialog(
+    players: List<Player>,
+    currentName: String,
+    onPlayerSelected: (Player) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xCC000000))
+            .clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .fillMaxHeight(0.7f)
+                .background(WatchColors.Surface, RoundedCornerShape(16.dp))
+                .clickable(enabled = false) {} // Prevent dismissing when clicking on dialog
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Select Player",
+                color = WatchColors.OnSurface,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            if (players.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "No Players",
+                            color = WatchColors.OnSurfaceDisabled,
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Add players from the Players screen",
+                            color = WatchColors.OnSurfaceDisabled,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(players, key = { it.id }) { player ->
+                        val isSelected = player.name == currentName
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    if (isSelected) WatchColors.Primary else WatchColors.Background,
+                                    RoundedCornerShape(8.dp)
+                                )
+                                .clickable { onPlayerSelected(player) }
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = player.name,
+                                    color = WatchColors.OnSurface,
+                                    fontSize = 16.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                                if (isSelected) {
+                                    Text(
+                                        text = "✓",
+                                        color = Color.White,
+                                        fontSize = 18.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Cancel button
+            Spacer(modifier = Modifier.height(16.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .background(WatchColors.Background, RoundedCornerShape(8.dp))
+                    .clickable { onDismiss() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Cancel",
+                    color = WatchColors.OnSurfaceDisabled,
+                    fontSize = 16.sp
                 )
             }
         }

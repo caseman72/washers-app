@@ -72,9 +72,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Mess
         // Request current state from watch
         requestStateFromWatch()
 
-        // Send current settings to watch
+        // Send current format to watch (showRounds is now derived from format > 1)
         WearableSender.sendFormat(SettingsRepository.format.value)
-        WearableSender.sendShowRounds(SettingsRepository.showRounds.value)
     }
 
     private fun requestStateFromWatch() {
@@ -134,9 +133,8 @@ class MainActivity : ComponentActivity(), DataClient.OnDataChangedListener, Mess
                 }
             }
             REQUEST_SETTINGS_PATH -> {
-                Log.d(TAG, "Watch requested settings, sending...")
+                Log.d(TAG, "Watch requested settings, sending format...")
                 WearableSender.sendFormat(SettingsRepository.format.value)
-                WearableSender.sendShowRounds(SettingsRepository.showRounds.value)
             }
         }
     }

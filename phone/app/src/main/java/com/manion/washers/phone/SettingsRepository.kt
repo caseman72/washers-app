@@ -75,4 +75,45 @@ object SettingsRepository {
         _showRounds.value = value
         prefs?.edit()?.putBoolean(KEY_SHOW_ROUNDS, value)?.apply()
     }
+
+    /**
+     * Get the game number from the current namespace.
+     * "casey@manion.com/5" → 5
+     * "casey@manion.com" → 0 (no game number specified)
+     */
+    fun getGameNumber(): Int {
+        val parts = _namespace.value.split("/", limit = 2)
+        return if (parts.size > 1) parts[1].toIntOrNull() ?: 0 else 0
+    }
+
+    /**
+     * Get the base namespace (email) without the game number.
+     * "casey@manion.com/5" → "casey@manion.com"
+     */
+    fun getBaseNamespace(): String {
+        return _namespace.value.split("/", limit = 2)[0]
+    }
+
+    /**
+     * Check if current game is a tournament game (games 1-64).
+     * Tournament games have format locked to 1 and don't show rounds.
+     */
+    fun isTournamentGame(): Boolean {
+        val gameNumber = getGameNumber()
+        return gameNumber in 1..64
+    }
+
+    /**
+     * Get effective format: tournament games are always format 1.
+     */
+    fun getEffectiveFormat(): Int {
+        return if (isTournamentGame()) 1 else _format.value
+    }
+
+    /**
+     * Check if rounds should be shown (format > 1 and not a tournament game).
+     */
+    fun shouldShowRounds(): Boolean {
+        return !isTournamentGame() && _format.value > 1
+    }
 }

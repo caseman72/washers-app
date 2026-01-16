@@ -160,34 +160,28 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 - [x] Tournament screen: vertical tile list on mobile
 
 ### Phone App
-- [ ] Tournament detection (games 1-64 = tournament mode)
-- [ ] Players page (mimic web - add/delete players)
-- [ ] Mirror page: scrolling player picker instead of text input
-- [ ] Format selector next to namespace (locked for games 1-64)
-- [ ] Settings page: simplify to just namespace field
-- [ ] Keep Score: format selector, if format=1 show players instead of games
+- [x] Tournament detection (games 1-64 = tournament mode)
+- [x] Players page (mimic web - add/delete players)
+- [x] Mirror page: scrolling player picker instead of text input
+- [x] Format selector next to namespace (locked for games 1-64)
+- [x] Settings page: simplify to just namespace field
+- [x] Keep Score: format selector, if format=1 show players instead of games
 - [ ] Top half minimum 475px or screen width
 
 ### Breadcrumbs
 *(Current progress - update before context compaction)*
 
-**Status**: ✅ Watch + ALL Web tasks complete! Ready for Phone tasks.
-**Next**: Phone App tasks (Tournament detection, Players page, etc.)
+**Status**: ✅ All Phone tasks complete except min height!
+**Next**: Commit changes, then min 475px height
 **Files modified this session**:
-- `watch/app/.../ScoreboardScreen.kt` - infer showRounds from format > 1
-- `watch/app/.../DataLayerManager.kt` - removed showRounds, derive from format
-- `watch/app/.../MainActivity.kt` - removed SHOW_ROUNDS_PATH handler
-- `web/src/screens/MirrorScreen.tsx` - max-width 475px
-- `web/src/screens/KeepScoreScreen.tsx` - max-width 475px
-- `web/src/components/GameDisplay.tsx` - infer showRounds, names header when format=1
-- `web/src/components/Scoreboard.tsx` - rounds.games display, names header when format=1
-- `web/src/lib/firebase.ts` - added player1Id/player2Id to FirebaseGameState
-- `web/src/components/MatchCard.tsx` - pass player IDs to initializeGame
-- `web/src/lib/firebase-players.ts` - added finalsWins/Losses, teamFinalsWins/Losses
-- `web/src/types/index.ts` - updated Player type with new stats fields
-- `web/src/hooks/usePlayers.ts` - added new finals tracking functions
-- `web/src/screens/PlayersScreen.tsx` - added stats display with responsive hiding
-- `web/src/screens/TournamentSetupScreen.tsx` - responsive single-column grid on mobile
+- `phone/app/.../SettingsRepository.kt` - added tournament detection helpers
+- `phone/app/.../screens/GameDisplayScreen.kt` - format inference, names header, format selector, player picker
+- `phone/app/.../screens/PlayersScreen.kt` - new Players screen (add/delete players)
+- `phone/app/.../screens/SettingsScreen.kt` - simplified to namespace only
+- `phone/app/.../screens/ModePickerScreen.kt` - added Players mode option
+- `phone/app/.../navigation/NavGraph.kt` - added Players route
+- `phone/app/.../FirebasePlayersRepository.kt` - new player data repository
+- `phone/app/.../MainActivity.kt` - removed showRounds sync (now derived from format)
 
 ---
 
