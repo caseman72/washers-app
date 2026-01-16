@@ -526,6 +526,8 @@ export function BracketScreen() {
                         showHeader={true}
                         player1Losses={0}
                         player2Losses={0}
+                        namespace={settings.namespace}
+                        tournamentStartedAt={tournament.createdAt.getTime()}
                       />
                     ))}
                   </div>
@@ -548,6 +550,8 @@ export function BracketScreen() {
                     showHeader={true}
                     player1Losses={0}
                     player2Losses={1}
+                    namespace={settings.namespace}
+                        tournamentStartedAt={tournament.createdAt.getTime()}
                   />
                 </div>
               </div>
@@ -569,6 +573,8 @@ export function BracketScreen() {
                     showHeader={true}
                     player1Losses={1}
                     player2Losses={1}
+                    namespace={settings.namespace}
+                        tournamentStartedAt={tournament.createdAt.getTime()}
                   />
                 </div>
               </div>
@@ -603,6 +609,8 @@ export function BracketScreen() {
                           showHeader={true}
                           player1Losses={1}
                           player2Losses={1}
+                          namespace={settings.namespace}
+                        tournamentStartedAt={tournament.createdAt.getTime()}
                         />
                       ))}
                     </div>

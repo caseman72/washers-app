@@ -43,9 +43,8 @@ function nextPowerOf2(n: number): number {
 // Get bracket size for n players (must give even R1 games)
 // Round up to next multiple of 4 to ensure R1 has even number of games
 function getBracketSize(n: number): number {
-  if (n <= 4) return 4
-  // Round up to next multiple of 4
-  return Math.ceil(n / 4) * 4
+  // Bracket size must be a power of 2
+  return nextPowerOf2(n)
 }
 
 // Calculate number of rounds needed

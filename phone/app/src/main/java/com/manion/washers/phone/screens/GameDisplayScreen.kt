@@ -12,6 +12,8 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -50,6 +52,16 @@ fun GameDisplayScreen(
     LaunchedEffect(localGameState) {
         if (mode == AppMode.KEEP_SCORE) {
             FirebaseRepository.writeCurrentState(localGameState)
+        }
+    }
+
+    // Observe namespace for Mirror mode
+    val namespace by SettingsRepository.namespace.collectAsState()
+
+    // Read player names from Firebase when entering Mirror mode or when namespace changes
+    LaunchedEffect(mode, namespace) {
+        if (mode == AppMode.MIRROR && namespace.isNotBlank()) {
+            FirebaseRepository.readAndSyncNames()
         }
     }
 
@@ -110,6 +122,24 @@ fun GameDisplayScreen(
                 )
 
                 Spacer(modifier = Modifier.weight(1f))
+
+                // Namespace field (Mirror mode only)
+                if (mode == AppMode.MIRROR) {
+                    OutlinedTextField(
+                        value = namespace,
+                        onValueChange = { SettingsRepository.setNamespace(it) },
+                        label = { Text("Namespace") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = WatchColors.Primary,
+                            unfocusedBorderColor = WatchColors.Surface,
+                            focusedLabelColor = WatchColors.Primary,
+                            unfocusedLabelColor = WatchColors.OnSurfaceDisabled
+                        )
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
                 // Back button
                 Box(

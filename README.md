@@ -155,6 +155,10 @@ cd web && npm install && npm run dev
 - Round labels for all finals columns
 - Full Firebase sync for tournaments (`/tournaments/{namespace}/`)
 - Archive completed tournaments (view history)
+- Live scores on bracket cards (real-time Firebase sync)
+- Auto-detect game winners when round is won (best of 1 mode)
+- Game table initialization with player names from bracket
+- Phone reads player names from Firebase when namespace changes
 
 ### Tournament Navigation
 - `/tournament` - Landing page (Create New or View Current + View Archived)
@@ -297,6 +301,7 @@ Rounds checked:
 - [x] Series win celebration dialog ("Player X Won!")
 - [x] Firebase write on state changes (Mirror + Keep Score modes)
 - [x] Firebase round history logging on round win
+- [x] Firebase read player names on namespace change (Mirror mode)
 
 ### Web App (React/TypeScript)
 - [x] Home screen (mode picker - Mirror / Keep Score / Settings)
@@ -316,6 +321,9 @@ Rounds checked:
 - [x] Match cards with winner selection modal (shows team names for doubles)
 - [x] Tournament Firebase sync (create, update, archive)
 - [x] Tournament navigation (current/archived views)
+- [x] Live scores on bracket cards (Firebase realtime sync)
+- [x] Auto-detect winners from Firebase (round win detection)
+- [x] Initialize game tables with player names from bracket
 - [ ] Live game tiles (all 8 games at once)
 
 ---

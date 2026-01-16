@@ -113,6 +113,46 @@ object FirebaseRepository {
     }
 
     /**
+     * Read current game state from Firebase and sync player names.
+     * Called when entering Mirror mode to get names set by web tournament.
+     */
+    fun readAndSyncNames() {
+        val namespace = SettingsRepository.namespace.value
+        Log.d(TAG, "readAndSyncNames called, namespace='$namespace'")
+        if (namespace.isBlank()) {
+            Log.d(TAG, "No namespace configured, skipping Firebase read")
+            return
+        }
+
+        val (email, table) = parseNamespace(namespace)
+        val path = "games/$email/$table/current"
+        Log.d(TAG, "Reading from path: $path")
+        val ref = database.getReference(path)
+
+        ref.get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    val player1Name = snapshot.child("player1Name").getValue(String::class.java) ?: ""
+                    val player2Name = snapshot.child("player2Name").getValue(String::class.java) ?: ""
+                    Log.i(TAG, "SUCCESS: Read names from Firebase: '$player1Name' vs '$player2Name'")
+
+                    // Update local settings with names from Firebase
+                    if (player1Name.isNotBlank() && player1Name != "TBD") {
+                        SettingsRepository.setPlayer1Name(player1Name)
+                    }
+                    if (player2Name.isNotBlank() && player2Name != "TBD") {
+                        SettingsRepository.setPlayer2Name(player2Name)
+                    }
+                } else {
+                    Log.d(TAG, "No data at path: $path")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "FAILED to read from $path: ${e.message}", e)
+            }
+    }
+
+    /**
      * Parse namespace into email and table number.
      * "casey@manion.com/1" → ("casey@manion_com", "1")
      * "casey@manion.com" → ("casey@manion_com", "1")

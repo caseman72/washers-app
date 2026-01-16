@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getDatabase, ref, onValue, off } from 'firebase/database'
+import { getDatabase, ref, onValue, off, set } from 'firebase/database'
 import { getAuth, signInAnonymously } from 'firebase/auth'
 
 // Firebase configuration
@@ -63,6 +63,38 @@ export interface FirebaseGameState {
   player2Name: string
   format: number
   updatedAt: number
+}
+
+// Initialize game state (wipe and set fresh data for tournament match)
+export async function initializeGame(
+  namespace: string,
+  table: number,
+  player1Name: string,
+  player2Name: string
+): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `games/${sanitized}/${table}/current`
+  const gameRef = ref(database, path)
+
+  const freshState: FirebaseGameState = {
+    player1Score: 0,
+    player2Score: 0,
+    player1Games: 0,
+    player2Games: 0,
+    player1Rounds: 0,
+    player2Rounds: 0,
+    player1Color: 'ORANGE',
+    player2Color: 'BLACK',
+    player1Name,
+    player2Name,
+    format: 1,
+    updatedAt: Date.now(),
+  }
+
+  console.log(`Initializing game at ${path}:`, freshState)
+  await set(gameRef, freshState)
 }
 
 // Subscribe to game state

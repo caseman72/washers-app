@@ -1,5 +1,7 @@
+import { useState, useEffect, useRef } from 'react'
 import { BracketNode, Player, Team } from '../types'
 import { isMatchReady, isByeMatch } from '../lib/bracket'
+import { subscribeToGame, initializeGame, FirebaseGameState } from '../lib/firebase'
 
 const styles = `
   .match-card {
@@ -96,6 +98,23 @@ const styles = `
     font-size: 0.7rem;
   }
 
+  .live-score {
+    font-weight: bold;
+    font-size: 0.9rem;
+    min-width: 1.5rem;
+    text-align: right;
+  }
+
+  .match-card.live {
+    border-color: #27ae60;
+    box-shadow: 0 0 8px rgba(39, 174, 96, 0.3);
+  }
+
+  .game-number.live {
+    background: #27ae60;
+    color: white;
+  }
+
   .match-modal-overlay {
     position: fixed;
     top: 0;
@@ -172,6 +191,8 @@ interface MatchCardProps {
   showHeader?: boolean
   player1Losses?: number
   player2Losses?: number
+  namespace?: string
+  tournamentStartedAt?: number
 }
 
 // Helper to get team name from team ID
@@ -199,7 +220,10 @@ export function MatchCard({
   showHeader,
   player1Losses,
   player2Losses,
+  namespace,
+  tournamentStartedAt,
 }: MatchCardProps) {
+  const [liveGame, setLiveGame] = useState<FirebaseGameState | null>(null)
   const isDoubles = tournamentType === 'doubles'
 
   // For singles: get player directly. For doubles: get team and display both player names
@@ -212,6 +236,61 @@ export function MatchCard({
   const isBye = isByeMatch(match)
   const hasWinner = !!match.winnerId
   const clickable = ready && onSelectWinner
+
+  // Track which match we've initialized to avoid re-initializing
+  const initializedMatchRef = useRef<string | null>(null)
+
+  // Get display names for Firebase
+  const player1DisplayName = isDoubles ? (team1Name || 'TBD') : (player1?.name || 'TBD')
+  const player2DisplayName = isDoubles ? (team2Name || 'TBD') : (player2?.name || 'TBD')
+
+  // Initialize and subscribe to all games with a game number (not just ready matches)
+  const shouldSubscribe = gameNumber !== undefined && namespace && !hasWinner
+  useEffect(() => {
+    if (!namespace || gameNumber === undefined) {
+      setLiveGame(null)
+      return
+    }
+
+    // Initialize game with fresh data if we haven't already for this match
+    if (initializedMatchRef.current !== match.id && !hasWinner) {
+      initializedMatchRef.current = match.id
+      initializeGame(namespace, gameNumber, player1DisplayName, player2DisplayName)
+        .catch(err => console.error('Failed to initialize game:', err))
+    }
+
+    // Subscribe to live updates (even for completed matches to see final state)
+    if (!shouldSubscribe) {
+      setLiveGame(null)
+      return
+    }
+
+    const unsubscribe = subscribeToGame(namespace, gameNumber, (state) => {
+      setLiveGame(state)
+    })
+
+    return unsubscribe
+  }, [shouldSubscribe, namespace, gameNumber, match.id, player1DisplayName, player2DisplayName, hasWinner])
+
+  // Auto-detect winner when a round is won (player1Rounds or player2Rounds >= 1)
+  // With best of 1, winning a game = winning a round, and everything resets to 0
+  // Only trigger if game data is fresh (updated after tournament started)
+  useEffect(() => {
+    if (!liveGame || hasWinner || !onSelectWinner || !match.player1Id || !match.player2Id) return
+
+    // Ignore stale data from before the tournament started
+    if (tournamentStartedAt && liveGame.updatedAt < tournamentStartedAt) return
+
+    // Check if either player has won a round (for tournament, first to 1 round wins)
+    if (liveGame.player1Rounds >= 1) {
+      onSelectWinner(match.id, match.player1Id)
+    } else if (liveGame.player2Rounds >= 1) {
+      onSelectWinner(match.id, match.player2Id)
+    }
+  }, [liveGame?.player1Rounds, liveGame?.player2Rounds, liveGame?.updatedAt, tournamentStartedAt, hasWinner, onSelectWinner, match.id, match.player1Id, match.player2Id])
+
+  // Game is "live" only when scoring has started (not just initialized)
+  const isLive = liveGame !== null && (liveGame.player1Score > 0 || liveGame.player2Score > 0)
 
   const getPlayerClass = (playerId: string | undefined) => {
     if (!playerId) return 'tbd'
@@ -238,11 +317,11 @@ export function MatchCard({
   return (
     <>
       <div
-        className={`match-card ${clickable ? 'clickable' : ''} ${hasWinner ? 'completed' : ''} ${isBye ? 'bye' : ''}`}
+        className={`match-card ${clickable ? 'clickable' : ''} ${hasWinner ? 'completed' : ''} ${isBye ? 'bye' : ''} ${isLive ? 'live' : ''}`}
         onClick={handleClick}
       >
         {(gameNumber !== undefined || showHeader) && (
-          <div className="game-number">{gameNumber !== undefined ? `Game ${gameNumber}` : '\u00A0'}</div>
+          <div className={`game-number ${isLive ? 'live' : ''}`}>{gameNumber !== undefined ? `Game ${gameNumber}` : '\u00A0'}</div>
         )}
         <div className={`match-player ${getPlayerClass(match.player1Id)} ${!match.player1Id && match.isByeMatch ? 'bye-slot' : ''}`}>
           <span className="player-name">
@@ -260,6 +339,9 @@ export function MatchCard({
           {match.winnerId === match.player1Id && (
             <span className="winner-indicator">W</span>
           )}
+          {isLive && (
+            <span className="live-score">{liveGame?.player1Score ?? 0}</span>
+          )}
         </div>
         <div className={`match-player ${getPlayerClass(match.player2Id)} ${!match.player2Id && isBye ? 'bye-slot' : ''}`}>
           <span className="player-name">
@@ -276,6 +358,9 @@ export function MatchCard({
           </span>
           {match.winnerId === match.player2Id && (
             <span className="winner-indicator">W</span>
+          )}
+          {isLive && (
+            <span className="live-score">{liveGame?.player2Score ?? 0}</span>
           )}
         </div>
       </div>
