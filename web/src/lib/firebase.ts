@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { getDatabase, ref, onValue, off, set } from 'firebase/database'
+import { getDatabase, ref, onValue, off, set, update } from 'firebase/database'
 import { getAuth, signInAnonymously } from 'firebase/auth'
 
 // Firebase configuration
@@ -95,6 +95,27 @@ export async function initializeGame(
 
   console.log(`Initializing game at ${path}:`, freshState)
   await set(gameRef, freshState)
+}
+
+// Write game state to Firebase
+export async function writeGameState(
+  namespace: string,
+  table: number,
+  state: Partial<FirebaseGameState>
+): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `games/${sanitized}/${table}/current`
+  const gameRef = ref(database, path)
+
+  const updateData = {
+    ...state,
+    updatedAt: Date.now(),
+  }
+
+  console.log(`Writing game state to ${path}:`, updateData)
+  await update(gameRef, updateData)
 }
 
 // Subscribe to game state

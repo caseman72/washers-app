@@ -319,9 +319,10 @@ const mainStyles = `
 
 interface ScoreboardProps {
   onGameComplete?: (winner: 1 | 2, session: GameSession) => void
+  onStateChange?: (session: GameSession, colors: { p1: string; p2: string }) => void
 }
 
-export function Scoreboard({ onGameComplete }: ScoreboardProps) {
+export function Scoreboard({ onGameComplete, onStateChange }: ScoreboardProps) {
   const [session, setSession] = useState<GameSession>({
     player1Score: 0,
     player2Score: 0,
@@ -396,6 +397,11 @@ export function Scoreboard({ onGameComplete }: ScoreboardProps) {
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [colorPicker])
+
+  // Notify parent of state changes for Firebase sync
+  useEffect(() => {
+    onStateChange?.(session, { p1: player1Color.toUpperCase(), p2: player2Color.toUpperCase() })
+  }, [session, player1Color, player2Color, onStateChange])
 
   const selectColor = useCallback((player: 1 | 2, color: ColorId) => {
     if (player === 1) {
