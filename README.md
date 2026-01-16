@@ -166,22 +166,14 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 - [x] Format selector next to namespace (locked for games 1-64)
 - [x] Settings page: simplify to just namespace field
 - [x] Keep Score: format selector, if format=1 show players instead of games
-- [ ] Top half minimum 475px or screen width
+- [x] Top half minimum 475px or screen width
 
 ### Breadcrumbs
 *(Current progress - update before context compaction)*
 
-**Status**: ✅ All Phone tasks complete except min height!
-**Next**: Commit changes, then min 475px height
-**Files modified this session**:
-- `phone/app/.../SettingsRepository.kt` - added tournament detection helpers
-- `phone/app/.../screens/GameDisplayScreen.kt` - format inference, names header, format selector, player picker
-- `phone/app/.../screens/PlayersScreen.kt` - new Players screen (add/delete players)
-- `phone/app/.../screens/SettingsScreen.kt` - simplified to namespace only
-- `phone/app/.../screens/ModePickerScreen.kt` - added Players mode option
-- `phone/app/.../navigation/NavGraph.kt` - added Players route
-- `phone/app/.../FirebasePlayersRepository.kt` - new player data repository
-- `phone/app/.../MainActivity.kt` - removed showRounds sync (now derived from format)
+**Status**: ✅ ALL January 2026 Update tasks complete!
+**Next**: Clean up breadcrumbs, final commit
+**Files modified this session**: See commit history
 
 ---
 

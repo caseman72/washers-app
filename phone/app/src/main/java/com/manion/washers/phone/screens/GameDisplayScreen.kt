@@ -95,6 +95,8 @@ fun GameDisplayScreen(
 
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
+    // Cap game display at 475dp on larger screens, use full width on smaller screens
+    val gameDisplaySize = minOf(screenWidth, 475.dp)
 
     Box(
         modifier = Modifier
@@ -102,12 +104,13 @@ fun GameDisplayScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Square game display area (width x width)
+            // Square game display area (capped at 475dp)
             Box(
                 modifier = Modifier
-                    .size(screenWidth)
+                    .size(gameDisplaySize)
                     .background(WatchColors.Background)
             ) {
                 when (mode) {
