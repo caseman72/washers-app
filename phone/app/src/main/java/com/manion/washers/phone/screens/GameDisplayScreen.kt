@@ -177,7 +177,16 @@ fun GameDisplayScreen(
                         FormatSelector(
                             format = if (isTournament) 1 else format,
                             enabled = !isTournament,
-                            onFormatChange = { SettingsRepository.setFormat(it) }
+                            onFormatChange = { newFormat ->
+                                SettingsRepository.setFormat(newFormat)
+                                WearableSender.sendFormat(newFormat)
+                                // Update Firebase with new format
+                                if (mode == AppMode.MIRROR) {
+                                    FirebaseRepository.writeCurrentState(displayState)
+                                } else if (mode == AppMode.KEEP_SCORE) {
+                                    FirebaseRepository.writeCurrentState(localGameState)
+                                }
+                            }
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
@@ -213,8 +222,9 @@ private fun MirrorDisplay(gameState: GameState) {
     val namespace by SettingsRepository.namespace.collectAsState()
     val player1Name by SettingsRepository.player1Name.collectAsState()
     val player2Name by SettingsRepository.player2Name.collectAsState()
-    // Derive showRounds from format > 1 (tournament games 1-64 have format locked to 1)
-    val showRounds = SettingsRepository.shouldShowRounds()
+    // Derive showRounds reactively from format > 1 (tournament games 1-64 have format locked to 1)
+    val isTournament = SettingsRepository.isTournamentGame()
+    val showRounds = !isTournament && format > 1
 
     // Player picker state
     var showPlayerPicker by remember { mutableStateOf<Int?>(null) }
@@ -237,7 +247,7 @@ private fun MirrorDisplay(gameState: GameState) {
         // Top padding
         Spacer(modifier = Modifier.height(30.dp))
 
-        // Games counter with colored badges (or names when format=1)
+        // Games counter with colored badges
         GamesCounterWithBadges(
             player1Games = gameState.player1Games,
             player2Games = gameState.player2Games,
@@ -245,9 +255,7 @@ private fun MirrorDisplay(gameState: GameState) {
             player2Rounds = gameState.player2Rounds,
             player1Color = gameState.player1Color,
             player2Color = gameState.player2Color,
-            showRounds = showRounds,
-            player1Name = if (format == 1) player1Name else null,
-            player2Name = if (format == 1) player2Name else null
+            showRounds = showRounds
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -793,8 +801,9 @@ private fun KeepScoreGameScreen(
     val format by SettingsRepository.format.collectAsState()
     val player1Name by SettingsRepository.player1Name.collectAsState()
     val player2Name by SettingsRepository.player2Name.collectAsState()
-    // Derive showRounds from format > 1 (tournament games 1-64 have format locked to 1)
-    val showRounds = SettingsRepository.shouldShowRounds()
+    // Derive showRounds reactively from format > 1 (tournament games 1-64 have format locked to 1)
+    val isTournament = SettingsRepository.isTournamentGame()
+    val showRounds = !isTournament && format > 1
 
     Column(
         modifier = Modifier
@@ -811,9 +820,7 @@ private fun KeepScoreGameScreen(
             player2Rounds = gameState.player2Rounds,
             player1Color = gameState.player1Color,
             player2Color = gameState.player2Color,
-            showRounds = showRounds,
-            player1Name = if (format == 1) player1Name else null,
-            player2Name = if (format == 1) player2Name else null
+            showRounds = showRounds
         )
 
         Spacer(modifier = Modifier.height(16.dp))
