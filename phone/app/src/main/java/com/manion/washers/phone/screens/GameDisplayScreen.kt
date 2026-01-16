@@ -260,10 +260,13 @@ private fun MirrorDisplay(
     var showPlayerPicker by remember { mutableStateOf<Int?>(null) }
     val players by FirebasePlayersRepository.players.collectAsState()
 
-    // Subscribe to players when namespace is set (only for non-tournament)
-    LaunchedEffect(namespace) {
-        if (namespace.isNotBlank() && !isTournament) {
-            FirebasePlayersRepository.subscribeToPlayers(namespace)
+    // Get base namespace (email only, without game number) for player lookup
+    val baseNamespace = namespace.split("/", limit = 2)[0]
+
+    // Subscribe to players using base namespace (only for non-tournament)
+    LaunchedEffect(baseNamespace) {
+        if (baseNamespace.isNotBlank() && !isTournament) {
+            FirebasePlayersRepository.subscribeToPlayers(baseNamespace)
         }
     }
 
