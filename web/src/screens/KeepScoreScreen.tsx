@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Scoreboard } from '../components/Scoreboard'
 import { loadSettings, updateGameNumber } from './SettingsScreen'
 import { writeGameState } from '../lib/firebase'
-import type { GameSession } from '../types'
+import { subscribeToPlayers } from '../lib/firebase-players'
+import type { GameSession, Player } from '../types'
 
 const styles = `
   .keep-score-screen {
@@ -156,6 +157,102 @@ const styles = `
   .settings-link:hover {
     background: #e55d00;
   }
+
+  .player-picker-overlay {
+    position: fixed;
+    inset: 0;
+    background: #1a1a1a;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .player-picker-header {
+    padding: 1.5rem;
+    text-align: center;
+    font-size: 1.25rem;
+    color: #888;
+    border-bottom: 1px solid #333;
+  }
+
+  .player-picker-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+  }
+
+  .player-picker-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 85%;
+    margin: 0 auto;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.125rem;
+    cursor: pointer;
+    border-radius: 0.5rem;
+  }
+
+  .player-picker-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .player-picker-item.selected {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .player-initial {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #d35400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+
+  .player-picker-name {
+    flex: 1;
+    text-align: left;
+  }
+
+  .player-picker-check {
+    color: #4caf50;
+    font-size: 1.5rem;
+  }
+
+  .player-picker-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+  }
+
+  .player-picker-cancel {
+    padding: 1rem;
+    text-align: center;
+    border-top: 1px solid #333;
+  }
+
+  .player-picker-cancel button {
+    padding: 0.75rem 2rem;
+    background: #333;
+    color: #888;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  .player-picker-cancel button:hover {
+    background: #444;
+    color: white;
+  }
 `
 
 export function KeepScoreScreen() {
@@ -165,12 +262,23 @@ export function KeepScoreScreen() {
   const [format, setFormat] = useState(1)
   const [player1Name, setPlayer1Name] = useState('')
   const [player2Name, setPlayer2Name] = useState('')
+  const [players, setPlayers] = useState<Player[]>([])
+  const [showPlayerPicker, setShowPlayerPicker] = useState<1 | 2 | null>(null)
 
   const baseNamespace = settings.namespace
   const hasNamespace = baseNamespace.trim().length > 0
 
   const [lastSession, setLastSession] = useState<GameSession | null>(null)
   const [lastColors, setLastColors] = useState<{ p1: string; p2: string }>({ p1: 'ORANGE', p2: 'BLACK' })
+
+  // Subscribe to players
+  useEffect(() => {
+    if (!hasNamespace) return
+    const unsubscribe = subscribeToPlayers(baseNamespace, (playerList) => {
+      setPlayers(playerList.filter(p => !p.archived))
+    })
+    return unsubscribe
+  }, [baseNamespace, hasNamespace])
 
   // Save gameNumber to settings when it changes (debounced)
   useEffect(() => {
@@ -281,19 +389,13 @@ export function KeepScoreScreen() {
         <div className="player-names-row">
           <span
             className={`player-name-label ${!player1Name ? 'empty' : ''}`}
-            onClick={() => {
-              const name = prompt('Player 1 name:', player1Name)
-              if (name !== null) setPlayer1Name(name)
-            }}
+            onClick={() => setShowPlayerPicker(1)}
           >
             {player1Name || 'Player 1'}
           </span>
           <span
             className={`player-name-label ${!player2Name ? 'empty' : ''}`}
-            onClick={() => {
-              const name = prompt('Player 2 name:', player2Name)
-              if (name !== null) setPlayer2Name(name)
-            }}
+            onClick={() => setShowPlayerPicker(2)}
           >
             {player2Name || 'Player 2'}
           </span>
@@ -325,6 +427,51 @@ export function KeepScoreScreen() {
           Back to Menu
         </button>
       </div>
+
+      {/* Player picker overlay */}
+      {showPlayerPicker && (
+        <div className="player-picker-overlay">
+          <div className="player-picker-header">
+            Select Player {showPlayerPicker}
+          </div>
+          <div className="player-picker-list">
+            {players.length === 0 ? (
+              <div className="player-picker-empty">
+                No players found.<br />
+                Add players in the Players screen.
+              </div>
+            ) : (
+              players.map(player => {
+                const currentName = showPlayerPicker === 1 ? player1Name : player2Name
+                const isSelected = player.name === currentName
+                return (
+                  <button
+                    key={player.id}
+                    className={`player-picker-item ${isSelected ? 'selected' : ''}`}
+                    onClick={() => {
+                      if (showPlayerPicker === 1) {
+                        setPlayer1Name(player.name)
+                      } else {
+                        setPlayer2Name(player.name)
+                      }
+                      setShowPlayerPicker(null)
+                    }}
+                  >
+                    <span className="player-initial">
+                      {player.name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="player-picker-name">{player.name}</span>
+                    {isSelected && <span className="player-picker-check">✓</span>}
+                  </button>
+                )
+              })
+            )}
+          </div>
+          <div className="player-picker-cancel">
+            <button onClick={() => setShowPlayerPicker(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
 
       <style>{styles}</style>
     </div>
