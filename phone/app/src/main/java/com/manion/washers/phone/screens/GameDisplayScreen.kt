@@ -67,8 +67,8 @@ fun GameDisplayScreen(
     // Reset game state when namespace changes (prevents stale rounds from triggering false wins)
     LaunchedEffect(namespace) {
         if (namespace != previousNamespace) {
-            // Reset local state for Keep Score mode
-            localGameState = GameState()
+            // Reset local state for Keep Score mode (preserves colors)
+            localGameState = localGameState.resetAll()
             // Reset watch state for Mirror mode
             WearableRepository.reset()
             // Tell Watch to reset its state too
