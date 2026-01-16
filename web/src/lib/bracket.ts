@@ -171,15 +171,14 @@ function generateLosersBracket(
   const nodes: BracketNode[] = []
   const numRounds = calculateRounds(numPlayers)
 
-  // Loser's bracket has (numRounds - 1) * 2 rounds
-  // Round 1 losers drop to LB round 1
-  // Each winner's round after that feeds into LB
+  // Calculate LB R1 matches based on actual losers from WB R1
+  // Real matches (non-BYE) have both player1Id and player2Id
+  const winnersRound1 = winnersBracket.filter(m => m.round === 1)
+  const realWBR1Matches = winnersRound1.filter(m => m.player1Id && m.player2Id)
+  const losersFromWBR1 = realWBR1Matches.length
 
-  // For simplicity, create placeholder matches
-  // The actual structure depends on the bracket size
-
-  const bracketSize = nextPowerOf2(numPlayers)
-  let matchesInFirstLBRound = bracketSize / 4
+  // LB R1 receives pairs of losers (2 losers per match)
+  const matchesInFirstLBRound = Math.ceil(losersFromWBR1 / 2)
 
   // Loser's bracket round 1: losers from winner's round 1
   let lbRound = 1
@@ -193,14 +192,27 @@ function generateLosersBracket(
       position: i,
       bracket: 'losers',
     }
+    // If odd number of losers, last LB R1 match only gets 1 loser (BYE)
+    if (losersFromWBR1 % 2 === 1 && i === matchesInFirstLBRound - 1) {
+      match.isByeMatch = true
+    }
     nodes.push(match)
     prevMatches.push(match)
   }
 
-  // Link winner's round 1 losers to loser's bracket
-  const winnersRound1 = winnersBracket.filter(m => m.round === 1)
+  // Link winner's round 1 losers to loser's bracket (only real matches have losers)
+  let lbMatchIndex = 0
+  let slotInMatch = 0
   for (let i = 0; i < winnersRound1.length; i++) {
-    winnersRound1[i].loserNextMatchId = `l-r1-${Math.floor(i / 2)}`
+    // Only real matches (non-BYE) produce losers
+    if (winnersRound1[i].player1Id && winnersRound1[i].player2Id) {
+      winnersRound1[i].loserNextMatchId = `l-r1-${lbMatchIndex}`
+      slotInMatch++
+      if (slotInMatch >= 2) {
+        lbMatchIndex++
+        slotInMatch = 0
+      }
+    }
   }
 
   // Continue building loser's bracket rounds

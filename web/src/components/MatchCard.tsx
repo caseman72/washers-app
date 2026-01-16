@@ -184,6 +184,16 @@ function getTeamName(teamId: string, teams: Team[] | undefined, players: Map<str
   return `${p1.name} & ${p2.name}`
 }
 
+// Helper to get team losses (both players on a team have the same teamLosses)
+function getTeamLosses(teamId: string, teams: Team[] | undefined, players: Map<string, Player>): number {
+  if (!teams) return 0
+  const team = teams.find(t => t.id === teamId)
+  if (!team) return 0
+  const p1 = players.get(team.player1Id)
+  const p2 = players.get(team.player2Id)
+  return p1?.teamLosses || p2?.teamLosses || 0
+}
+
 export function MatchCard({
   match,
   players,
@@ -204,6 +214,8 @@ export function MatchCard({
   const player2 = match.player2Id ? players.get(match.player2Id) : null
   const team1Name = isDoubles && match.player1Id ? getTeamName(match.player1Id, teams, players) : null
   const team2Name = isDoubles && match.player2Id ? getTeamName(match.player2Id, teams, players) : null
+  const team1Losses = isDoubles && match.player1Id ? getTeamLosses(match.player1Id, teams, players) : 0
+  const team2Losses = isDoubles && match.player2Id ? getTeamLosses(match.player2Id, teams, players) : 0
 
   const ready = isMatchReady(match)
   const isBye = isByeMatch(match)
@@ -250,6 +262,9 @@ export function MatchCard({
             {!isDoubles && player1 && player1Losses !== undefined && (
               <sub className="loss-count">{player1Losses}</sub>
             )}
+            {isDoubles && team1Name && (
+              <sub className="loss-count">{team1Losses}</sub>
+            )}
           </span>
           {match.winnerId === match.player1Id && (
             <span className="winner-indicator">W</span>
@@ -263,6 +278,9 @@ export function MatchCard({
             }
             {!isDoubles && player2 && player2Losses !== undefined && (
               <sub className="loss-count">{player2Losses}</sub>
+            )}
+            {isDoubles && team2Name && (
+              <sub className="loss-count">{team2Losses}</sub>
             )}
           </span>
           {match.winnerId === match.player2Id && (
