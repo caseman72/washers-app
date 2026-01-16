@@ -159,10 +159,10 @@ export function HomeScreen() {
 
         <button
           className="mode-btn tournament"
-          onClick={() => navigate('/tournament/current')}
+          onClick={() => navigate('/tournament')}
         >
-          Bracket
-          <div className="mode-description">View or create tournament</div>
+          Tournament
+          <div className="mode-description">Create or view brackets</div>
         </button>
       </div>
 

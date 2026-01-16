@@ -35,6 +35,18 @@
              }
            }
          }
+       },
+       "players": {
+         "$namespace": {
+           ".read": "auth != null",
+           ".write": "auth != null"
+         }
+       },
+       "tournaments": {
+         "$namespace": {
+           ".read": "auth != null",
+           ".write": "auth != null"
+         }
        }
      }
    }
@@ -106,22 +118,27 @@ cd web && npm install && npm run dev
 4. [x] Phone → Firebase (Realtime Database)
 5. [x] Web App (Firebase read - Mirror mode)
 
-### Phase 2: Features
+### Phase 2: Features ✅
 - [x] Player/Team names
 - [x] Authentication (namespace)
-- [x] Player management
+- [x] Player management (Firebase sync)
 - [x] Bracket creation
-- [x] Tournament play (local)
+- [x] Tournament play (Firebase sync)
+- [x] Player stats (wins, losses, tournament wins)
+
+### Phase 3: Future
+- [ ] Live game tiles view (all 8 games at once)
 
 ---
 
 ## Current Task
 
-**✅ Tournament Bracket (Complete)**
+**✅ Tournament System (Complete)**
 
-### Completed
-- Player management screen (add/delete players, Firebase realtime sync)
-- Tournament setup screen (name, player selection 2-16, single/double elimination)
+### Features
+- Player management (add/delete, Firebase realtime sync)
+- Player stats tracking (wins, losses, tournament wins)
+- Tournament setup (name, player selection 2-16, single/double elimination)
 - Bracket generation algorithm (BYE handling, proper seeding)
 - Bracket display (winner's bracket, loser's bracket columns)
 - Match cards with tap-to-select winner modal
@@ -131,11 +148,14 @@ cd web && npm install && npm run dev
 - BYE match auto-advance uses crossover logic for correct slot placement
 - Game numbering by round (WB + LB together per round)
 - Round labels for all finals columns
-- Players stored in Firebase (`/players/{namespace}/`)
+- Full Firebase sync for tournaments (`/tournaments/{namespace}/`)
+- Archive completed tournaments (view history)
 
-### Future
-- [ ] Firebase sync for brackets (currently localStorage only)
-- [ ] Live game tiles view
+### Tournament Navigation
+- `/tournament` - Landing page (Create New or View Current + View Archived)
+- `/tournament/new` - Create tournament form
+- `/tournament/list` - Archived tournaments list
+- `/tournament/:id` - Bracket view
 
 ---
 
@@ -282,10 +302,13 @@ Rounds checked:
 - [x] Win/bust logic
 - [x] Firebase realtime sync (anonymous auth)
 - [x] Player management (add/delete players, Firebase realtime sync)
+- [x] Player stats (wins, losses, tournament wins - auto-tracked)
 - [x] Tournament setup (name, player selection, single/double elimination)
 - [x] Bracket generation (single & double elimination, BYE handling)
 - [x] Bracket display (winner's bracket, loser's bracket, grand finals)
 - [x] Match cards with winner selection modal
+- [x] Tournament Firebase sync (create, update, archive)
+- [x] Tournament navigation (current/archived views)
 - [ ] Live game tiles (all 8 games at once)
 
 ---
@@ -341,13 +364,15 @@ Rounds checked:
 - Real-time updates via Firebase subscriptions
 
 **Tournament Features**:
-- Player management (add/delete, localStorage persistence)
+- Player management (add/delete, Firebase realtime sync)
+- Player stats tracking (wins, losses, tournament wins)
 - Tournament setup (2-16 players, single/double elimination)
 - Bracket generation with BYE handling
 - Interactive bracket display with winner selection
 - Grand Finals with conditional Game 2
+- Full Firebase sync for tournaments
+- Archive completed tournaments
 
 **Future**:
 - Live game tiles (all 8 games at once)
-- Firebase sync for brackets
     

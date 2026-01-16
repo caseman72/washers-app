@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Tournament } from '../types'
 import { usePlayers } from '../hooks/usePlayers'
+import { useTournaments } from '../hooks/useTournaments'
 import { loadSettings } from './SettingsScreen'
 import { generateTournament } from '../lib/bracket'
 
@@ -233,36 +233,11 @@ const styles = `
   }
 `
 
-const TOURNAMENT_STORAGE_KEY = 'washers-tournament'
-
-export function saveTournament(tournament: Tournament): void {
-  try {
-    localStorage.setItem(TOURNAMENT_STORAGE_KEY, JSON.stringify(tournament))
-  } catch (e) {
-    console.error('Failed to save tournament:', e)
-  }
-}
-
-export function loadTournament(): Tournament | null {
-  try {
-    const stored = localStorage.getItem(TOURNAMENT_STORAGE_KEY)
-    if (stored) {
-      return JSON.parse(stored)
-    }
-  } catch (e) {
-    console.error('Failed to load tournament:', e)
-  }
-  return null
-}
-
-export function clearTournament(): void {
-  localStorage.removeItem(TOURNAMENT_STORAGE_KEY)
-}
-
 export function TournamentSetupScreen() {
   const navigate = useNavigate()
   const settings = loadSettings()
-  const { players: allPlayers, loading } = usePlayers(settings.namespace)
+  const { players: allPlayers, loading: playersLoading } = usePlayers(settings.namespace)
+  const { createTournament } = useTournaments(settings.namespace)
   const players = allPlayers.filter(p => !p.archived)
   const [tournamentName, setTournamentName] = useState('')
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set())
@@ -271,12 +246,12 @@ export function TournamentSetupScreen() {
 
   // Select all players by default once loaded
   useEffect(() => {
-    if (!loading && players.length > 0 && !initialized) {
+    if (!playersLoading && players.length > 0 && !initialized) {
       const initialSelected = new Set(players.slice(0, 16).map(p => p.id))
       setSelectedPlayerIds(initialSelected)
       setInitialized(true)
     }
-  }, [loading, players, initialized])
+  }, [playersLoading, players, initialized])
 
   const selectAll = () => {
     const allIds = new Set(players.slice(0, 16).map(p => p.id))
@@ -301,7 +276,7 @@ export function TournamentSetupScreen() {
 
   const canCreate = selectedPlayerIds.size >= 2 && selectedPlayerIds.size <= 16
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!canCreate) return
 
     const name = tournamentName.trim() || `Tournament ${new Date().toLocaleDateString()}`
@@ -312,8 +287,12 @@ export function TournamentSetupScreen() {
       1 // bestOf
     )
 
-    saveTournament(tournament)
-    navigate(`/tournament/${tournament.id}`)
+    try {
+      const id = await createTournament(tournament)
+      navigate(`/tournament/${id}`)
+    } catch (err) {
+      console.error('Failed to create tournament:', err)
+    }
   }
 
   return (
@@ -400,7 +379,7 @@ export function TournamentSetupScreen() {
       </div>
 
       <div className="setup-footer">
-        <button className="cancel-btn" onClick={() => navigate('/')}>
+        <button className="cancel-btn" onClick={() => navigate('/tournament')}>
           Cancel
         </button>
         <button

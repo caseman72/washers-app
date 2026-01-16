@@ -34,6 +34,7 @@ export interface Tournament {
   bracket: BracketNode[]
   createdAt: Date
   winnerId?: string
+  archived?: boolean
 }
 
 // Bracket node (single match in a tournament)

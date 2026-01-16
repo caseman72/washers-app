@@ -33,7 +33,7 @@ function calculateRounds(numPlayers: number): number {
 // Generate winner's bracket
 function generateWinnersBracket(
   playerIds: string[],
-  format: 'single_elimination' | 'double_elimination'
+  _format: 'single_elimination' | 'double_elimination'
 ): BracketNode[] {
   const numPlayers = playerIds.length
   const bracketSize = nextPowerOf2(numPlayers)
@@ -482,9 +482,9 @@ export function isMatchReady(match: BracketNode): boolean {
 // Check if a match is a bye (auto-win)
 export function isByeMatch(match: BracketNode): boolean {
   // WB BYE or LB BYE (marked with isByeMatch flag)
-  return (
+  return !!(
     ((match.player1Id && !match.player2Id) ||
      (!match.player1Id && match.player2Id) ||
-     match.isByeMatch) && !!match.winnerId
+     match.isByeMatch) && match.winnerId
   )
 }

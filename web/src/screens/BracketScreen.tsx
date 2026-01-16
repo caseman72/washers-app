@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Tournament, Player } from '../types'
+import { Player, BracketNode } from '../types'
 import { usePlayers } from '../hooks/usePlayers'
+import { useTournament } from '../hooks/useTournaments'
 import { loadSettings } from './SettingsScreen'
-import { loadTournament, saveTournament, clearTournament } from './TournamentSetupScreen'
 import { MatchCard } from '../components/MatchCard'
 import { getMatchesByRound, advanceWinner } from '../lib/bracket'
 
@@ -146,7 +146,21 @@ const styles = `
     color: white;
   }
 
-  .reset-btn {
+  .archive-btn {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    background: #555;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+
+  .archive-btn:hover {
+    background: #666;
+  }
+
+  .delete-btn {
     padding: 0.75rem 1rem;
     font-size: 1rem;
     background: #c0392b;
@@ -156,8 +170,16 @@ const styles = `
     cursor: pointer;
   }
 
-  .reset-btn:hover {
+  .delete-btn:hover {
     background: #e74c3c;
+  }
+
+  .archived-banner {
+    background: #555;
+    color: #ccc;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.875rem;
   }
 
   .no-tournament {
@@ -191,7 +213,7 @@ export function BracketScreen() {
   const { id } = useParams()
   const settings = loadSettings()
   const { players: playerList, recordGameResult, recordTournamentWin } = usePlayers(settings.namespace)
-  const [tournament, setTournament] = useState<Tournament | null>(null)
+  const { tournament, loading, updateTournament, archiveTournament } = useTournament(settings.namespace, id)
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
 
   // Convert player list to Map for easy lookup
@@ -200,13 +222,6 @@ export function BracketScreen() {
     playerList.forEach(p => playerMap.set(p.id, p))
     return playerMap
   }, [playerList])
-
-  useEffect(() => {
-    const t = loadTournament()
-    if (t && (id === t.id || id === 'current')) {
-      setTournament(t)
-    }
-  }, [id])
 
   const winnersRounds = useMemo(() => {
     if (!tournament) return new Map()
@@ -259,13 +274,13 @@ export function BracketScreen() {
     for (let round = 1; round <= maxRound; round++) {
       // WB matches for this round
       const wbMatches = winnersRounds.get(round) || []
-      wbMatches.forEach(match => {
+      wbMatches.forEach((match: BracketNode) => {
         numbers.set(match.id, gameNum++)
       })
 
       // LB matches for this round
       const lbMatches = losersRounds.get(round) || []
-      lbMatches.forEach(match => {
+      lbMatches.forEach((match: BracketNode) => {
         numbers.set(match.id, gameNum++)
       })
 
@@ -299,8 +314,17 @@ export function BracketScreen() {
     }
 
     const updated = advanceWinner(tournament, matchId, winnerId)
-    setTournament(updated)
-    saveTournament(updated)
+
+    // Update Firebase with new bracket state
+    try {
+      await updateTournament({
+        bracket: updated.bracket,
+        status: updated.status,
+        winnerId: updated.winnerId,
+      })
+    } catch (err) {
+      console.error('Failed to update tournament:', err)
+    }
     setActiveMatchId(null)
 
     // Check if tournament just completed
@@ -313,20 +337,38 @@ export function BracketScreen() {
     }
   }
 
-  const handleReset = () => {
-    if (!confirm('Delete this tournament? This cannot be undone.')) return
-    clearTournament()
-    navigate('/')
+  const handleArchive = async () => {
+    if (!confirm('Archive this tournament? You can still view it later.')) return
+    try {
+      await archiveTournament()
+      navigate('/tournament/list')
+    } catch (err) {
+      console.error('Failed to archive tournament:', err)
+    }
   }
 
   const champion = tournament?.winnerId ? players.get(tournament.winnerId) : null
 
-  const getRoundLabel = (round: number, totalRounds: number, bracket: 'winners' | 'losers') => {
+  const getRoundLabel = (round: number, bracket: 'winners' | 'losers') => {
     if (bracket === 'winners') {
       return `WB Round ${round}`
     } else {
       return `LB Round ${round}`
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="bracket-screen">
+        <div className="bracket-header">
+          <span className="bracket-title">Tournament</span>
+        </div>
+        <div className="no-tournament">
+          <div className="no-tournament-title">Loading...</div>
+        </div>
+        <style>{styles}</style>
+      </div>
+    )
   }
 
   if (!tournament) {
@@ -336,10 +378,10 @@ export function BracketScreen() {
           <span className="bracket-title">Tournament</span>
         </div>
         <div className="no-tournament">
-          <div className="no-tournament-title">No Active Tournament</div>
-          <div>Create a new tournament to get started</div>
-          <button className="create-link" onClick={() => navigate('/tournament/setup')}>
-            Create Tournament
+          <div className="no-tournament-title">Tournament Not Found</div>
+          <div>This tournament may have been deleted</div>
+          <button className="create-link" onClick={() => navigate('/tournament/list')}>
+            View Tournaments
           </button>
         </div>
         <div className="bracket-footer">
@@ -353,10 +395,12 @@ export function BracketScreen() {
   }
 
   const maxWinnersRound = Math.max(...Array.from(winnersRounds.keys()))
-  const maxLosersRound = losersRounds.size > 0 ? Math.max(...Array.from(losersRounds.keys())) : 0
 
   return (
     <div className="bracket-screen">
+      {tournament.archived && (
+        <div className="archived-banner">This tournament is archived</div>
+      )}
       <div className="bracket-header">
         <span className="bracket-title">{tournament.name}</span>
         <span className={`bracket-status ${tournament.status}`}>
@@ -382,10 +426,10 @@ export function BracketScreen() {
               .map(([round, matches]) => (
                 <div key={`w-${round}`} className="bracket-round">
                   <div className="round-label">
-                    {getRoundLabel(round, maxWinnersRound, 'winners')}
+                    {getRoundLabel(round, 'winners')}
                   </div>
                   <div className="round-matches">
-                    {matches.map(match => (
+                    {matches.map((match: BracketNode) => (
                       <MatchCard
                         key={match.id}
                         match={match}
@@ -450,10 +494,10 @@ export function BracketScreen() {
                 .map(([round, matches]) => (
                   <div key={`l-${round}`} className="bracket-round">
                     <div className="round-label">
-                      {getRoundLabel(round, maxLosersRound, 'losers')}
+                      {getRoundLabel(round, 'losers')}
                     </div>
                     <div className="round-matches">
-                      {matches.map(match => (
+                      {matches.map((match: BracketNode) => (
                         <MatchCard
                           key={match.id}
                           match={match}
@@ -476,12 +520,14 @@ export function BracketScreen() {
       </div>
 
       <div className="bracket-footer">
-        <button className="back-btn" onClick={() => navigate('/')}>
-          Back to Menu
+        <button className="back-btn" onClick={() => navigate('/tournament/list')}>
+          Back
         </button>
-        <button className="reset-btn" onClick={handleReset}>
-          Delete
-        </button>
+        {!tournament.archived && (
+          <button className="archive-btn" onClick={handleArchive}>
+            Archive
+          </button>
+        )}
       </div>
 
       <style>{styles}</style>
