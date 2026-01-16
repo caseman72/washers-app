@@ -165,6 +165,48 @@ object FirebaseRepository {
     }
 
     /**
+     * Check if there's an active tournament for the current namespace.
+     * An active tournament has archived=false and status is 'active' or 'setup'.
+     * Calls callback with true if active tournament exists, false otherwise.
+     */
+    fun checkActiveTournament(callback: (Boolean) -> Unit) {
+        val namespace = SettingsRepository.namespace.value
+        if (namespace.isBlank()) {
+            callback(false)
+            return
+        }
+
+        // Get just the email part (without game number)
+        val email = sanitizeEmail(namespace.split("/", limit = 2)[0])
+        val path = "tournaments/$email"
+        Log.d(TAG, "Checking for active tournament at: $path")
+
+        database.getReference(path).get()
+            .addOnSuccessListener { snapshot ->
+                if (snapshot.exists()) {
+                    // Check each tournament for an active one
+                    var hasActive = false
+                    snapshot.children.forEach { child ->
+                        val archived = child.child("archived").getValue(Boolean::class.java) ?: false
+                        val status = child.child("status").getValue(String::class.java) ?: ""
+                        if (!archived && (status == "active" || status == "setup")) {
+                            hasActive = true
+                            Log.d(TAG, "Found active tournament: ${child.key}, status=$status")
+                        }
+                    }
+                    callback(hasActive)
+                } else {
+                    Log.d(TAG, "No tournaments found at path: $path")
+                    callback(false)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Failed to check tournaments: ${e.message}", e)
+                callback(false)
+            }
+    }
+
+    /**
      * Sanitize email for use as Firebase path.
      * Firebase paths cannot contain: . $ # [ ] /
      */

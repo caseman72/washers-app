@@ -86,6 +86,21 @@ fun GameDisplayScreen(
         }
     }
 
+    // Tournament warning dialog state
+    var showTournamentWarning by remember { mutableStateOf(false) }
+
+    // Check for active tournament when namespace changes to a tournament game (1-64)
+    LaunchedEffect(namespace) {
+        if (mode == AppMode.MIRROR && SettingsRepository.isTournamentGame()) {
+            kotlinx.coroutines.delay(600) // Wait after debounce for name sync
+            FirebaseRepository.checkActiveTournament { hasActive ->
+                if (!hasActive) {
+                    showTournamentWarning = true
+                }
+            }
+        }
+    }
+
     // Use watch state for Mirror, local state for Keep Score
     val displayState = when (mode) {
         AppMode.MIRROR -> watchGameState ?: GameState()
@@ -114,7 +129,17 @@ fun GameDisplayScreen(
                     .background(WatchColors.Background)
             ) {
                 when (mode) {
-                    AppMode.MIRROR -> MirrorDisplay(displayState)
+                    AppMode.MIRROR -> MirrorDisplay(
+                        gameState = displayState,
+                        showTournamentWarning = showTournamentWarning,
+                        onDismissTournamentWarning = { showTournamentWarning = false },
+                        onFixTournamentWarning = {
+                            // Remove the game number from namespace (keep just email)
+                            val email = namespace.split("/", limit = 2)[0]
+                            SettingsRepository.setNamespace(email)
+                            showTournamentWarning = false
+                        }
+                    )
                     AppMode.KEEP_SCORE -> KeepScorePager(
                         gameState = localGameState,
                         onGameStateChange = { localGameState = it }
@@ -217,7 +242,12 @@ fun GameDisplayScreen(
  * Mirror mode - display only, matches watch layout exactly
  */
 @Composable
-private fun MirrorDisplay(gameState: GameState) {
+private fun MirrorDisplay(
+    gameState: GameState,
+    showTournamentWarning: Boolean,
+    onDismissTournamentWarning: () -> Unit,
+    onFixTournamentWarning: () -> Unit
+) {
     val format by SettingsRepository.format.collectAsState()
     val namespace by SettingsRepository.namespace.collectAsState()
     val player1Name by SettingsRepository.player1Name.collectAsState()
@@ -226,13 +256,13 @@ private fun MirrorDisplay(gameState: GameState) {
     val isTournament = SettingsRepository.isTournamentGame()
     val showRounds = !isTournament && format > 1
 
-    // Player picker state
+    // Player picker state - disabled for tournament games
     var showPlayerPicker by remember { mutableStateOf<Int?>(null) }
     val players by FirebasePlayersRepository.players.collectAsState()
 
-    // Subscribe to players when namespace is set
+    // Subscribe to players when namespace is set (only for non-tournament)
     LaunchedEffect(namespace) {
-        if (namespace.isNotBlank()) {
+        if (namespace.isNotBlank() && !isTournament) {
             FirebasePlayersRepository.subscribeToPlayers(namespace)
         }
     }
@@ -261,6 +291,7 @@ private fun MirrorDisplay(gameState: GameState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Score panels with player picker in the top area
+        // Player picker is disabled for tournament games (1-64)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -273,7 +304,8 @@ private fun MirrorDisplay(gameState: GameState) {
                 color = gameState.player1Color,
                 name = player1Name,
                 placeholder = "Player 1",
-                onTap = { showPlayerPicker = 1 },
+                onTap = { if (!isTournament) showPlayerPicker = 1 },
+                enabled = !isTournament,
                 modifier = Modifier.weight(1f)
             )
 
@@ -282,7 +314,8 @@ private fun MirrorDisplay(gameState: GameState) {
                 color = gameState.player2Color,
                 name = player2Name,
                 placeholder = "Player 2",
-                onTap = { showPlayerPicker = 2 },
+                onTap = { if (!isTournament) showPlayerPicker = 2 },
+                enabled = !isTournament,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -290,21 +323,33 @@ private fun MirrorDisplay(gameState: GameState) {
         Spacer(modifier = Modifier.height(30.dp))
     }
 
-    // Player picker dialog overlay
-    showPlayerPicker?.let { playerNum ->
-        PlayerPickerDialog(
-            players = activePlayers,
-            currentName = if (playerNum == 1) player1Name else player2Name,
-            onPlayerSelected = { player ->
-                if (playerNum == 1) {
-                    SettingsRepository.setPlayer1Name(player.name)
-                } else {
-                    SettingsRepository.setPlayer2Name(player.name)
-                }
-                showPlayerPicker = null
-            },
-            onDismiss = { showPlayerPicker = null }
+    // Tournament warning dialog - shown when entering tournament game without active tournament
+    if (showTournamentWarning) {
+        TournamentWarningDialog(
+            onDismiss = onDismissTournamentWarning,
+            onFix = onFixTournamentWarning
         )
+    }
+
+    // Player picker dialog overlay (only for non-tournament)
+    if (!isTournament) {
+        showPlayerPicker?.let { playerNum ->
+            PlayerPickerDialog(
+                players = activePlayers,
+                currentName = if (playerNum == 1) player1Name else player2Name,
+                onPlayerSelected = { player ->
+                    if (playerNum == 1) {
+                        SettingsRepository.setPlayer1Name(player.name)
+                    } else {
+                        SettingsRepository.setPlayer2Name(player.name)
+                    }
+                    // Update Firebase with new player name
+                    FirebaseRepository.writeCurrentState(gameState)
+                    showPlayerPicker = null
+                },
+                onDismiss = { showPlayerPicker = null }
+            )
+        }
     }
 }
 
@@ -1249,6 +1294,7 @@ private fun FormatSelector(
 
 /**
  * Score panel with tappable name for player picker (for Mirror mode)
+ * When enabled=false (tournament mode), the name area is not tappable
  */
 @Composable
 private fun ScorePanelWithPlayerPicker(
@@ -1257,6 +1303,7 @@ private fun ScorePanelWithPlayerPicker(
     name: String,
     placeholder: String,
     onTap: () -> Unit,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -1265,13 +1312,13 @@ private fun ScorePanelWithPlayerPicker(
             .clip(RoundedCornerShape(8.dp)),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top area with tappable name
+        // Top area with tappable name (disabled for tournaments)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(0.7f)
                 .background(color.darker)
-                .clickable { onTap() },
+                .then(if (enabled) Modifier.clickable { onTap() } else Modifier),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -1422,6 +1469,88 @@ private fun PlayerPickerDialog(
                     color = WatchColors.OnSurfaceDisabled,
                     fontSize = 16.sp
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Warning dialog shown when user tries to mirror a tournament game (1-64)
+ * without an active tournament. Offers to fix by removing the game number.
+ */
+@Composable
+private fun TournamentWarningDialog(
+    onDismiss: () -> Unit,
+    onFix: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xCC000000)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .background(WatchColors.Surface, RoundedCornerShape(16.dp))
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "No Active Tournament",
+                color = Color(0xFFFF9800),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Game numbers 1-64 are reserved for tournaments. You cannot mirror a tournament game without an active tournament.",
+                color = WatchColors.OnSurface,
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center,
+                lineHeight = 20.sp
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Dismiss button
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .background(Color(0xFF333333), RoundedCornerShape(8.dp))
+                        .clickable { onDismiss() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Dismiss",
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                }
+
+                // Fix button (removes game number)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .background(Color(0xFF27AE60), RoundedCornerShape(8.dp))
+                        .clickable { onFix() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Fix It",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
