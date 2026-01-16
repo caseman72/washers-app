@@ -15,6 +15,7 @@ object WearableSender {
     private const val TAG = "WearableSender"
     private const val FORMAT_PATH = "/format"
     private const val SHOW_ROUNDS_PATH = "/show_rounds"
+    private const val RESET_PATH = "/reset"
 
     private var messageClient: MessageClient? = null
     private var nodeClient: NodeClient? = null
@@ -59,6 +60,24 @@ object WearableSender {
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error sending showRounds to watch", e)
+            }
+        }
+    }
+
+    fun sendReset() {
+        scope.launch {
+            try {
+                val nodes = nodeClient?.connectedNodes?.await() ?: return@launch
+                if (nodes.isEmpty()) {
+                    Log.d(TAG, "No connected nodes, cannot send reset")
+                    return@launch
+                }
+                nodes.forEach { node ->
+                    messageClient?.sendMessage(node.id, RESET_PATH, byteArrayOf())?.await()
+                    Log.d(TAG, "Sent reset to node: ${node.displayName}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending reset to watch", e)
             }
         }
     }

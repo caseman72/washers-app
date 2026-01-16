@@ -40,6 +40,7 @@ class DataLayerManager private constructor(context: Context) {
         const val REQUEST_SETTINGS_PATH = "/request_settings"
         const val FORMAT_PATH = "/format"
         const val SHOW_ROUNDS_PATH = "/show_rounds"
+        const val RESET_PATH = "/reset"
 
         @Volatile
         private var instance: DataLayerManager? = null
@@ -57,6 +58,10 @@ class DataLayerManager private constructor(context: Context) {
         private var pendingShowRounds: Boolean? = null
         private val _pendingSettings = MutableStateFlow<PendingSettings?>(null)
         val pendingSettings: StateFlow<PendingSettings?> = _pendingSettings.asStateFlow()
+
+        // Reset trigger from Phone (incremented when reset message received)
+        private val _resetTrigger = MutableStateFlow(0)
+        val resetTrigger: StateFlow<Int> = _resetTrigger.asStateFlow()
 
         fun getInstance(context: Context): DataLayerManager {
             return instance ?: synchronized(this) {
@@ -110,6 +115,11 @@ class DataLayerManager private constructor(context: Context) {
             pendingFormat = null
             pendingShowRounds = null
             _pendingSettings.value = null
+        }
+
+        fun triggerReset() {
+            Log.d(TAG, "Reset triggered from Phone")
+            _resetTrigger.value++
         }
     }
 

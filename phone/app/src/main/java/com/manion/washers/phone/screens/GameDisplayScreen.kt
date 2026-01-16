@@ -35,6 +35,7 @@ import com.manion.washers.phone.GameState
 import com.manion.washers.phone.PlayerColor
 import com.manion.washers.phone.SettingsRepository
 import com.manion.washers.phone.WearableRepository
+import com.manion.washers.phone.WearableSender
 import com.manion.washers.phone.ui.theme.WatchColors
 
 @Composable
@@ -59,6 +60,22 @@ fun GameDisplayScreen(
 
     // Observe namespace for Mirror mode
     val namespace by SettingsRepository.namespace.collectAsState()
+
+    // Track previous namespace to detect changes
+    var previousNamespace by remember { mutableStateOf(namespace) }
+
+    // Reset game state when namespace changes (prevents stale rounds from triggering false wins)
+    LaunchedEffect(namespace) {
+        if (namespace != previousNamespace) {
+            // Reset local state for Keep Score mode
+            localGameState = GameState()
+            // Reset watch state for Mirror mode
+            WearableRepository.reset()
+            // Tell Watch to reset its state too
+            WearableSender.sendReset()
+            previousNamespace = namespace
+        }
+    }
 
     // Read player names from Firebase when entering Mirror mode or when namespace changes
     // Debounce to avoid firing on every keystroke

@@ -62,6 +62,14 @@ fun ScoreboardScreen() {
     val showRoundsFromPhone by DataLayerManager.showRoundsFromPhone.collectAsState()
     val showRounds = showRoundsFromPhone ?: false
 
+    // Observe reset trigger from phone (resets game state when namespace changes)
+    val resetTrigger by DataLayerManager.resetTrigger.collectAsState()
+    LaunchedEffect(resetTrigger) {
+        if (resetTrigger > 0) {
+            gameState = GameState()
+        }
+    }
+
     // Observe pending settings from phone
     val pendingSettings by DataLayerManager.pendingSettings.collectAsState()
 

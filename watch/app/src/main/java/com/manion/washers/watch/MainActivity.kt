@@ -70,6 +70,10 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
                 Log.d(TAG, "Phone sent showRounds: $showRounds")
                 DataLayerManager.setShowRoundsFromPhone(showRounds)
             }
+            DataLayerManager.RESET_PATH -> {
+                Log.d(TAG, "Phone sent reset command")
+                DataLayerManager.triggerReset()
+            }
         }
     }
 }
