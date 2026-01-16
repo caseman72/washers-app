@@ -6,8 +6,10 @@ import {
   addPlayer as firebaseAddPlayer,
   deletePlayer as firebaseDeletePlayer,
   recordGameResult as firebaseRecordGameResult,
+  undoGameResult as firebaseUndoGameResult,
   recordTournamentWin as firebaseRecordTournamentWin,
   recordTeamGameResult as firebaseRecordTeamGameResult,
+  undoTeamGameResult as firebaseUndoTeamGameResult,
   recordTeamTournamentWinForTeam as firebaseRecordTeamTournamentWinForTeam,
 } from '../lib/firebase-players'
 
@@ -18,8 +20,10 @@ export interface UsePlayersResult {
   addPlayer: (name: string) => Promise<void>
   deletePlayer: (playerId: string) => Promise<void>
   recordGameResult: (winnerId: string, loserId: string) => Promise<void>
+  undoGameResult: (winnerId: string, loserId: string) => Promise<void>
   recordTournamentWin: (playerId: string) => Promise<void>
   recordTeamGameResult: (winnerPlayerIds: string[], loserPlayerIds: string[]) => Promise<void>
+  undoTeamGameResult: (winnerPlayerIds: string[], loserPlayerIds: string[]) => Promise<void>
   recordTeamTournamentWin: (playerIds: string[]) => Promise<void>
 }
 
@@ -83,6 +87,13 @@ export function usePlayers(namespace: string): UsePlayersResult {
     await firebaseRecordGameResult(namespace, winnerId, loserId)
   }
 
+  const undoGameResult = async (winnerId: string, loserId: string) => {
+    if (!namespace.trim()) {
+      throw new Error('No namespace configured')
+    }
+    await firebaseUndoGameResult(namespace, winnerId, loserId)
+  }
+
   const recordTournamentWin = async (playerId: string) => {
     if (!namespace.trim()) {
       throw new Error('No namespace configured')
@@ -95,6 +106,13 @@ export function usePlayers(namespace: string): UsePlayersResult {
       throw new Error('No namespace configured')
     }
     await firebaseRecordTeamGameResult(namespace, winnerPlayerIds, loserPlayerIds)
+  }
+
+  const undoTeamGameResult = async (winnerPlayerIds: string[], loserPlayerIds: string[]) => {
+    if (!namespace.trim()) {
+      throw new Error('No namespace configured')
+    }
+    await firebaseUndoTeamGameResult(namespace, winnerPlayerIds, loserPlayerIds)
   }
 
   const recordTeamTournamentWin = async (playerIds: string[]) => {
@@ -111,8 +129,10 @@ export function usePlayers(namespace: string): UsePlayersResult {
     addPlayer,
     deletePlayer,
     recordGameResult,
+    undoGameResult,
     recordTournamentWin,
     recordTeamGameResult,
+    undoTeamGameResult,
     recordTeamTournamentWin,
   }
 }

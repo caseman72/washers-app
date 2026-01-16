@@ -212,7 +212,7 @@ export function BracketScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
   const settings = loadSettings()
-  const { players: playerList, recordGameResult, recordTournamentWin, recordTeamGameResult, recordTeamTournamentWin } = usePlayers(settings.namespace)
+  const { players: playerList, recordGameResult, undoGameResult, recordTournamentWin, recordTeamGameResult, undoTeamGameResult, recordTeamTournamentWin } = usePlayers(settings.namespace)
   const { tournament, loading, updateTournament, archiveTournament, deleteTournament } = useTournament(settings.namespace, id)
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
 
@@ -356,25 +356,50 @@ export function BracketScreen() {
 
     const isDoubles = tournament.type === 'doubles'
 
-    // Find the match to get the loser
+    // Find the match to check previous winner
     const match = tournament.bracket.find(m => m.id === matchId)
-    if (match && match.player1Id && match.player2Id) {
-      const loserId = match.player1Id === winnerId ? match.player2Id : match.player1Id
-      // Record game result (win for winner, loss for loser)
+    if (!match || !match.player1Id || !match.player2Id) return
+
+    const previousWinnerId = match.winnerId
+    const loserId = match.player1Id === winnerId ? match.player2Id : match.player1Id
+
+    // Case 1: Same winner selected - no DB update needed
+    if (previousWinnerId === winnerId) {
+      setActiveMatchId(null)
+      return
+    }
+
+    // Case 2: Winner changed - undo old result, record new result
+    if (previousWinnerId) {
+      const previousLoserId = match.player1Id === previousWinnerId ? match.player2Id : match.player1Id
       try {
         if (isDoubles) {
-          // For teams, get player IDs and record team game result
-          const winnerPlayerIds = getTeamPlayerIds(winnerId)
-          const loserPlayerIds = getTeamPlayerIds(loserId)
-          if (winnerPlayerIds.length > 0 && loserPlayerIds.length > 0) {
-            await recordTeamGameResult(winnerPlayerIds, loserPlayerIds)
+          const oldWinnerPlayerIds = getTeamPlayerIds(previousWinnerId)
+          const oldLoserPlayerIds = getTeamPlayerIds(previousLoserId)
+          if (oldWinnerPlayerIds.length > 0 && oldLoserPlayerIds.length > 0) {
+            await undoTeamGameResult(oldWinnerPlayerIds, oldLoserPlayerIds)
           }
         } else {
-          await recordGameResult(winnerId, loserId)
+          await undoGameResult(previousWinnerId, previousLoserId)
         }
       } catch (err) {
-        console.error('Failed to record game result:', err)
+        console.error('Failed to undo game result:', err)
       }
+    }
+
+    // Case 3: New winner (or changed winner) - record new result
+    try {
+      if (isDoubles) {
+        const winnerPlayerIds = getTeamPlayerIds(winnerId)
+        const loserPlayerIds = getTeamPlayerIds(loserId)
+        if (winnerPlayerIds.length > 0 && loserPlayerIds.length > 0) {
+          await recordTeamGameResult(winnerPlayerIds, loserPlayerIds)
+        }
+      } else {
+        await recordGameResult(winnerId, loserId)
+      }
+    } catch (err) {
+      console.error('Failed to record game result:', err)
     }
 
     const updated = advanceWinner(tournament, matchId, winnerId)

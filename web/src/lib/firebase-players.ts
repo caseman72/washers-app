@@ -177,6 +177,46 @@ export async function recordGameResult(
   ])
 }
 
+// Undo a game win for a player
+export async function undoWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    wins: increment(-1)
+  })
+  console.log(`Undid win for player ${playerId}`)
+}
+
+// Undo a game loss for a player
+export async function undoLoss(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    losses: increment(-1)
+  })
+  console.log(`Undid loss for player ${playerId}`)
+}
+
+// Undo game result (remove win from old winner, remove loss from old loser)
+export async function undoGameResult(
+  namespace: string,
+  winnerId: string,
+  loserId: string
+): Promise<void> {
+  await Promise.all([
+    undoWin(namespace, winnerId),
+    undoLoss(namespace, loserId)
+  ])
+}
+
 // Record a team game win for a player
 export async function recordTeamWin(namespace: string, playerId: string): Promise<void> {
   await ensureAuth()
@@ -228,6 +268,46 @@ export async function recordTeamGameResult(
   await Promise.all([
     ...winnerPlayerIds.map(id => recordTeamWin(namespace, id)),
     ...loserPlayerIds.map(id => recordTeamLoss(namespace, id))
+  ])
+}
+
+// Undo a team game win for a player
+export async function undoTeamWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    teamWins: increment(-1)
+  })
+  console.log(`Undid team win for player ${playerId}`)
+}
+
+// Undo a team game loss for a player
+export async function undoTeamLoss(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    teamLosses: increment(-1)
+  })
+  console.log(`Undid team loss for player ${playerId}`)
+}
+
+// Undo team game result
+export async function undoTeamGameResult(
+  namespace: string,
+  winnerPlayerIds: string[],
+  loserPlayerIds: string[]
+): Promise<void> {
+  await Promise.all([
+    ...winnerPlayerIds.map(id => undoTeamWin(namespace, id)),
+    ...loserPlayerIds.map(id => undoTeamLoss(namespace, id))
   ])
 }
 
