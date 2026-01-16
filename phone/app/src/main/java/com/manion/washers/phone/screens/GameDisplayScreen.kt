@@ -69,9 +69,7 @@ fun GameDisplayScreen(
         if (namespace != previousNamespace) {
             // Reset local state for Keep Score mode (preserves colors)
             localGameState = localGameState.resetAll()
-            // Reset watch state for Mirror mode
-            WearableRepository.reset()
-            // Tell Watch to reset its state too
+            // Tell Watch to reset its state (Watch preserves colors)
             WearableSender.sendReset()
             previousNamespace = namespace
         }
