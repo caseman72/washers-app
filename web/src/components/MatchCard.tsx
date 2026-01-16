@@ -240,6 +240,9 @@ export function MatchCard({
   // Track which match we've initialized to avoid re-initializing
   const initializedMatchRef = useRef<string | null>(null)
 
+  // Track which match we've already triggered winner selection for
+  const winnerTriggeredRef = useRef<string | null>(null)
+
   // Get display names for Firebase
   const player1DisplayName = isDoubles ? (team1Name || 'TBD') : (player1?.name || 'TBD')
   const player2DisplayName = isDoubles ? (team2Name || 'TBD') : (player2?.name || 'TBD')
@@ -281,10 +284,15 @@ export function MatchCard({
     // Ignore stale data from before the tournament started
     if (tournamentStartedAt && liveGame.updatedAt < tournamentStartedAt) return
 
+    // Prevent duplicate triggers (effect can fire multiple times before state updates)
+    if (winnerTriggeredRef.current === match.id) return
+
     // Check if either player has won a round (for tournament, first to 1 round wins)
     if (liveGame.player1Rounds >= 1) {
+      winnerTriggeredRef.current = match.id
       onSelectWinner(match.id, match.player1Id)
     } else if (liveGame.player2Rounds >= 1) {
+      winnerTriggeredRef.current = match.id
       onSelectWinner(match.id, match.player2Id)
     }
   }, [liveGame?.player1Rounds, liveGame?.player2Rounds, liveGame?.updatedAt, tournamentStartedAt, hasWinner, onSelectWinner, match.id, match.player1Id, match.player2Id])
