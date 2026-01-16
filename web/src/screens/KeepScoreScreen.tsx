@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Scoreboard } from '../components/Scoreboard'
 import { loadSettings } from './SettingsScreen'
@@ -139,6 +139,11 @@ export function KeepScoreScreen() {
     }).catch(err => console.error('Failed to write game state:', err))
   }, [lastSession, lastColors, gameNumber, settings.namespace, hasNamespace])
 
+  const handleStateChange = useCallback((session: GameSession, colors: { p1: string; p2: string }) => {
+    setLastSession(session)
+    setLastColors(colors)
+  }, [])
+
   if (!hasNamespace) {
     return (
       <div className="keep-score-screen" style={{ background: '#1a1a1a', minHeight: '100vh' }}>
@@ -176,12 +181,7 @@ export function KeepScoreScreen() {
           min="1"
         />
       </div>
-      <Scoreboard
-        onStateChange={(session, colors) => {
-          setLastSession(session)
-          setLastColors(colors)
-        }}
-      />
+      <Scoreboard onStateChange={handleStateChange} />
       <button
         className="back-btn-overlay"
         onClick={() => navigate('/')}

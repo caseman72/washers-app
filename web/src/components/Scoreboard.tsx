@@ -401,7 +401,8 @@ export function Scoreboard({ onGameComplete, onStateChange }: ScoreboardProps) {
   // Notify parent of state changes for Firebase sync
   useEffect(() => {
     onStateChange?.(session, { p1: player1Color.toUpperCase(), p2: player2Color.toUpperCase() })
-  }, [session, player1Color, player2Color, onStateChange])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, player1Color, player2Color])
 
   const selectColor = useCallback((player: 1 | 2, color: ColorId) => {
     if (player === 1) {
