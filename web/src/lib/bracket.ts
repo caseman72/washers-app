@@ -24,6 +24,14 @@ function nextPowerOf2(n: number): number {
   return power
 }
 
+// Get bracket size for n players (must give even R1 games)
+// Round up to next multiple of 4 to ensure R1 has even number of games
+function getBracketSize(n: number): number {
+  if (n <= 4) return 4
+  // Round up to next multiple of 4
+  return Math.ceil(n / 4) * 4
+}
+
 // Calculate number of rounds needed
 function calculateRounds(numPlayers: number): number {
   const bracketSize = nextPowerOf2(numPlayers)
@@ -36,8 +44,8 @@ function generateWinnersBracket(
   _format: 'single_elimination' | 'double_elimination'
 ): BracketNode[] {
   const numPlayers = playerIds.length
-  const bracketSize = nextPowerOf2(numPlayers)
-  const numRounds = calculateRounds(numPlayers)
+  const bracketSize = getBracketSize(numPlayers)
+  const numRounds = Math.ceil(Math.log2(bracketSize))
   const nodes: BracketNode[] = []
 
   // Shuffle players
