@@ -97,7 +97,7 @@ const styles = `
   }
 
   .back-btn {
-    flex: 1;
+    width: 100%;
     padding: 0.875rem;
     font-size: 1rem;
     font-weight: 500;
@@ -185,14 +185,16 @@ export function MirrorScreen() {
             />
           </div>
 
+          <div className="spacer" />
+
           <button className="format-btn" onClick={cycleFormat}>
             Bo{format}
           </button>
-
-          <button className="back-btn" onClick={() => navigate('/')}>
-            Back to Menu
-          </button>
         </div>
+
+        <button className="back-btn" onClick={() => navigate('/')}>
+          Back to Menu
+        </button>
       </div>
 
       <style>{styles}</style>
