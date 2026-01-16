@@ -611,8 +611,8 @@ export function getMatchesByRound(
   return matchesByRound
 }
 
-// Edit window in milliseconds (60 seconds)
-const EDIT_WINDOW_MS = 60 * 1000
+// Edit window in milliseconds (5 seconds for testing, increase for production)
+const EDIT_WINDOW_MS = 5 * 1000
 
 // Check if a match is ready to be played (or editable within 60s window)
 export function isMatchReady(match: BracketNode): boolean {
