@@ -258,8 +258,11 @@ export function MatchCard({
     // Initialize game with fresh data when match or players change
     // Re-initialize when players change from TBD to actual names
     const initKey = `${match.id}-${player1DisplayName}-${player2DisplayName}`
-    if (initializedRef.current !== initKey && !hasWinner) {
+    const shouldInit = initializedRef.current !== initKey && !hasWinner
+    console.log(`Game ${gameNumber}: initKey=${initKey}, prevKey=${initializedRef.current}, shouldInit=${shouldInit}`)
+    if (shouldInit) {
       initializedRef.current = initKey
+      console.log(`Initializing game ${gameNumber} with ${player1DisplayName} vs ${player2DisplayName}`)
       initializeGame(namespace, gameNumber, player1DisplayName, player2DisplayName)
         .catch(err => console.error('Failed to initialize game:', err))
     }
