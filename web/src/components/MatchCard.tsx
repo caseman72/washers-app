@@ -237,8 +237,8 @@ export function MatchCard({
   const hasWinner = !!match.winnerId
   const clickable = ready && onSelectWinner
 
-  // Track which match we've initialized to avoid re-initializing
-  const initializedMatchRef = useRef<string | null>(null)
+  // Track which match+players we've initialized to avoid unnecessary re-initializing
+  const initializedRef = useRef<string | null>(null)
 
   // Track which match we've already triggered winner selection for
   const winnerTriggeredRef = useRef<string | null>(null)
@@ -255,9 +255,11 @@ export function MatchCard({
       return
     }
 
-    // Initialize game with fresh data if we haven't already for this match
-    if (initializedMatchRef.current !== match.id && !hasWinner) {
-      initializedMatchRef.current = match.id
+    // Initialize game with fresh data when match or players change
+    // Re-initialize when players change from TBD to actual names
+    const initKey = `${match.id}-${player1DisplayName}-${player2DisplayName}`
+    if (initializedRef.current !== initKey && !hasWinner) {
+      initializedRef.current = initKey
       initializeGame(namespace, gameNumber, player1DisplayName, player2DisplayName)
         .catch(err => console.error('Failed to initialize game:', err))
     }
