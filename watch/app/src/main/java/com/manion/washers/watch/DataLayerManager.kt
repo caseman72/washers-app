@@ -69,9 +69,11 @@ class DataLayerManager private constructor(context: Context) {
         fun getLastGameState(): GameState? = lastGameState
 
         fun setFormatFromPhone(format: Int) {
-            Log.d(TAG, "Format received from phone: $format, current: ${_formatFromPhone.value}")
-            if (format != _formatFromPhone.value) {
-                // Different from current - queue as pending
+            Log.d(TAG, "Format received from phone: $format, current: ${_formatFromPhone.value}, pending: $pendingFormat")
+            // Show dialog if:
+            // 1. Format differs from current applied value, OR
+            // 2. There's already a pending dialog and the new format is different from pending
+            if (format != _formatFromPhone.value || (pendingFormat != null && format != pendingFormat)) {
                 pendingFormat = format
                 updatePendingSettings()
             }
