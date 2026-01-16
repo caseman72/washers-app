@@ -218,20 +218,10 @@ fun GameDisplayScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Namespace and Format fields (Mirror and Keep Score modes)
+                // Game number and Format fields (Mirror and Keep Score modes)
                 if (mode == AppMode.MIRROR || mode == AppMode.KEEP_SCORE) {
                     val format by SettingsRepository.format.collectAsState()
                     val isTournament = SettingsRepository.isTournamentGame()
-
-                    // Base namespace label (set in Settings)
-                    Text(
-                        text = if (baseNamespace.isNotBlank()) baseNamespace else "Set namespace in Settings",
-                        color = if (baseNamespace.isNotBlank()) WatchColors.OnSurface else WatchColors.OnSurfaceDisabled,
-                        fontSize = 14.sp,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
