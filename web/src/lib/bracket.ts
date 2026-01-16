@@ -481,8 +481,11 @@ export function advanceWinner(
         }
 
         // If this is an LB BYE match (only 1 player expected), auto-advance
-        if (loserMatch.isByeMatch && loserMatch.player1Id && !loserMatch.winnerId) {
-          loserMatch.winnerId = loserMatch.player1Id
+        // For LB R1 BYEs, player is in player1Id
+        // For crossover BYEs, player is in player2Id (WB loser drops to player2)
+        const byePlayerId = loserMatch.player1Id || loserMatch.player2Id
+        if (loserMatch.isByeMatch && byePlayerId && !loserMatch.winnerId) {
+          loserMatch.winnerId = byePlayerId
 
           // Propagate to next LB match
           if (loserMatch.nextMatchId) {

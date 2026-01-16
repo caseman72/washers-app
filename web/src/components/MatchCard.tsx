@@ -242,11 +242,11 @@ export function MatchCard({
         {gameNumber !== undefined && (
           <div className="game-number">Game {gameNumber}</div>
         )}
-        <div className={`match-player ${getPlayerClass(match.player1Id)}`}>
+        <div className={`match-player ${getPlayerClass(match.player1Id)} ${!match.player1Id && match.isByeMatch ? 'bye-slot' : ''}`}>
           <span className="player-name">
             {isDoubles
-              ? (team1Name || (match.player1Id ? 'Unknown' : 'TBD'))
-              : (player1 ? player1.name : (match.player1Id ? 'Unknown' : 'TBD'))
+              ? (team1Name || (match.player1Id ? 'Unknown' : (match.isByeMatch ? 'BYE' : 'TBD')))
+              : (player1 ? player1.name : (match.player1Id ? 'Unknown' : (match.isByeMatch ? 'BYE' : 'TBD')))
             }
             {!isDoubles && player1 && player1Losses !== undefined && (
               <sub className="loss-count">{player1Losses}</sub>
