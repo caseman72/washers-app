@@ -66,7 +66,7 @@ fun ScoreboardScreen() {
     val resetTrigger by DataLayerManager.resetTrigger.collectAsState()
     LaunchedEffect(resetTrigger) {
         if (resetTrigger > 0) {
-            gameState = GameState()
+            gameState = gameState.resetAll()  // Preserves colors and format
         }
     }
 
