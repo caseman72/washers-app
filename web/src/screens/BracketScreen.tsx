@@ -523,6 +523,7 @@ export function BracketScreen() {
                         onOpenModal={() => setActiveMatchId(match.id)}
                         onCloseModal={() => setActiveMatchId(null)}
                         gameNumber={gameNumbers.get(match.id)}
+                        showHeader={true}
                         player1Losses={0}
                         player2Losses={0}
                       />
@@ -544,6 +545,7 @@ export function BracketScreen() {
                     onOpenModal={() => setActiveMatchId(finalsGame1.id)}
                     onCloseModal={() => setActiveMatchId(null)}
                     gameNumber={gameNumbers.get(finalsGame1.id)}
+                    showHeader={true}
                     player1Losses={0}
                     player2Losses={1}
                   />
@@ -564,6 +566,7 @@ export function BracketScreen() {
                     onOpenModal={() => setActiveMatchId(finalsGame2.id)}
                     onCloseModal={() => setActiveMatchId(null)}
                     gameNumber={gameNumbers.get(finalsGame2.id)}
+                    showHeader={true}
                     player1Losses={1}
                     player2Losses={1}
                   />
@@ -597,6 +600,7 @@ export function BracketScreen() {
                           onOpenModal={() => setActiveMatchId(match.id)}
                           onCloseModal={() => setActiveMatchId(null)}
                           gameNumber={gameNumbers.get(match.id)}
+                          showHeader={true}
                           player1Losses={1}
                           player2Losses={1}
                         />

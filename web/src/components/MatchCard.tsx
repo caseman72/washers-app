@@ -8,7 +8,7 @@ const styles = `
     background: #2a2a2a;
     border-radius: 0.375rem;
     overflow: hidden;
-    min-width: 120px;
+    min-width: 180px;
     border: 1px solid #333;
   }
 
@@ -33,7 +33,7 @@ const styles = `
   .match-player {
     display: flex;
     align-items: center;
-    padding: 0.5rem 0.625rem;
+    padding: 0.5rem 1rem;
     font-size: 0.8rem;
     border-bottom: 1px solid #333;
   }
@@ -92,7 +92,7 @@ const styles = `
   }
 
   .winner-indicator {
-    margin-left: 0.25rem;
+    margin-left: 0.5rem;
     font-size: 0.7rem;
   }
 
@@ -169,6 +169,7 @@ interface MatchCardProps {
   onCloseModal?: () => void
   onOpenModal?: () => void
   gameNumber?: number
+  showHeader?: boolean
   player1Losses?: number
   player2Losses?: number
 }
@@ -195,6 +196,7 @@ export function MatchCard({
   onCloseModal,
   onOpenModal,
   gameNumber,
+  showHeader,
   player1Losses,
   player2Losses,
 }: MatchCardProps) {
@@ -239,8 +241,8 @@ export function MatchCard({
         className={`match-card ${clickable ? 'clickable' : ''} ${hasWinner ? 'completed' : ''} ${isBye ? 'bye' : ''}`}
         onClick={handleClick}
       >
-        {gameNumber !== undefined && (
-          <div className="game-number">Game {gameNumber}</div>
+        {(gameNumber !== undefined || showHeader) && (
+          <div className="game-number">{gameNumber !== undefined ? `Game ${gameNumber}` : '\u00A0'}</div>
         )}
         <div className={`match-player ${getPlayerClass(match.player1Id)} ${!match.player1Id && match.isByeMatch ? 'bye-slot' : ''}`}>
           <span className="player-name">
