@@ -9,10 +9,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.text.input.KeyboardType
@@ -726,30 +728,46 @@ private fun KeepScorePager(
     onGameStateChange: (GameState) -> Unit
 ) {
     var colorPickerFor by remember { mutableStateOf<Int?>(null) }
+    var playerPickerFor by remember { mutableStateOf<Int?>(null) }
     var winConfirmationFor by remember { mutableStateOf<Int?>(null) }
     var seriesWinFor by remember { mutableStateOf<Int?>(null) }
     var sessionStartTime by remember { mutableStateOf(System.currentTimeMillis()) }
     val format by SettingsRepository.format.collectAsState()
+    val namespace by SettingsRepository.namespace.collectAsState()
     val player1Name by SettingsRepository.player1Name.collectAsState()
     val player2Name by SettingsRepository.player2Name.collectAsState()
     val pagerState = rememberPagerState(pageCount = { 2 })
+
+    // Get base namespace for player lookup
+    val baseNamespace = namespace.split("/", limit = 2)[0]
+
+    // Subscribe to players
+    val players by FirebasePlayersRepository.players.collectAsState()
+    LaunchedEffect(baseNamespace) {
+        if (baseNamespace.isNotBlank()) {
+            FirebasePlayersRepository.subscribeToPlayers(baseNamespace)
+        }
+    }
+    val activePlayers = players.filter { !it.archived }
 
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
-            userScrollEnabled = colorPickerFor == null && winConfirmationFor == null && seriesWinFor == null
+            userScrollEnabled = colorPickerFor == null && playerPickerFor == null && winConfirmationFor == null && seriesWinFor == null
         ) { page ->
             when (page) {
                 0 -> KeepScoreGameScreen(
                     gameState = gameState,
                     onGameStateChange = onGameStateChange,
-                    onPlayerWin = { player -> winConfirmationFor = player }
+                    onPlayerWin = { player -> winConfirmationFor = player },
+                    onPlayerTap = { player -> playerPickerFor = player }
                 )
                 1 -> KeepScoreColorsScreen(
                     gameState = gameState,
                     onColorTap = { player -> colorPickerFor = player },
-                    onResetColors = { onGameStateChange(gameState.resetColors()) }
+                    onResetColors = { onGameStateChange(gameState.resetColors()) },
+                    onPlayerTap = { player -> playerPickerFor = player }
                 )
             }
         }
@@ -834,28 +852,52 @@ private fun KeepScorePager(
                 }
             )
         }
+
+        // Player picker overlay
+        playerPickerFor?.let { playerNum ->
+            PlayerPickerDialog(
+                players = activePlayers,
+                currentName = if (playerNum == 1) player1Name else player2Name,
+                onPlayerSelected = { player ->
+                    if (playerNum == 1) {
+                        SettingsRepository.setPlayer1Name(player.name)
+                    } else {
+                        SettingsRepository.setPlayer2Name(player.name)
+                    }
+                    // Update Firebase with new player name
+                    FirebaseRepository.writeCurrentState(gameState)
+                    playerPickerFor = null
+                },
+                onDismiss = { playerPickerFor = null }
+            )
+        }
     }
 }
 
 /**
- * Keep Score game screen (Page 0) - matches watch layout exactly
+ * Keep Score game screen (Page 0) - scrollable with player selection below the fold
  */
 @Composable
 private fun KeepScoreGameScreen(
     gameState: GameState,
     onGameStateChange: (GameState) -> Unit,
-    onPlayerWin: (Int) -> Unit
+    onPlayerWin: (Int) -> Unit,
+    onPlayerTap: (Int) -> Unit
 ) {
     val format by SettingsRepository.format.collectAsState()
     val player1Name by SettingsRepository.player1Name.collectAsState()
     val player2Name by SettingsRepository.player2Name.collectAsState()
+    val namespace by SettingsRepository.namespace.collectAsState()
     // Derive showRounds reactively from format > 1 (tournament games 1-64 have format locked to 1)
     val isTournament = SettingsRepository.isTournamentGame()
     val showRounds = !isTournament && format > 1
 
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -876,7 +918,7 @@ private fun KeepScoreGameScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .height(280.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             ScoreControlPanel(
@@ -924,21 +966,113 @@ private fun KeepScoreGameScreen(
         }
 
         Spacer(modifier = Modifier.height(30.dp))
+
+        // ---- Below the fold: Player selection ----
+
+        // Namespace display
+        Text(
+            text = namespace.ifEmpty { "No namespace set" },
+            color = WatchColors.OnSurfaceDisabled,
+            fontSize = 12.sp
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Player 1 selector
+        PlayerSelectorRow(
+            playerNumber = 1,
+            playerName = player1Name,
+            playerColor = gameState.player1Color,
+            onTap = { onPlayerTap(1) }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Player 2 selector
+        PlayerSelectorRow(
+            playerNumber = 2,
+            playerName = player2Name,
+            playerColor = gameState.player2Color,
+            onTap = { onPlayerTap(2) }
+        )
+
+        Spacer(modifier = Modifier.height(30.dp))
     }
 }
 
 /**
- * Keep Score colors screen (Page 1) - matches watch layout exactly
+ * Tappable row for selecting a player (used in Keep Score below the fold)
+ */
+@Composable
+private fun PlayerSelectorRow(
+    playerNumber: Int,
+    playerName: String,
+    playerColor: PlayerColor,
+    onTap: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .background(WatchColors.Surface, RoundedCornerShape(8.dp))
+            .clickable { onTap() }
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Color indicator
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(playerColor.background)
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        // Player label and name
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Player $playerNumber",
+                color = WatchColors.OnSurfaceDisabled,
+                fontSize = 12.sp
+            )
+            Text(
+                text = playerName.ifEmpty { "Tap to select" },
+                color = if (playerName.isEmpty()) WatchColors.OnSurfaceDisabled else WatchColors.OnSurface,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
+        // Arrow indicator
+        Text(
+            text = "›",
+            color = WatchColors.OnSurfaceDisabled,
+            fontSize = 24.sp
+        )
+    }
+}
+
+/**
+ * Keep Score colors screen (Page 1) - scrollable with player selection below the fold
  */
 @Composable
 private fun KeepScoreColorsScreen(
     gameState: GameState,
     onColorTap: (Int) -> Unit,
-    onResetColors: () -> Unit
+    onResetColors: () -> Unit,
+    onPlayerTap: (Int) -> Unit
 ) {
+    val player1Name by SettingsRepository.player1Name.collectAsState()
+    val player2Name by SettingsRepository.player2Name.collectAsState()
+    val namespace by SettingsRepository.namespace.collectAsState()
+
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -960,7 +1094,7 @@ private fun KeepScoreColorsScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f),
+                .height(280.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             Box(
@@ -996,6 +1130,37 @@ private fun KeepScoreColorsScreen(
         ) {
             Text("Reset", fontSize = 18.sp, color = WatchColors.OnSurfaceDisabled)
         }
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        // ---- Below the fold: Player selection ----
+
+        // Namespace display
+        Text(
+            text = namespace.ifEmpty { "No namespace set" },
+            color = WatchColors.OnSurfaceDisabled,
+            fontSize = 12.sp
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Player 1 selector
+        PlayerSelectorRow(
+            playerNumber = 1,
+            playerName = player1Name,
+            playerColor = gameState.player1Color,
+            onTap = { onPlayerTap(1) }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Player 2 selector
+        PlayerSelectorRow(
+            playerNumber = 2,
+            playerName = player2Name,
+            playerColor = gameState.player2Color,
+            onTap = { onPlayerTap(2) }
+        )
 
         Spacer(modifier = Modifier.height(30.dp))
     }
