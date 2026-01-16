@@ -2,6 +2,7 @@ package com.manion.washers.phone
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,6 +51,7 @@ object SettingsRepository {
     }
 
     fun setNamespace(value: String) {
+        Log.d("SettingsRepository", "setNamespace called with: '$value'")
         _namespace.value = value
         prefs?.edit()?.putString(KEY_NAMESPACE, value)?.apply()
     }

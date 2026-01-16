@@ -78,9 +78,9 @@ const styles = `
   }
 
   .game-number-input {
-    width: 3rem;
-    padding: 0.25rem;
-    font-size: 0.75rem;
+    width: 4rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
     background: #333;
     border: 1px solid #444;
     border-radius: 0.25rem;
@@ -156,8 +156,20 @@ export function MirrorScreen() {
   const [game1Number, setGame1Number] = useState(1)
   const [game2Number, setGame2Number] = useState(2)
 
+  const handleGameNumberChange = (value: string, setter: (n: number) => void) => {
+    const num = parseInt(value, 10)
+    if (!isNaN(num) && num >= 1) {
+      console.log('Setting game number to:', num)
+      setter(num)
+    }
+  }
+
   const game1 = useGameState(settings.namespace, game1Number)
   const game2 = useGameState(settings.namespace, game2Number)
+
+  // Debug logging
+  console.log('Game 1 subscribing to:', settings.namespace, game1Number)
+  console.log('Game 2 subscribing to:', settings.namespace, game2Number)
 
   if (!hasNamespace) {
     return (
@@ -197,7 +209,7 @@ export function MirrorScreen() {
               type="number"
               className="game-number-input"
               value={game1Number}
-              onChange={(e) => setGame1Number(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => handleGameNumberChange(e.target.value, setGame1Number)}
               min="1"
             />
           </div>
@@ -216,7 +228,7 @@ export function MirrorScreen() {
               type="number"
               className="game-number-input"
               value={game2Number}
-              onChange={(e) => setGame2Number(Math.max(1, parseInt(e.target.value) || 1))}
+              onChange={(e) => handleGameNumberChange(e.target.value, setGame2Number)}
               min="1"
             />
           </div>
