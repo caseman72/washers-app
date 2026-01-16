@@ -256,7 +256,8 @@ export function BracketScreen() {
   // Game 2 is only needed if LB winner won Game 1
   const needsGame2 = finalsGame1?.winnerId && finalsGame1.winnerId === finalsGame1.player2Id
 
-  // Compute game numbers - skip BYEs and prioritize immediately-playable matches
+  // Compute game numbers - fixed at tournament creation, based on round and position
+  // Game numbers should NOT change as games complete
   const gameNumbers = useMemo(() => {
     if (!tournament) return new Map<string, number>()
     const numbers = new Map<string, number>()
@@ -264,18 +265,8 @@ export function BracketScreen() {
 
     // Helper: check if a match is a BYE (auto-advance, not a real game)
     const isByeMatch = (match: BracketNode) => {
-      return match.winnerId && (!match.player1Id || !match.player2Id || match.isByeMatch)
-    }
-
-    // Helper: check if match is immediately playable (both players known from BYEs)
-    const isImmediatelyPlayable = (match: BracketNode, bracket: BracketNode[]) => {
-      if (isByeMatch(match)) return false // BYEs aren't "playable"
-      if (match.player1Id && match.player2Id) return true // Both players already set
-
-      // Check if both feeder matches are BYEs (winners already known)
-      const feeders = bracket.filter(m => m.nextMatchId === match.id)
-      if (feeders.length === 0) return match.player1Id && match.player2Id
-      return feeders.every(f => isByeMatch(f))
+      // A match is a BYE if it has a winner but is missing a player
+      return (match.player1Id && !match.player2Id) || (!match.player1Id && match.player2Id) || match.isByeMatch
     }
 
     // Get all round numbers from both brackets
@@ -286,43 +277,35 @@ export function BracketScreen() {
       lbRoundNums.length > 0 ? lbRoundNums[lbRoundNums.length - 1] : 0
     )
 
-    // Number games by round, but within each round:
-    // 1. First number immediately-playable matches (both players from BYEs)
-    // 2. Then number matches that need to wait
+    // Number games by round in fixed order (WB then LB), skipping BYEs
     for (let round = 1; round <= maxRound; round++) {
       const wbMatches = winnersRounds.get(round) || []
       const lbMatches = losersRounds.get(round) || []
-      const allMatches = [...wbMatches, ...lbMatches]
 
-      // Separate into immediately playable vs waiting, skip BYEs
-      const immediate: BracketNode[] = []
-      const waiting: BracketNode[] = []
+      // WB matches first (sorted by position for consistency)
+      wbMatches
+        .filter((match: BracketNode) => !isByeMatch(match))
+        .sort((a: BracketNode, b: BracketNode) => a.position - b.position)
+        .forEach((match: BracketNode) => {
+          numbers.set(match.id, gameNum++)
+        })
 
-      allMatches.forEach((match: BracketNode) => {
-        if (isByeMatch(match)) return // Skip BYE matches
-        if (isImmediatelyPlayable(match, tournament.bracket)) {
-          immediate.push(match)
-        } else {
-          waiting.push(match)
-        }
-      })
+      // LB matches second (sorted by position for consistency)
+      lbMatches
+        .filter((match: BracketNode) => !isByeMatch(match))
+        .sort((a: BracketNode, b: BracketNode) => a.position - b.position)
+        .forEach((match: BracketNode) => {
+          numbers.set(match.id, gameNum++)
+        })
 
-      // Number immediate matches first, then waiting
-      immediate.forEach((match: BracketNode) => {
-        numbers.set(match.id, gameNum++)
-      })
-      waiting.forEach((match: BracketNode) => {
-        numbers.set(match.id, gameNum++)
-      })
-
-      // Grand Finals G1 comes after last LB round
-      if (round === maxRound && finalsGame1 && !isByeMatch(finalsGame1)) {
+      // Grand Finals G1 comes after last round
+      if (round === maxRound && finalsGame1) {
         numbers.set(finalsGame1.id, gameNum++)
       }
     }
 
-    // Grand Finals G2 is its own final round
-    if (finalsGame2 && !finalsGame2.winnerId) {
+    // Grand Finals G2 always gets a number (shown conditionally in UI)
+    if (finalsGame2) {
       numbers.set(finalsGame2.id, gameNum++)
     }
 
