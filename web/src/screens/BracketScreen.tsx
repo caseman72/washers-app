@@ -256,11 +256,27 @@ export function BracketScreen() {
   // Game 2 is only needed if LB winner won Game 1
   const needsGame2 = finalsGame1?.winnerId && finalsGame1.winnerId === finalsGame1.player2Id
 
-  // Compute game numbers for all matches - numbered by round (WB + LB together)
+  // Compute game numbers - skip BYEs and prioritize immediately-playable matches
   const gameNumbers = useMemo(() => {
     if (!tournament) return new Map<string, number>()
     const numbers = new Map<string, number>()
     let gameNum = 1
+
+    // Helper: check if a match is a BYE (auto-advance, not a real game)
+    const isByeMatch = (match: BracketNode) => {
+      return match.winnerId && (!match.player1Id || !match.player2Id || match.isByeMatch)
+    }
+
+    // Helper: check if match is immediately playable (both players known from BYEs)
+    const isImmediatelyPlayable = (match: BracketNode, bracket: BracketNode[]) => {
+      if (isByeMatch(match)) return false // BYEs aren't "playable"
+      if (match.player1Id && match.player2Id) return true // Both players already set
+
+      // Check if both feeder matches are BYEs (winners already known)
+      const feeders = bracket.filter(m => m.nextMatchId === match.id)
+      if (feeders.length === 0) return match.player1Id && match.player2Id
+      return feeders.every(f => isByeMatch(f))
+    }
 
     // Get all round numbers from both brackets
     const wbRoundNums = Array.from(winnersRounds.keys()).sort((a, b) => a - b)
@@ -270,28 +286,43 @@ export function BracketScreen() {
       lbRoundNums.length > 0 ? lbRoundNums[lbRoundNums.length - 1] : 0
     )
 
-    // Number games by round (WB round N, then LB round N)
+    // Number games by round, but within each round:
+    // 1. First number immediately-playable matches (both players from BYEs)
+    // 2. Then number matches that need to wait
     for (let round = 1; round <= maxRound; round++) {
-      // WB matches for this round
       const wbMatches = winnersRounds.get(round) || []
-      wbMatches.forEach((match: BracketNode) => {
-        numbers.set(match.id, gameNum++)
-      })
-
-      // LB matches for this round
       const lbMatches = losersRounds.get(round) || []
-      lbMatches.forEach((match: BracketNode) => {
+      const allMatches = [...wbMatches, ...lbMatches]
+
+      // Separate into immediately playable vs waiting, skip BYEs
+      const immediate: BracketNode[] = []
+      const waiting: BracketNode[] = []
+
+      allMatches.forEach((match: BracketNode) => {
+        if (isByeMatch(match)) return // Skip BYE matches
+        if (isImmediatelyPlayable(match, tournament.bracket)) {
+          immediate.push(match)
+        } else {
+          waiting.push(match)
+        }
+      })
+
+      // Number immediate matches first, then waiting
+      immediate.forEach((match: BracketNode) => {
+        numbers.set(match.id, gameNum++)
+      })
+      waiting.forEach((match: BracketNode) => {
         numbers.set(match.id, gameNum++)
       })
 
-      // Grand Finals G1 comes after last LB round (same "round" as LB finals)
-      if (round === maxRound && finalsGame1) {
+      // Grand Finals G1 comes after last LB round
+      if (round === maxRound && finalsGame1 && !isByeMatch(finalsGame1)) {
         numbers.set(finalsGame1.id, gameNum++)
       }
     }
 
     // Grand Finals G2 is its own final round
-    if (finalsGame2) {
+    if (finalsGame2 && !finalsGame2.winnerId) {
       numbers.set(finalsGame2.id, gameNum++)
     }
 
