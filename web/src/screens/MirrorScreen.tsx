@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { loadSettings } from './SettingsScreen'
 import { useGameState } from '../hooks/useGameState'
@@ -65,12 +66,31 @@ const styles = `
   }
 
   .game-number-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
     font-size: 0.75rem;
     color: #666;
-    text-align: center;
     padding: 0.25rem;
     background: #222;
     border-radius: 0.25rem 0.25rem 0 0;
+  }
+
+  .game-number-input {
+    width: 3rem;
+    padding: 0.25rem;
+    font-size: 0.75rem;
+    background: #333;
+    border: 1px solid #444;
+    border-radius: 0.25rem;
+    color: white;
+    text-align: center;
+  }
+
+  .game-number-input:focus {
+    outline: none;
+    border-color: #d35400;
   }
 
   .mirror-footer {
@@ -133,8 +153,11 @@ export function MirrorScreen() {
   const settings = loadSettings()
   const hasNamespace = settings.namespace.trim().length > 0
 
-  const game1 = useGameState(settings.namespace, settings.mirror1Game)
-  const game2 = useGameState(settings.namespace, settings.mirror2Game)
+  const [game1Number, setGame1Number] = useState(1)
+  const [game2Number, setGame2Number] = useState(2)
+
+  const game1 = useGameState(settings.namespace, game1Number)
+  const game2 = useGameState(settings.namespace, game2Number)
 
   if (!hasNamespace) {
     return (
@@ -168,22 +191,40 @@ export function MirrorScreen() {
 
       <div className="mirror-container">
         <div className="mirror-panel">
-          <div className="game-number-label">Game {settings.mirror1Game}</div>
+          <div className="game-number-label">
+            Game
+            <input
+              type="number"
+              className="game-number-input"
+              value={game1Number}
+              onChange={(e) => setGame1Number(Math.max(1, parseInt(e.target.value) || 1))}
+              min="1"
+            />
+          </div>
           <GameDisplay
             state={game1.state}
             loading={game1.loading}
             error={game1.error}
-            gameNumber={settings.mirror1Game}
+            gameNumber={game1Number}
           />
         </div>
 
         <div className="mirror-panel">
-          <div className="game-number-label">Game {settings.mirror2Game}</div>
+          <div className="game-number-label">
+            Game
+            <input
+              type="number"
+              className="game-number-input"
+              value={game2Number}
+              onChange={(e) => setGame2Number(Math.max(1, parseInt(e.target.value) || 1))}
+              min="1"
+            />
+          </div>
           <GameDisplay
             state={game2.state}
             loading={game2.loading}
             error={game2.error}
-            gameNumber={settings.mirror2Game}
+            gameNumber={game2Number}
           />
         </div>
       </div>
