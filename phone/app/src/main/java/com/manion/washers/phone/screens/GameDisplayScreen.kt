@@ -59,8 +59,10 @@ fun GameDisplayScreen(
     val namespace by SettingsRepository.namespace.collectAsState()
 
     // Read player names from Firebase when entering Mirror mode or when namespace changes
+    // Debounce to avoid firing on every keystroke
     LaunchedEffect(mode, namespace) {
         if (mode == AppMode.MIRROR && namespace.isNotBlank()) {
+            kotlinx.coroutines.delay(500) // Wait 500ms after typing stops
             FirebaseRepository.readAndSyncNames()
         }
     }
