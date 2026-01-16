@@ -403,7 +403,7 @@ interface ScoreboardProps {
   player2Name?: string
 }
 
-export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1, player1Name, player2Name }: ScoreboardProps) {
+export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1, player1Name: _player1Name, player2Name: _player2Name }: ScoreboardProps) {
   const [session, setSession] = useState<GameSession>({
     player1Score: 0,
     player2Score: 0,

@@ -15,12 +15,19 @@ import kotlinx.coroutines.flow.asStateFlow
 data class Player(
     val id: String,
     val name: String,
+    // Non-tournament game stats (game 0, 65-99)
     val wins: Int = 0,
     val losses: Int = 0,
-    val finalsWins: Int = 0,
-    val finalsLosses: Int = 0,
+    // Singles tournament match stats
+    val tournamentWins: Int = 0,
+    val tournamentLosses: Int = 0,
+    // Doubles tournament match stats
     val teamWins: Int = 0,
     val teamLosses: Int = 0,
+    // Singles tournament championship stats (grand finals)
+    val finalsWins: Int = 0,
+    val finalsLosses: Int = 0,
+    // Doubles tournament championship stats (grand finals)
     val teamFinalsWins: Int = 0,
     val teamFinalsLosses: Int = 0,
     val archived: Boolean = false
@@ -93,11 +100,12 @@ object FirebasePlayersRepository {
                     val name = childSnapshot.child("name").getValue(String::class.java) ?: continue
                     val wins = childSnapshot.child("wins").getValue(Int::class.java) ?: 0
                     val losses = childSnapshot.child("losses").getValue(Int::class.java) ?: 0
-                    val finalsWins = childSnapshot.child("finalsWins").getValue(Int::class.java)
-                        ?: childSnapshot.child("tournamentWins").getValue(Int::class.java) ?: 0
-                    val finalsLosses = childSnapshot.child("finalsLosses").getValue(Int::class.java) ?: 0
+                    val tournamentWins = childSnapshot.child("tournamentWins").getValue(Int::class.java) ?: 0
+                    val tournamentLosses = childSnapshot.child("tournamentLosses").getValue(Int::class.java) ?: 0
                     val teamWins = childSnapshot.child("teamWins").getValue(Int::class.java) ?: 0
                     val teamLosses = childSnapshot.child("teamLosses").getValue(Int::class.java) ?: 0
+                    val finalsWins = childSnapshot.child("finalsWins").getValue(Int::class.java) ?: 0
+                    val finalsLosses = childSnapshot.child("finalsLosses").getValue(Int::class.java) ?: 0
                     val teamFinalsWins = childSnapshot.child("teamFinalsWins").getValue(Int::class.java)
                         ?: childSnapshot.child("teamTournamentWins").getValue(Int::class.java) ?: 0
                     val teamFinalsLosses = childSnapshot.child("teamFinalsLosses").getValue(Int::class.java) ?: 0
@@ -109,10 +117,12 @@ object FirebasePlayersRepository {
                             name = name,
                             wins = wins,
                             losses = losses,
-                            finalsWins = finalsWins,
-                            finalsLosses = finalsLosses,
+                            tournamentWins = tournamentWins,
+                            tournamentLosses = tournamentLosses,
                             teamWins = teamWins,
                             teamLosses = teamLosses,
+                            finalsWins = finalsWins,
+                            finalsLosses = finalsLosses,
                             teamFinalsWins = teamFinalsWins,
                             teamFinalsLosses = teamFinalsLosses,
                             archived = archived
@@ -174,10 +184,12 @@ object FirebasePlayersRepository {
             "archived" to false,
             "wins" to 0,
             "losses" to 0,
-            "finalsWins" to 0,
-            "finalsLosses" to 0,
+            "tournamentWins" to 0,
+            "tournamentLosses" to 0,
             "teamWins" to 0,
             "teamLosses" to 0,
+            "finalsWins" to 0,
+            "finalsLosses" to 0,
             "teamFinalsWins" to 0,
             "teamFinalsLosses" to 0
         )

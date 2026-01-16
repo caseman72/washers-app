@@ -207,3 +207,40 @@ export async function deleteTournament(namespace: string, tournamentId: string):
   await remove(tournamentRef)
   console.log(`Deleted tournament ${tournamentId}`)
 }
+
+// Check if there's an active tournament for a namespace
+export async function checkActiveTournament(namespace: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const sanitized = sanitizeEmail(namespace)
+    const path = `tournaments/${sanitized}`
+    const tournamentsRef = ref(database, path)
+
+    onValue(
+      tournamentsRef,
+      (snapshot) => {
+        const data = snapshot.val()
+        off(tournamentsRef)
+
+        if (!data) {
+          resolve(false)
+          return
+        }
+
+        // Check each tournament for an active one
+        const hasActive = Object.values(data).some((tournament: any) => {
+          const archived = tournament.archived || false
+          const status = tournament.status || ''
+          return !archived && (status === 'active' || status === 'setup')
+        })
+
+        resolve(hasActive)
+      },
+      (error) => {
+        console.error(`Error checking tournaments: ${error}`)
+        off(tournamentsRef)
+        resolve(false)
+      },
+      { onlyOnce: true }
+    )
+  })
+}

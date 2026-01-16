@@ -4,6 +4,7 @@ import { Scoreboard } from '../components/Scoreboard'
 import { loadSettings, updateGameNumber } from './SettingsScreen'
 import { writeGameState } from '../lib/firebase'
 import { subscribeToPlayers } from '../lib/firebase-players'
+import { checkActiveTournament } from '../lib/firebase-tournaments'
 import type { GameSession, Player } from '../types'
 
 const styles = `
@@ -253,17 +254,85 @@ const styles = `
     background: #444;
     color: white;
   }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .modal {
+    background: #222;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    text-align: center;
+    max-width: 320px;
+    margin: 1rem;
+  }
+
+  .modal-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #d35400;
+    margin-bottom: 1rem;
+  }
+
+  .modal-message {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+
+  .modal-btn.dismiss {
+    background: #444;
+    color: #999;
+  }
+
+  .modal-btn.dismiss:hover {
+    background: #555;
+    color: white;
+  }
+
+  .modal-btn.fix {
+    background: #d35400;
+    color: white;
+  }
+
+  .modal-btn.fix:hover {
+    background: #e55d00;
+  }
 `
 
 export function KeepScoreScreen() {
   const navigate = useNavigate()
   const settings = loadSettings()
   const [gameNumber, setGameNumber] = useState(settings.gameNumber)
+  const [gameNumberInput, setGameNumberInput] = useState(settings.gameNumber.toString())
   const [format, setFormat] = useState(1)
   const [player1Name, setPlayer1Name] = useState('')
   const [player2Name, setPlayer2Name] = useState('')
   const [players, setPlayers] = useState<Player[]>([])
   const [showPlayerPicker, setShowPlayerPicker] = useState<1 | 2 | null>(null)
+  const [showTournamentWarning, setShowTournamentWarning] = useState(false)
 
   const baseNamespace = settings.namespace
   const hasNamespace = baseNamespace.trim().length > 0
@@ -303,7 +372,7 @@ export function KeepScoreScreen() {
       player2Rounds: 0,
     }
 
-    writeGameState(baseNamespace, gameNumber, {
+    const gameState: Record<string, unknown> = {
       player1Score: session.player1Score,
       player2Score: session.player2Score,
       player1Games: session.player1Games,
@@ -312,10 +381,13 @@ export function KeepScoreScreen() {
       player2Rounds: session.player2Rounds,
       player1Color: lastColors.p1,
       player2Color: lastColors.p2,
-      player1Name: player1Name || undefined,
-      player2Name: player2Name || undefined,
       format,
-    }).catch(err => console.error('Failed to write game state:', err))
+    }
+    // Only include names if they have a value (Firebase rejects undefined)
+    if (player1Name) gameState.player1Name = player1Name
+    if (player2Name) gameState.player2Name = player2Name
+
+    writeGameState(baseNamespace, gameNumber, gameState).catch(err => console.error('Failed to write game state:', err))
   }, [lastSession, lastColors, gameNumber, baseNamespace, hasNamespace, player1Name, player2Name, format])
 
   const handleStateChange = useCallback((session: GameSession, colors: { p1: string; p2: string }) => {
@@ -324,12 +396,35 @@ export function KeepScoreScreen() {
   }, [])
 
   const handleGameNumberChange = (value: string) => {
-    const num = parseInt(value, 10)
+    // Only update input display while typing - actual gameNumber updates on blur
+    setGameNumberInput(value)
+  }
+
+  const handleGameNumberBlur = useCallback(async () => {
+    // Parse and clamp the value on blur (0-99 valid)
+    const num = parseInt(gameNumberInput, 10)
+    let finalNumber: number
     if (!isNaN(num)) {
-      setGameNumber(Math.max(0, Math.min(64, num)))
-    } else if (value === '') {
-      setGameNumber(0)
+      finalNumber = Math.max(0, Math.min(99, num))
+    } else {
+      finalNumber = 0
     }
+    setGameNumber(finalNumber)
+    setGameNumberInput(finalNumber.toString())
+
+    // Check tournament only for games 1-64 (tournament reserved range)
+    if (finalNumber >= 1 && finalNumber <= 64 && baseNamespace) {
+      const hasActive = await checkActiveTournament(baseNamespace)
+      if (!hasActive) {
+        setShowTournamentWarning(true)
+      }
+    }
+  }, [gameNumberInput, baseNamespace])
+
+  const handleFixTournament = () => {
+    setGameNumber(0)
+    setGameNumberInput('0')
+    setShowTournamentWarning(false)
   }
 
   const cycleFormat = () => {
@@ -359,12 +454,13 @@ export function KeepScoreScreen() {
             <div className="game-number-field">
               <div className="game-number-label">Game #</div>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 className="game-number-input"
-                value={gameNumber}
+                value={gameNumberInput}
                 onChange={(e) => handleGameNumberChange(e.target.value)}
-                min={0}
-                max={64}
+                onBlur={handleGameNumberBlur}
               />
             </div>
 
@@ -379,6 +475,26 @@ export function KeepScoreScreen() {
             Back to Menu
           </button>
         </div>
+
+        {/* Tournament warning modal */}
+        {showTournamentWarning && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <div className="modal-title">No Active Tournament</div>
+              <div className="modal-message">
+                Games 1-64 are reserved for tournaments. There is no active tournament for this namespace.
+              </div>
+              <div className="modal-buttons">
+                <button className="modal-btn dismiss" onClick={() => setShowTournamentWarning(false)}>
+                  Dismiss
+                </button>
+                <button className="modal-btn fix" onClick={handleFixTournament}>
+                  Fix It
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <style>{styles}</style>
       </div>
@@ -416,12 +532,13 @@ export function KeepScoreScreen() {
           <div className="game-number-field">
             <div className="game-number-label">Game #</div>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               className="game-number-input"
-              value={gameNumber}
+              value={gameNumberInput}
               onChange={(e) => handleGameNumberChange(e.target.value)}
-              min={0}
-              max={64}
+              onBlur={handleGameNumberBlur}
             />
           </div>
 
@@ -478,6 +595,26 @@ export function KeepScoreScreen() {
           </div>
           <div className="player-picker-cancel">
             <button onClick={() => setShowPlayerPicker(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Tournament warning modal */}
+      {showTournamentWarning && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-title">No Active Tournament</div>
+            <div className="modal-message">
+              Games 1-64 are reserved for tournaments. There is no active tournament for this namespace.
+            </div>
+            <div className="modal-buttons">
+              <button className="modal-btn dismiss" onClick={() => setShowTournamentWarning(false)}>
+                Dismiss
+              </button>
+              <button className="modal-btn fix" onClick={handleFixTournament}>
+                Fix It
+              </button>
+            </div>
           </div>
         </div>
       )}

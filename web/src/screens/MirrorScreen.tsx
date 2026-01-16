@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { loadSettings, updateGameNumber } from './SettingsScreen'
 import { useGameState } from '../hooks/useGameState'
 import { GameDisplay } from '../components/GameDisplay'
+import { checkActiveTournament } from '../lib/firebase-tournaments'
 
 const styles = `
   .mirror-screen {
@@ -115,6 +116,72 @@ const styles = `
   .back-btn:hover {
     background: #616161;
   }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .modal {
+    background: #222;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    text-align: center;
+    max-width: 320px;
+    margin: 1rem;
+  }
+
+  .modal-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #d35400;
+    margin-bottom: 1rem;
+  }
+
+  .modal-message {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+
+  .modal-btn.dismiss {
+    background: #444;
+    color: #999;
+  }
+
+  .modal-btn.dismiss:hover {
+    background: #555;
+    color: white;
+  }
+
+  .modal-btn.fix {
+    background: #d35400;
+    color: white;
+  }
+
+  .modal-btn.fix:hover {
+    background: #e55d00;
+  }
 `
 
 export function MirrorScreen() {
@@ -122,8 +189,13 @@ export function MirrorScreen() {
   const settings = loadSettings()
 
   const [gameNumber, setGameNumber] = useState(settings.gameNumber)
-  const [format, setFormat] = useState(1)
+  const [gameNumberInput, setGameNumberInput] = useState(settings.gameNumber.toString())
+  const [showTournamentWarning, setShowTournamentWarning] = useState(false)
   const baseNamespace = settings.namespace
+
+  const game = useGameState(baseNamespace, gameNumber)
+  // Get format from Firebase data (read-only display)
+  const firebaseFormat = game.state?.format || 1
 
   // Save gameNumber to settings when it changes (debounced)
   useEffect(() => {
@@ -135,25 +207,39 @@ export function MirrorScreen() {
     return () => clearTimeout(timer)
   }, [gameNumber, settings.gameNumber])
 
-  const game = useGameState(baseNamespace, gameNumber)
-
   const hasData = game.state !== null
   const isConnected = hasData && !game.loading
 
   const handleGameNumberChange = (value: string) => {
-    const num = parseInt(value, 10)
-    if (!isNaN(num)) {
-      setGameNumber(Math.max(0, Math.min(64, num)))
-    } else if (value === '') {
-      setGameNumber(0)
-    }
+    // Only update input display while typing - actual gameNumber updates on blur
+    setGameNumberInput(value)
   }
 
-  const cycleFormat = () => {
-    const formats = [1, 3, 5, 7]
-    const currentIndex = formats.indexOf(format)
-    const nextIndex = (currentIndex + 1) % formats.length
-    setFormat(formats[nextIndex])
+  const handleGameNumberBlur = useCallback(async () => {
+    // Parse and clamp the value on blur (0-99 valid)
+    const num = parseInt(gameNumberInput, 10)
+    let finalNumber: number
+    if (!isNaN(num)) {
+      finalNumber = Math.max(0, Math.min(99, num))
+    } else {
+      finalNumber = 0
+    }
+    setGameNumber(finalNumber)
+    setGameNumberInput(finalNumber.toString())
+
+    // Check tournament only for games 1-64 (tournament reserved range)
+    if (finalNumber >= 1 && finalNumber <= 64 && baseNamespace) {
+      const hasActive = await checkActiveTournament(baseNamespace)
+      if (!hasActive) {
+        setShowTournamentWarning(true)
+      }
+    }
+  }, [gameNumberInput, baseNamespace])
+
+  const handleFixTournament = () => {
+    setGameNumber(0)
+    setGameNumberInput('0')
+    setShowTournamentWarning(false)
   }
 
   return (
@@ -180,26 +266,47 @@ export function MirrorScreen() {
           <div className="game-number-field">
             <div className="game-number-label">Game #</div>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               className="game-number-input"
-              value={gameNumber}
+              value={gameNumberInput}
               onChange={(e) => handleGameNumberChange(e.target.value)}
-              min={0}
-              max={64}
+              onBlur={handleGameNumberBlur}
             />
           </div>
 
           <div className="spacer" />
 
-          <button className="format-btn" onClick={cycleFormat}>
-            Bo{format}
-          </button>
+          <div className="format-btn" style={{ cursor: 'default' }}>
+            Bo{firebaseFormat}
+          </div>
         </div>
 
         <button className="back-btn" onClick={() => navigate('/')}>
           Back to Menu
         </button>
       </div>
+
+      {/* Tournament warning modal */}
+      {showTournamentWarning && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-title">No Active Tournament</div>
+            <div className="modal-message">
+              Games 1-64 are reserved for tournaments. There is no active tournament for this namespace.
+            </div>
+            <div className="modal-buttons">
+              <button className="modal-btn dismiss" onClick={() => setShowTournamentWarning(false)}>
+                Dismiss
+              </button>
+              <button className="modal-btn fix" onClick={handleFixTournament}>
+                Fix It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{styles}</style>
     </div>

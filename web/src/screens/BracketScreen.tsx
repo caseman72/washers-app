@@ -213,7 +213,7 @@ export function BracketScreen() {
   const { id } = useParams()
   const settings = loadSettings()
   const namespace = settings.namespace
-  const { players: playerList, recordGameResult, undoGameResult, recordTournamentWin, recordTeamGameResult, undoTeamGameResult, recordTeamTournamentWin } = usePlayers(namespace)
+  const { players: playerList, recordTournamentGameResult, undoTournamentGameResult, recordFinalsWin, recordFinalsLoss, undoFinalsWin, undoFinalsLoss, recordTeamGameResult, undoTeamGameResult, recordTeamFinalsWin, recordTeamFinalsLoss, undoTeamFinalsWin, undoTeamFinalsLoss } = usePlayers(namespace)
   const { tournament, loading, updateTournament, archiveTournament, deleteTournament } = useTournament(namespace, id)
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
 
@@ -381,7 +381,7 @@ export function BracketScreen() {
             await undoTeamGameResult(oldWinnerPlayerIds, oldLoserPlayerIds)
           }
         } else {
-          await undoGameResult(previousWinnerId, previousLoserId)
+          await undoTournamentGameResult(previousWinnerId, previousLoserId)
         }
       } catch (err) {
         console.error('Failed to undo game result:', err)
@@ -397,7 +397,7 @@ export function BracketScreen() {
           await recordTeamGameResult(winnerPlayerIds, loserPlayerIds)
         }
       } else {
-        await recordGameResult(winnerId, loserId)
+        await recordTournamentGameResult(winnerId, loserId)
       }
     } catch (err) {
       console.error('Failed to record game result:', err)
@@ -417,20 +417,52 @@ export function BracketScreen() {
     }
     setActiveMatchId(null)
 
-    // Check if tournament just completed
-    if (updated.winnerId && !tournament.winnerId) {
-      try {
-        if (isDoubles) {
-          // For teams, get player IDs and record team tournament win
-          const winnerPlayerIds = getTeamPlayerIds(updated.winnerId)
-          if (winnerPlayerIds.length > 0) {
-            await recordTeamTournamentWin(winnerPlayerIds)
+    // Handle finals stats when tournament completes or champion changes
+    if (updated.winnerId) {
+      const previousTournamentWinnerId = tournament.winnerId
+
+      // Undo previous finals if changing the champion
+      if (previousTournamentWinnerId && previousTournamentWinnerId !== updated.winnerId) {
+        try {
+          // Find the old runner-up (the loser of the finals match before this change)
+          const previousLoserId = match.player1Id === previousTournamentWinnerId ? match.player2Id : match.player1Id
+          if (isDoubles) {
+            const oldWinnerPlayerIds = getTeamPlayerIds(previousTournamentWinnerId)
+            const oldLoserPlayerIds = getTeamPlayerIds(previousLoserId)
+            if (oldWinnerPlayerIds.length > 0) {
+              await undoTeamFinalsWin(oldWinnerPlayerIds)
+            }
+            if (oldLoserPlayerIds.length > 0) {
+              await undoTeamFinalsLoss(oldLoserPlayerIds)
+            }
+          } else {
+            await undoFinalsWin(previousTournamentWinnerId)
+            await undoFinalsLoss(previousLoserId)
           }
-        } else {
-          await recordTournamentWin(updated.winnerId)
+        } catch (err) {
+          console.error('Failed to undo finals result:', err)
         }
-      } catch (err) {
-        console.error('Failed to record tournament win:', err)
+      }
+
+      // Record new finals (first completion or changed champion)
+      if (!previousTournamentWinnerId || previousTournamentWinnerId !== updated.winnerId) {
+        try {
+          if (isDoubles) {
+            const winnerPlayerIds = getTeamPlayerIds(updated.winnerId)
+            const loserPlayerIds = getTeamPlayerIds(loserId)
+            if (winnerPlayerIds.length > 0) {
+              await recordTeamFinalsWin(winnerPlayerIds)
+            }
+            if (loserPlayerIds.length > 0) {
+              await recordTeamFinalsLoss(loserPlayerIds)
+            }
+          } else {
+            await recordFinalsWin(updated.winnerId)
+            await recordFinalsLoss(loserId)
+          }
+        } catch (err) {
+          console.error('Failed to record finals result:', err)
+        }
       }
     }
   }

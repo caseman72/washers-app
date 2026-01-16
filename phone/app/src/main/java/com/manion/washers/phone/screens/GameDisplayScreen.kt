@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
@@ -105,17 +106,7 @@ fun GameDisplayScreen(
     }
     val activePlayers = players.filter { !it.archived }
 
-    // Check for active tournament when namespace changes to a tournament game (1-64)
-    LaunchedEffect(fullNamespace) {
-        if (mode == AppMode.MIRROR && SettingsRepository.isTournamentGame()) {
-            kotlinx.coroutines.delay(600) // Wait after debounce for name sync
-            FirebaseRepository.checkActiveTournament { hasActive ->
-                if (!hasActive) {
-                    showTournamentWarning = true
-                }
-            }
-        }
-    }
+    // Tournament check now happens on game number field blur (see below)
 
     // Use watch state for Mirror, local state for Keep Score
     val displayState = when (mode) {
@@ -223,6 +214,16 @@ fun GameDisplayScreen(
                     val format by SettingsRepository.format.collectAsState()
                     val isTournament = SettingsRepository.isTournamentGame()
 
+                    // Separate input state - only commit to gameNumber on blur
+                    var gameNumberInput by remember { mutableStateOf(gameNumber.toString()) }
+
+                    // Sync input when gameNumber changes externally (e.g., Fix It button)
+                    LaunchedEffect(gameNumber) {
+                        if (gameNumberInput != gameNumber.toString()) {
+                            gameNumberInput = gameNumber.toString()
+                        }
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -230,15 +231,53 @@ fun GameDisplayScreen(
                     ) {
                         // Game number field
                         OutlinedTextField(
-                            value = gameNumber.toString(),
+                            value = gameNumberInput,
                             onValueChange = { value ->
-                                val num = value.filter { it.isDigit() }.toIntOrNull() ?: 0
-                                SettingsRepository.setGameNumber(num.coerceIn(0, 64))
+                                // Only update input display while typing
+                                gameNumberInput = value.filter { it.isDigit() }
                             },
                             label = { Text("Game #") },
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.width(100.dp),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                            ),
+                            keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                                onDone = {
+                                    // Commit on Done key
+                                    val num = gameNumberInput.toIntOrNull() ?: 0
+                                    val finalNumber = num.coerceIn(0, 99)
+                                    SettingsRepository.setGameNumber(finalNumber)
+                                    gameNumberInput = finalNumber.toString()
+                                    // Check tournament
+                                    if (finalNumber in 1..64 && baseNamespace.isNotBlank()) {
+                                        FirebaseRepository.checkActiveTournament { hasActive ->
+                                            if (!hasActive) {
+                                                showTournamentWarning = true
+                                            }
+                                        }
+                                    }
+                                }
+                            ),
+                            modifier = Modifier
+                                .width(100.dp)
+                                .onFocusChanged { focusState ->
+                                    if (!focusState.isFocused) {
+                                        // Commit on blur
+                                        val num = gameNumberInput.toIntOrNull() ?: 0
+                                        val finalNumber = num.coerceIn(0, 99)
+                                        SettingsRepository.setGameNumber(finalNumber)
+                                        gameNumberInput = finalNumber.toString()
+                                        // Check tournament
+                                        if (finalNumber in 1..64 && baseNamespace.isNotBlank()) {
+                                            FirebaseRepository.checkActiveTournament { hasActive ->
+                                                if (!hasActive) {
+                                                    showTournamentWarning = true
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = WatchColors.Primary,
                                 unfocusedBorderColor = WatchColors.Surface,

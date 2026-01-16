@@ -26,7 +26,7 @@ object SettingsRepository {
     private val _baseNamespace = MutableStateFlow("")
     val baseNamespace: StateFlow<String> = _baseNamespace.asStateFlow()
 
-    // Game number (0 = regular play, 1-64 = tournament)
+    // Game number (0 and 65+ = regular play, 1-64 = tournament)
     private val _gameNumber = MutableStateFlow(0)
     val gameNumber: StateFlow<Int> = _gameNumber.asStateFlow()
 

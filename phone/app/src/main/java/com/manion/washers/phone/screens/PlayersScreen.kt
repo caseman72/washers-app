@@ -264,12 +264,16 @@ private fun PlayerCard(
             ) {
                 StatText(label = "W:", value = player.wins, isWin = true)
                 StatText(label = "L:", value = player.losses, isWin = false)
-                if (player.finalsWins > 0 || player.finalsLosses > 0) {
-                    Text(
-                        text = "Finals: ${player.finalsWins}/${player.finalsLosses}",
-                        color = WatchColors.OnSurfaceDisabled,
-                        fontSize = 12.sp
-                    )
+                if (player.tournamentWins > 0 || player.tournamentLosses > 0) {
+                    StatPair(label = "1v1:", wins = player.tournamentWins, losses = player.tournamentLosses)
+                }
+                if (player.teamWins > 0 || player.teamLosses > 0) {
+                    StatPair(label = "2v2:", wins = player.teamWins, losses = player.teamLosses)
+                }
+                val totalChampWins = player.finalsWins + player.teamFinalsWins
+                val totalChampLosses = player.finalsLosses + player.teamFinalsLosses
+                if (totalChampWins > 0 || totalChampLosses > 0) {
+                    StatPair(label = "Champ:", wins = totalChampWins, losses = totalChampLosses)
                 }
             }
         }
@@ -301,6 +305,32 @@ private fun StatText(label: String, value: Int, isWin: Boolean) {
         Text(
             text = "$value",
             color = if (isWin) Color(0xFF27AE60) else Color(0xFFC0392B),
+            fontSize = 12.sp
+        )
+    }
+}
+
+@Composable
+private fun StatPair(label: String, wins: Int, losses: Int) {
+    Row {
+        Text(
+            text = label,
+            color = WatchColors.OnSurfaceDisabled,
+            fontSize = 12.sp
+        )
+        Text(
+            text = "$wins",
+            color = Color(0xFF27AE60),
+            fontSize = 12.sp
+        )
+        Text(
+            text = "/",
+            color = WatchColors.OnSurfaceDisabled,
+            fontSize = 12.sp
+        )
+        Text(
+            text = "$losses",
+            color = Color(0xFFC0392B),
             fontSize = 12.sp
         )
     }

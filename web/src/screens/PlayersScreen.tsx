@@ -387,20 +387,28 @@ export function PlayersScreen() {
                       <span className="stat-label">L:</span>
                       <span className="stat-value losses">{player.losses}</span>
                     </span>
-                    {(player.finalsWins > 0 || player.finalsLosses > 0) && (
+                    {(player.tournamentWins > 0 || player.tournamentLosses > 0) && (
                       <span className="stat-item">
-                        <span className="stat-label">Finals:</span>
-                        <span className="stat-value wins">{player.finalsWins}</span>
+                        <span className="stat-label">1v1:</span>
+                        <span className="stat-value wins">{player.tournamentWins}</span>
                         <span className="stat-value">/</span>
-                        <span className="stat-value losses">{player.finalsLosses}</span>
+                        <span className="stat-value losses">{player.tournamentLosses}</span>
                       </span>
                     )}
                     {(player.teamWins > 0 || player.teamLosses > 0) && (
                       <span className="stat-item">
-                        <span className="stat-label">Team:</span>
+                        <span className="stat-label">2v2:</span>
                         <span className="stat-value wins">{player.teamWins}</span>
                         <span className="stat-value">/</span>
                         <span className="stat-value losses">{player.teamLosses}</span>
+                      </span>
+                    )}
+                    {(player.finalsWins + player.teamFinalsWins > 0 || player.finalsLosses + player.teamFinalsLosses > 0) && (
+                      <span className="stat-item">
+                        <span className="stat-label">Champ:</span>
+                        <span className="stat-value wins">{player.finalsWins + player.teamFinalsWins}</span>
+                        <span className="stat-value">/</span>
+                        <span className="stat-value losses">{player.finalsLosses + player.teamFinalsLosses}</span>
                       </span>
                     )}
                   </div>

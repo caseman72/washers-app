@@ -131,7 +131,7 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 - [x] Player management (Firebase sync)
 - [x] Bracket creation
 - [x] Tournament play (Firebase sync)
-- [x] Player stats (wins, losses, tournament wins)
+- [x] Player stats (wins/losses, tournament match stats, championship stats)
 
 ### Phase 3: Future
 - [ ] Live game tiles view (all 8 games at once)
@@ -140,40 +140,36 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 
 ## Current Task
 
-**🚧 January 2026 Update - Player ID Refactor & UI Improvements**
+**✅ January 2026 Update - Complete**
 
-### Key Concepts
-- **Game number convention**: Games 1-64 = tournament (format=1 locked), Game 0 or >65 = regular play
-- **Format inference**: `format > 1` automatically means show rounds (x.y), `format = 1` means games only
-- **Player IDs**: Games table uses `player1Id`/`player2Id` instead of names; names resolved from players DB
+All January 2026 tasks completed. Ready for next feature.
 
-### Watch App
-- [x] Infer showRounds from `format > 1` (removed separate showRounds setting)
+### Completed This Session: Player Stats Restructure
 
-### Web App
-- [x] Mirror/Keep Score: increase size to 475x475 (from 400x400)
-- [x] Infer rounds display from `format > 1`
-- [x] If format=1, show player names where games counter was
-- [x] Games structure: add `player1Id`/`player2Id` (kept names for display)
-- [x] Player stats: add `finalsWins`/`finalsLosses`, `teamFinalsWins`/`teamFinalsLosses`
-- [x] Players screen: show stats on large screens, hide on mobile
-- [x] Tournament screen: vertical tile list on mobile
+Restructured player stats to properly separate tournament match stats from championship stats:
 
-### Phone App
-- [x] Tournament detection (games 1-64 = tournament mode)
-- [x] Players page (mimic web - add/delete players)
-- [x] Mirror page: scrolling player picker instead of text input
-- [x] Format selector next to namespace (locked for games 1-64)
-- [x] Settings page: simplify to just namespace field
-- [x] Keep Score: format selector, if format=1 show players instead of games
-- [x] Top half minimum 475px or screen width
+| Field | Description |
+|-------|-------------|
+| `wins` / `losses` | Non-tournament games (game 0, 65-99) |
+| `tournamentWins` / `tournamentLosses` | Singles tournament match stats |
+| `teamWins` / `teamLosses` | Doubles tournament match stats |
+| `finalsWins` / `finalsLosses` | Singles championship (grand finals) |
+| `teamFinalsWins` / `teamFinalsLosses` | Doubles championship (grand finals) |
 
-### Breadcrumbs
-*(Current progress - update before context compaction)*
+**Stats Display** (both Web and Phone):
+- **W/L** = non-tournament wins/losses
+- **1v1** = singles tournament match wins/losses
+- **2v2** = doubles tournament match wins/losses
+- **Champ** = combined championship wins/losses
 
-**Status**: ✅ ALL January 2026 Update tasks complete!
-**Next**: Clean up breadcrumbs, final commit
-**Files modified this session**: See commit history
+**Files Modified**:
+- `web/src/types/index.ts` - Player interface
+- `web/src/lib/firebase-players.ts` - Firebase functions for all stats
+- `web/src/hooks/usePlayers.ts` - Hook with record/undo functions
+- `web/src/screens/BracketScreen.tsx` - Uses correct stat functions
+- `web/src/screens/PlayersScreen.tsx` - Updated stats display
+- `phone/.../FirebasePlayersRepository.kt` - Player data class + Firebase
+- `phone/.../screens/PlayersScreen.kt` - Updated stats display
 
 ---
 
@@ -229,8 +225,8 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 - [x] Win/bust logic
 - [x] Firebase realtime sync (anonymous auth)
 - [x] Player management (add/delete players, Firebase realtime sync)
-- [x] Player stats (wins, losses, tournament wins - auto-tracked)
-- [x] Team stats (teamWins, teamLosses, teamTournamentWins - auto-tracked)
+- [x] Player stats (wins/losses, tournamentWins/Losses, finalsWins/Losses - auto-tracked)
+- [x] Team stats (teamWins/Losses, teamFinalsWins/Losses - auto-tracked)
 - [x] Tournament setup (name, player selection, single/double elimination)
 - [x] Singles/Teams mode (random team pairing for doubles)
 - [x] Bracket generation (single & double elimination, BYE handling)
@@ -300,8 +296,13 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 
 **Tournament Features**:
 - Player management (add/delete, Firebase realtime sync)
-- Player stats tracking (wins, losses, tournament wins)
-- Team stats tracking (teamWins, teamLosses, teamTournamentWins)
+- Player stats tracking:
+  - `wins/losses` - non-tournament games
+  - `tournamentWins/Losses` - singles tournament matches
+  - `finalsWins/Losses` - singles championships
+- Team stats tracking:
+  - `teamWins/Losses` - doubles tournament matches
+  - `teamFinalsWins/Losses` - doubles championships
 - Tournament setup (2-16 players, single/double elimination)
 - Singles or Teams mode (random pairing for doubles)
 - Bracket generation with smart BYE handling

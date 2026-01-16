@@ -7,20 +7,22 @@ export interface FirebasePlayer {
   name: string
   createdAt: number
   archived: boolean
-  // Per-game stats (any game)
+  // Non-tournament game stats (game 0, 65-99)
   wins: number
   losses: number
-  // Tournament champion stats (won the whole tournament)
-  finalsWins: number
-  finalsLosses: number
-  // Team per-game stats
+  // Singles tournament match stats
+  tournamentWins: number
+  tournamentLosses: number
+  // Doubles tournament match stats
   teamWins: number
   teamLosses: number
-  // Team tournament champion stats
+  // Singles tournament championship stats (grand finals)
+  finalsWins: number
+  finalsLosses: number
+  // Doubles tournament championship stats (grand finals)
   teamFinalsWins: number
   teamFinalsLosses: number
   // Legacy fields (kept for backwards compatibility)
-  tournamentWins?: number
   teamTournamentWins?: number
 }
 
@@ -56,11 +58,12 @@ export function subscribeToPlayers(
           archived: p.archived || false,
           wins: p.wins || 0,
           losses: p.losses || 0,
-          // Use new fields, fall back to legacy fields for backwards compat
-          finalsWins: p.finalsWins ?? p.tournamentWins ?? 0,
-          finalsLosses: p.finalsLosses || 0,
+          tournamentWins: p.tournamentWins || 0,
+          tournamentLosses: p.tournamentLosses || 0,
           teamWins: p.teamWins || 0,
           teamLosses: p.teamLosses || 0,
+          finalsWins: p.finalsWins || 0,
+          finalsLosses: p.finalsLosses || 0,
           teamFinalsWins: p.teamFinalsWins ?? p.teamTournamentWins ?? 0,
           teamFinalsLosses: p.teamFinalsLosses || 0,
         }
@@ -98,10 +101,12 @@ export async function addPlayer(namespace: string, name: string): Promise<string
     archived: false,
     wins: 0,
     losses: 0,
-    finalsWins: 0,
-    finalsLosses: 0,
+    tournamentWins: 0,
+    tournamentLosses: 0,
     teamWins: 0,
     teamLosses: 0,
+    finalsWins: 0,
+    finalsLosses: 0,
     teamFinalsWins: 0,
     teamFinalsLosses: 0,
   }
@@ -136,7 +141,7 @@ export async function archivePlayer(namespace: string, playerId: string): Promis
   console.log(`Archived player ${playerId}`)
 }
 
-// Record a game win for a player
+// Record a non-tournament game win (game 0, 65-99)
 export async function recordWin(namespace: string, playerId: string): Promise<void> {
   await ensureAuth()
 
@@ -150,7 +155,7 @@ export async function recordWin(namespace: string, playerId: string): Promise<vo
   console.log(`Recorded win for player ${playerId}`)
 }
 
-// Record a game loss for a player
+// Record a non-tournament game loss (game 0, 65-99)
 export async function recordLoss(namespace: string, playerId: string): Promise<void> {
   await ensureAuth()
 
@@ -162,6 +167,34 @@ export async function recordLoss(namespace: string, playerId: string): Promise<v
     losses: increment(1)
   })
   console.log(`Recorded loss for player ${playerId}`)
+}
+
+// Record a singles tournament match win
+export async function recordTournamentWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    tournamentWins: increment(1)
+  })
+  console.log(`Recorded tournament win for player ${playerId}`)
+}
+
+// Record a singles tournament match loss
+export async function recordTournamentLoss(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    tournamentLosses: increment(1)
+  })
+  console.log(`Recorded tournament loss for player ${playerId}`)
 }
 
 // Record a finals win for a player (tournament champion)
@@ -192,10 +225,35 @@ export async function recordFinalsLoss(namespace: string, playerId: string): Pro
   console.log(`Recorded finals loss for player ${playerId}`)
 }
 
-// Legacy alias for backwards compatibility
-export const recordTournamentWin = recordFinalsWin
+// Undo a finals win for a player
+export async function undoFinalsWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
 
-// Record game result (win for winner, loss for loser)
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    finalsWins: increment(-1)
+  })
+  console.log(`Undid finals win for player ${playerId}`)
+}
+
+// Undo a finals loss for a player
+export async function undoFinalsLoss(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    finalsLosses: increment(-1)
+  })
+  console.log(`Undid finals loss for player ${playerId}`)
+}
+
+// Record non-tournament game result (win for winner, loss for loser)
 export async function recordGameResult(
   namespace: string,
   winnerId: string,
@@ -204,6 +262,18 @@ export async function recordGameResult(
   await Promise.all([
     recordWin(namespace, winnerId),
     recordLoss(namespace, loserId)
+  ])
+}
+
+// Record singles tournament match result
+export async function recordTournamentGameResult(
+  namespace: string,
+  winnerId: string,
+  loserId: string
+): Promise<void> {
+  await Promise.all([
+    recordTournamentWin(namespace, winnerId),
+    recordTournamentLoss(namespace, loserId)
   ])
 }
 
@@ -235,7 +305,7 @@ export async function undoLoss(namespace: string, playerId: string): Promise<voi
   console.log(`Undid loss for player ${playerId}`)
 }
 
-// Undo game result (remove win from old winner, remove loss from old loser)
+// Undo non-tournament game result (remove win from old winner, remove loss from old loser)
 export async function undoGameResult(
   namespace: string,
   winnerId: string,
@@ -244,6 +314,46 @@ export async function undoGameResult(
   await Promise.all([
     undoWin(namespace, winnerId),
     undoLoss(namespace, loserId)
+  ])
+}
+
+// Undo a singles tournament match win
+export async function undoTournamentWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    tournamentWins: increment(-1)
+  })
+  console.log(`Undid tournament win for player ${playerId}`)
+}
+
+// Undo a singles tournament match loss
+export async function undoTournamentLoss(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    tournamentLosses: increment(-1)
+  })
+  console.log(`Undid tournament loss for player ${playerId}`)
+}
+
+// Undo singles tournament match result
+export async function undoTournamentGameResult(
+  namespace: string,
+  winnerId: string,
+  loserId: string
+): Promise<void> {
+  await Promise.all([
+    undoTournamentWin(namespace, winnerId),
+    undoTournamentLoss(namespace, loserId)
   ])
 }
 
@@ -301,6 +411,34 @@ export async function recordTeamFinalsLoss(namespace: string, playerId: string):
     teamFinalsLosses: increment(1)
   })
   console.log(`Recorded team finals loss for player ${playerId}`)
+}
+
+// Undo a team finals win for a player
+export async function undoTeamFinalsWin(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    teamFinalsWins: increment(-1)
+  })
+  console.log(`Undid team finals win for player ${playerId}`)
+}
+
+// Undo a team finals loss for a player
+export async function undoTeamFinalsLoss(namespace: string, playerId: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+  const path = `players/${sanitized}/${playerId}`
+  const playerRef = ref(database, path)
+
+  await update(playerRef, {
+    teamFinalsLosses: increment(-1)
+  })
+  console.log(`Undid team finals loss for player ${playerId}`)
 }
 
 // Legacy alias for backwards compatibility
@@ -372,6 +510,22 @@ export async function recordTeamFinalsLossForTeam(
   playerIds: string[]
 ): Promise<void> {
   await Promise.all(playerIds.map(id => recordTeamFinalsLoss(namespace, id)))
+}
+
+// Undo team finals win for all players on a team
+export async function undoTeamFinalsWinForTeam(
+  namespace: string,
+  playerIds: string[]
+): Promise<void> {
+  await Promise.all(playerIds.map(id => undoTeamFinalsWin(namespace, id)))
+}
+
+// Undo team finals loss for all players on a team
+export async function undoTeamFinalsLossForTeam(
+  namespace: string,
+  playerIds: string[]
+): Promise<void> {
+  await Promise.all(playerIds.map(id => undoTeamFinalsLoss(namespace, id)))
 }
 
 // Legacy alias for backwards compatibility
