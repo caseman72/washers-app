@@ -134,9 +134,9 @@ fun GameDisplayScreen(
                         showTournamentWarning = showTournamentWarning,
                         onDismissTournamentWarning = { showTournamentWarning = false },
                         onFixTournamentWarning = {
-                            // Remove the game number from namespace (keep just email)
+                            // Set game number to 0 (regular play, not tournament)
                             val email = namespace.split("/", limit = 2)[0]
-                            SettingsRepository.setNamespace(email)
+                            SettingsRepository.setNamespace("$email/0")
                             showTournamentWarning = false
                         }
                     )
