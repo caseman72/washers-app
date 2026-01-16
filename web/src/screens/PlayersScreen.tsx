@@ -59,10 +59,58 @@ const styles = `
     padding: 1rem;
     background: #2a2a2a;
     border-radius: 0.5rem;
+    gap: 1rem;
+  }
+
+  .player-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 0;
   }
 
   .player-name {
     font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .player-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  .stat-item {
+    display: flex;
+    gap: 0.25rem;
+    white-space: nowrap;
+  }
+
+  .stat-label {
+    color: #666;
+  }
+
+  .stat-value {
+    color: #aaa;
+  }
+
+  .stat-value.wins {
+    color: #27ae60;
+  }
+
+  .stat-value.losses {
+    color: #c0392b;
+  }
+
+  /* Hide stats on mobile */
+  @media (max-width: 600px) {
+    .player-stats {
+      display: none;
+    }
   }
 
   .delete-btn {
@@ -328,7 +376,35 @@ export function PlayersScreen() {
           <div className="player-list">
             {activePlayers.map(player => (
               <div key={player.id} className="player-card">
-                <span className="player-name">{player.name}</span>
+                <div className="player-info">
+                  <span className="player-name">{player.name}</span>
+                  <div className="player-stats">
+                    <span className="stat-item">
+                      <span className="stat-label">W:</span>
+                      <span className="stat-value wins">{player.wins}</span>
+                    </span>
+                    <span className="stat-item">
+                      <span className="stat-label">L:</span>
+                      <span className="stat-value losses">{player.losses}</span>
+                    </span>
+                    {(player.finalsWins > 0 || player.finalsLosses > 0) && (
+                      <span className="stat-item">
+                        <span className="stat-label">Finals:</span>
+                        <span className="stat-value wins">{player.finalsWins}</span>
+                        <span className="stat-value">/</span>
+                        <span className="stat-value losses">{player.finalsLosses}</span>
+                      </span>
+                    )}
+                    {(player.teamWins > 0 || player.teamLosses > 0) && (
+                      <span className="stat-item">
+                        <span className="stat-label">Team:</span>
+                        <span className="stat-value wins">{player.teamWins}</span>
+                        <span className="stat-value">/</span>
+                        <span className="stat-value losses">{player.teamLosses}</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <button
                   className="delete-btn"
                   onClick={() => handleDeletePlayer(player.id)}

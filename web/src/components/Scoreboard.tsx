@@ -172,6 +172,19 @@ const mainStyles = `
     box-sizing: border-box;
   }
 
+  .games.names {
+    font-size: 1rem;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .contained .games.names {
+    font-size: 0.875rem;
+    max-width: 40%;
+  }
+
   .games-label {
     font-size: 1rem;
     color: #aaa;
@@ -386,9 +399,11 @@ interface ScoreboardProps {
   onStateChange?: (session: GameSession, colors: { p1: string; p2: string }) => void
   contained?: boolean
   format?: number
+  player1Name?: string
+  player2Name?: string
 }
 
-export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1 }: ScoreboardProps) {
+export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1, player1Name, player2Name }: ScoreboardProps) {
   const [session, setSession] = useState<GameSession>({
     player1Score: 0,
     player2Score: 0,
@@ -675,12 +690,28 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Games counter */}
-      <div className="games-counter">
-        <span className="games" style={{ background: p1.bg, color: p1.text }}>{session.player1Games}</span>
-        <span className="games-label">Games</span>
-        <span className="games" style={{ background: p2.bg, color: p2.text, border: player2Color === 'white' ? '2px solid #ccc' : player2Color === 'black' ? '2px solid #333' : 'none' }}>{session.player2Games}</span>
-      </div>
+      {/* Header: show player names when format=1, games counter when format>1 */}
+      {format === 1 ? (
+        <div className="games-counter">
+          <span className="games names" style={{ background: p1.bg, color: p1.text }}>
+            {player1Name || 'Player 1'}
+          </span>
+          <span className="games-label">vs</span>
+          <span className="games names" style={{ background: p2.bg, color: p2.text, border: player2Color === 'white' ? '2px solid #ccc' : player2Color === 'black' ? '2px solid #333' : 'none' }}>
+            {player2Name || 'Player 2'}
+          </span>
+        </div>
+      ) : (
+        <div className="games-counter">
+          <span className="games" style={{ background: p1.bg, color: p1.text }}>
+            {`${session.player1Rounds}.${session.player1Games}`}
+          </span>
+          <span className="games-label">Games</span>
+          <span className="games" style={{ background: p2.bg, color: p2.text, border: player2Color === 'white' ? '2px solid #ccc' : player2Color === 'black' ? '2px solid #333' : 'none' }}>
+            {`${session.player2Rounds}.${session.player2Games}`}
+          </span>
+        </div>
+      )}
 
       {/* Main scores - NO onClick on panels, only on buttons */}
       <div className="scores">

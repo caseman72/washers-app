@@ -102,6 +102,13 @@ cd web && npm install && npm run dev
 - Iterate (repeat)
 - The overall goal is to reduce session drop and context switching
 
+### Context Compaction
+When context reaches ~10% remaining, STOP and update README.md before compaction:
+- Document current task progress in "Breadcrumbs" section
+- Note which files were being edited and what changes remain
+- List any decisions made or approaches chosen
+- This allows quick recovery after compaction or new session
+
 ## Technology Stack
 - **Watch**: Kotlin + Jetpack Compose (Wear OS)
 - **Phone**: Kotlin + Jetpack Compose (Android)
@@ -133,134 +140,54 @@ cd web && npm install && npm run dev
 
 ## Current Task
 
-**✅ Tournament System (Complete)**
+**🚧 January 2026 Update - Player ID Refactor & UI Improvements**
 
-### Features
-- Player management (add/delete, Firebase realtime sync)
-- Player stats tracking (wins, losses, tournament wins)
-- Team stats tracking (teamWins, teamLosses, teamTournamentWins)
-- Tournament setup (name, player selection 2-16, single/double elimination)
-- Singles or Teams mode (Teams: randomly pairs players into teams)
-- Bracket generation algorithm (BYE handling, proper seeding)
-- Bracket display (winner's bracket, loser's bracket columns)
-- Match cards with tap-to-select winner modal
-- Team names displayed as "Player1 & Player2" in brackets
-- Grand Finals handling (Game 1, conditional Game 2 if LB winner wins)
-- Champion display on tournament completion (shows team name for doubles)
-- Correct loser bracket routing (WB dropdowns → player2, LB winners → player1)
-- LB crossover rounds handle mismatched counts (more WB losers than LB winners)
-- Fair BYE distribution: teams that played real WB matches get LB BYEs
-- BYE match auto-advance for both LB R1 and crossover rounds
-- Game numbering by round (WB + LB together per round)
-- Round labels for all finals columns
-- Full Firebase sync for tournaments (`/tournaments/{namespace}/`)
-- Archive completed tournaments (view history)
-- Live scores on bracket cards (real-time Firebase sync)
-- Auto-detect game winners when round is won (best of 1 mode)
-- Game table initialization with player names from bracket
-- Phone reads player names from Firebase when namespace changes
+### Key Concepts
+- **Game number convention**: Games 1-64 = tournament (format=1 locked), Game 0 or >65 = regular play
+- **Format inference**: `format > 1` automatically means show rounds (x.y), `format = 1` means games only
+- **Player IDs**: Games table uses `player1Id`/`player2Id` instead of names; names resolved from players DB
 
-### Tournament Navigation
-- `/tournament` - Landing page (Create New or View Current + View Archived)
-- `/tournament/new` - Create tournament form
-- `/tournament/list` - Archived tournaments list
-- `/tournament/:id` - Bracket view
+### Watch App
+- [x] Infer showRounds from `format > 1` (removed separate showRounds setting)
 
----
+### Web App
+- [x] Mirror/Keep Score: increase size to 475x475 (from 400x400)
+- [x] Infer rounds display from `format > 1`
+- [x] If format=1, show player names where games counter was
+- [x] Games structure: add `player1Id`/`player2Id` (kept names for display)
+- [x] Player stats: add `finalsWins`/`finalsLosses`, `teamFinalsWins`/`teamFinalsLosses`
+- [x] Players screen: show stats on large screens, hide on mobile
+- [x] Tournament screen: vertical tile list on mobile
 
-**✅ Phone → Firebase Integration (Complete)**
+### Phone App
+- [ ] Tournament detection (games 1-64 = tournament mode)
+- [ ] Players page (mimic web - add/delete players)
+- [ ] Mirror page: scrolling player picker instead of text input
+- [ ] Format selector next to namespace (locked for games 1-64)
+- [ ] Settings page: simplify to just namespace field
+- [ ] Keep Score: format selector, if format=1 show players instead of games
+- [ ] Top half minimum 475px or screen width
 
-### Overview
-Phone app sends game state to Firebase Realtime Database. Web mirroring comes later.
+### Breadcrumbs
+*(Current progress - update before context compaction)*
 
-### Authentication
-- Phone app uses Firebase Anonymous Auth (auto sign-in, no user action required)
-- Namespace field in settings (email like `casey@manion.com`) identifies the game owner
-- Database rules require authentication but don't verify identity (prevents casual abuse)
-
-### Namespace Convention
-- **Solo game**: `casey@manion.com` or `casey@manion.com/1`
-- **Tournament (8 tables)**: `casey@manion.com/1` through `casey@manion.com/8`
-- Firebase path: `/games/{email}/{table}/current` (e.g., `/games/casey@manion_com/1/current`)
-
-### Data Model
-
-**Live State** `/games/{email}/{table}/current`:
-```
-player1Score: 0
-player1Rounds: 1
-player1Games: 2
-player1Color: "ORANGE"
-player1Name: "Casey"
-player2Score: 15
-player2Rounds: 0
-player2Games: 3
-player2Color: "BLACK"
-player2Name: "Ryan"
-format: 3
-updatedAt: timestamp
-```
-
-**Round History** `/games/{email}/{table}/history/{timestamp}`:
-```
-startedAt: timestamp
-endedAt: timestamp
-player1Games: 2
-player2Games: 1
-winner: 1
-format: 3
-player1Color: "ORANGE"
-player2Color: "BLACK"
-player1Name: "Casey"
-player2Name: "Ryan"
-```
-
-### Game Logic
-- **Score change** → Write to `/current`
-- **Win (21 points)** → Increment games, reset score to 0
-- **Round win** (half+1, e.g., 2 in best of 3) → Log to `/history`, increment rounds, reset games to 0
-- **Reset** → Create new round (zeros all values), leave old round in history as-is
-
-### Phone UI Updates Needed
-1. **Settings screen**: Namespace (email), Format (best of 1/3/5/7, default: 1), Rounds checkbox
-2. **Game display**:
-   - Rounds unchecked: `[ 2 ] GAMES [ 1 ]` (games only)
-   - Rounds checked: `[ 1.2 ] GAMES [ 0.3 ]` (rounds.games)
-3. **Name fields**: Editable inline in Mirror mode (placeholders: "Player 1", "Player 2")
-4. **Series win**: "Player X Won!" celebration dialog when winning best of 3/5/7
-
-### Display Format
-```
-Rounds unchecked (default):
-┌─────────────────────────┐
-│     [ 2 ] GAMES [ 1 ]   │  ← games only
-├─────────────────────────┤
-│  [  Casey  ] [  Ryan  ] │  ← names (Mirror mode)
-├─────────────────────────┤
-│     (scoreboard)        │
-└─────────────────────────┘
-
-Rounds checked:
-┌─────────────────────────┐
-│   [ 1.2 ] GAMES [ 0.3 ] │  ← rounds.games
-├─────────────────────────┤
-│  [  Casey  ] [  Ryan  ] │  ← names (Mirror mode)
-├─────────────────────────┤
-│     (scoreboard)        │
-└─────────────────────────┘
-```
-
-### Implementation Order
-1. [x] Add Firebase SDK to Phone app
-2. [x] Create Settings screen (namespace, format, rounds)
-3. [x] Update GameState to include rounds, names
-4. [x] Update UI for rounds.games display (controlled by Rounds checkbox)
-5. [x] Add name input fields (inline in Mirror mode)
-6. [x] Add series win celebration dialog
-7. [x] Sync showRounds setting to Watch
-8. [x] Implement Firebase write on state changes
-9. [x] Implement round history logging on round win
-10. [x] Watch settings sync prompt (Apply/Ignore when Phone reconnects)
+**Status**: ✅ Watch + ALL Web tasks complete! Ready for Phone tasks.
+**Next**: Phone App tasks (Tournament detection, Players page, etc.)
+**Files modified this session**:
+- `watch/app/.../ScoreboardScreen.kt` - infer showRounds from format > 1
+- `watch/app/.../DataLayerManager.kt` - removed showRounds, derive from format
+- `watch/app/.../MainActivity.kt` - removed SHOW_ROUNDS_PATH handler
+- `web/src/screens/MirrorScreen.tsx` - max-width 475px
+- `web/src/screens/KeepScoreScreen.tsx` - max-width 475px
+- `web/src/components/GameDisplay.tsx` - infer showRounds, names header when format=1
+- `web/src/components/Scoreboard.tsx` - rounds.games display, names header when format=1
+- `web/src/lib/firebase.ts` - added player1Id/player2Id to FirebaseGameState
+- `web/src/components/MatchCard.tsx` - pass player IDs to initializeGame
+- `web/src/lib/firebase-players.ts` - added finalsWins/Losses, teamFinalsWins/Losses
+- `web/src/types/index.ts` - updated Player type with new stats fields
+- `web/src/hooks/usePlayers.ts` - added new finals tracking functions
+- `web/src/screens/PlayersScreen.tsx` - added stats display with responsive hiding
+- `web/src/screens/TournamentSetupScreen.tsx` - responsive single-column grid on mobile
 
 ---
 
@@ -279,7 +206,7 @@ Rounds checked:
 - [x] Respond to state requests from Phone
 - [x] Format support (best of 1/3/5/7, default: 1)
 - [x] Receive format from Phone via MessageClient
-- [x] Receive showRounds from Phone via MessageClient
+- [x] Infer showRounds from format > 1 (no separate setting)
 - [x] Receive reset from Phone via MessageClient (preserves colors)
 - [x] Series win celebration dialog ("Player X Won!")
 - [x] Settings sync prompt (Apply/Ignore when Phone sends different settings)

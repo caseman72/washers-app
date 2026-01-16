@@ -266,8 +266,12 @@ export function MatchCard({
     if (shouldInit) {
       initializedRef.current = initKey
       console.log(`Initializing game ${gameNumber} with ${player1DisplayName} vs ${player2DisplayName}`)
-      initializeGame(namespace, gameNumber, player1DisplayName, player2DisplayName)
-        .catch(err => console.error('Failed to initialize game:', err))
+      initializeGame(
+        namespace,
+        gameNumber,
+        { id: match.player1Id, name: player1DisplayName },
+        { id: match.player2Id, name: player2DisplayName }
+      ).catch(err => console.error('Failed to initialize game:', err))
     }
 
     // Subscribe to live updates (even for completed matches to see final state)

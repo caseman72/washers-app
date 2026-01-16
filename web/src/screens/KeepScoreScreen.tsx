@@ -17,7 +17,7 @@ const styles = `
 
   .keep-score-game-area {
     width: 100%;
-    max-width: 400px;
+    max-width: 475px;
     aspect-ratio: 1;
     margin: 0 auto;
   }

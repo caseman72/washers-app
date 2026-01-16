@@ -59,6 +59,9 @@ export interface FirebaseGameState {
   player2Rounds: number
   player1Color: string
   player2Color: string
+  // Player identification - ID is authoritative, name is denormalized for display
+  player1Id?: string
+  player2Id?: string
   player1Name: string
   player2Name: string
   format: number
@@ -69,8 +72,8 @@ export interface FirebaseGameState {
 export async function initializeGame(
   namespace: string,
   table: number,
-  player1Name: string,
-  player2Name: string
+  player1: { id?: string; name: string },
+  player2: { id?: string; name: string }
 ): Promise<void> {
   await ensureAuth()
 
@@ -87,8 +90,10 @@ export async function initializeGame(
     player2Rounds: 0,
     player1Color: 'ORANGE',
     player2Color: 'BLACK',
-    player1Name,
-    player2Name,
+    player1Id: player1.id,
+    player2Id: player2.id,
+    player1Name: player1.name,
+    player2Name: player2.name,
     format: 1,
     updatedAt: Date.now(),
   }

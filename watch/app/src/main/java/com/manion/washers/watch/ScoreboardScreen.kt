@@ -58,9 +58,8 @@ fun ScoreboardScreen() {
         }
     }
 
-    // Observe showRounds from phone
-    val showRoundsFromPhone by DataLayerManager.showRoundsFromPhone.collectAsState()
-    val showRounds = showRoundsFromPhone ?: false
+    // Infer showRounds from format: format > 1 means show rounds
+    val showRounds = gameState.format > 1
 
     // Observe reset trigger from phone (resets game state when namespace changes)
     val resetTrigger by DataLayerManager.resetTrigger.collectAsState()

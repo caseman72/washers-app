@@ -61,14 +61,9 @@ class MainActivity : ComponentActivity(), MessageClient.OnMessageReceivedListene
                 DataLayerManager.getInstance(this).resendLastState()
             }
             DataLayerManager.FORMAT_PATH -> {
-                val format = String(messageEvent.data).toIntOrNull() ?: 7
+                val format = String(messageEvent.data).toIntOrNull() ?: 1
                 Log.d(TAG, "Phone sent format: $format")
                 DataLayerManager.setFormatFromPhone(format)
-            }
-            DataLayerManager.SHOW_ROUNDS_PATH -> {
-                val showRounds = String(messageEvent.data).toBoolean()
-                Log.d(TAG, "Phone sent showRounds: $showRounds")
-                DataLayerManager.setShowRoundsFromPhone(showRounds)
             }
             DataLayerManager.RESET_PATH -> {
                 Log.d(TAG, "Phone sent reset command")

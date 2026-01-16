@@ -66,6 +66,13 @@ const styles = `
     gap: 0.5rem;
   }
 
+  /* Single column on mobile */
+  @media (max-width: 480px) {
+    .player-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
   .player-checkbox {
     display: flex;
     align-items: center;

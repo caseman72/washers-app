@@ -51,6 +51,26 @@ const styles = `
     box-sizing: border-box;
   }
 
+  .name-badge {
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    max-width: 45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .names-header .games-label {
+    text-transform: none;
+  }
+
   .games-label {
     font-size: 1.125rem;
     color: #888;
@@ -145,7 +165,6 @@ interface GameDisplayProps {
   loading: boolean
   error: string | null
   gameNumber: number
-  showRounds?: boolean
 }
 
 export function GameDisplay({
@@ -153,7 +172,6 @@ export function GameDisplay({
   loading,
   error,
   gameNumber,
-  showRounds = false,
 }: GameDisplayProps) {
   if (loading) {
     return (
@@ -196,6 +214,10 @@ export function GameDisplay({
   const p1Color = getColor(state.player1Color)
   const p2Color = getColor(state.player2Color)
 
+  // Infer showRounds from format: format > 1 means best-of series, show rounds
+  const format = state.format || 1
+  const showRounds = format > 1
+
   const p1GamesDisplay = showRounds
     ? `${state.player1Rounds}.${state.player1Games}`
     : `${state.player1Games}`
@@ -205,22 +227,40 @@ export function GameDisplay({
 
   return (
     <div className="game-display">
-      {/* Games header */}
-      <div className="game-header">
-        <div
-          className="games-badge"
-          style={{ background: p1Color.bg, color: p1Color.text }}
-        >
-          {p1GamesDisplay}
+      {/* Header: show player names when format=1, games counter when format>1 */}
+      {format === 1 ? (
+        <div className="game-header names-header">
+          <div
+            className="name-badge"
+            style={{ background: p1Color.bg, color: p1Color.text }}
+          >
+            {state.player1Name || 'Player 1'}
+          </div>
+          <span className="games-label">vs</span>
+          <div
+            className="name-badge"
+            style={{ background: p2Color.bg, color: p2Color.text }}
+          >
+            {state.player2Name || 'Player 2'}
+          </div>
         </div>
-        <span className="games-label">GAMES</span>
-        <div
-          className="games-badge"
-          style={{ background: p2Color.bg, color: p2Color.text }}
-        >
-          {p2GamesDisplay}
+      ) : (
+        <div className="game-header">
+          <div
+            className="games-badge"
+            style={{ background: p1Color.bg, color: p1Color.text }}
+          >
+            {p1GamesDisplay}
+          </div>
+          <span className="games-label">GAMES</span>
+          <div
+            className="games-badge"
+            style={{ background: p2Color.bg, color: p2Color.text }}
+          >
+            {p2GamesDisplay}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Score panels with names inside */}
       <div className="scores-container">

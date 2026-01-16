@@ -5,13 +5,18 @@ export interface Player {
   photoUrl?: string
   createdAt: Date
   archived: boolean
+  // Per-game stats (any game)
   wins: number
   losses: number
-  tournamentWins: number
-  // Team stats (for doubles tournaments)
+  // Tournament champion stats (won the whole tournament)
+  finalsWins: number
+  finalsLosses: number
+  // Team per-game stats (for doubles tournaments)
   teamWins: number
   teamLosses: number
-  teamTournamentWins: number
+  // Team tournament champion stats
+  teamFinalsWins: number
+  teamFinalsLosses: number
 }
 
 // Game (single match result)

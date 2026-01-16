@@ -7,10 +7,12 @@ import {
   deletePlayer as firebaseDeletePlayer,
   recordGameResult as firebaseRecordGameResult,
   undoGameResult as firebaseUndoGameResult,
-  recordTournamentWin as firebaseRecordTournamentWin,
+  recordFinalsWin as firebaseRecordFinalsWin,
+  recordFinalsLoss as firebaseRecordFinalsLoss,
   recordTeamGameResult as firebaseRecordTeamGameResult,
   undoTeamGameResult as firebaseUndoTeamGameResult,
-  recordTeamTournamentWinForTeam as firebaseRecordTeamTournamentWinForTeam,
+  recordTeamFinalsWinForTeam as firebaseRecordTeamFinalsWinForTeam,
+  recordTeamFinalsLossForTeam as firebaseRecordTeamFinalsLossForTeam,
 } from '../lib/firebase-players'
 
 export interface UsePlayersResult {
@@ -21,9 +23,16 @@ export interface UsePlayersResult {
   deletePlayer: (playerId: string) => Promise<void>
   recordGameResult: (winnerId: string, loserId: string) => Promise<void>
   undoGameResult: (winnerId: string, loserId: string) => Promise<void>
-  recordTournamentWin: (playerId: string) => Promise<void>
+  // Finals (tournament champion) tracking
+  recordFinalsWin: (playerId: string) => Promise<void>
+  recordFinalsLoss: (playerId: string) => Promise<void>
+  recordTeamFinalsWin: (playerIds: string[]) => Promise<void>
+  recordTeamFinalsLoss: (playerIds: string[]) => Promise<void>
+  // Team game tracking
   recordTeamGameResult: (winnerPlayerIds: string[], loserPlayerIds: string[]) => Promise<void>
   undoTeamGameResult: (winnerPlayerIds: string[], loserPlayerIds: string[]) => Promise<void>
+  // Legacy aliases
+  recordTournamentWin: (playerId: string) => Promise<void>
   recordTeamTournamentWin: (playerIds: string[]) => Promise<void>
 }
 
@@ -94,11 +103,32 @@ export function usePlayers(namespace: string): UsePlayersResult {
     await firebaseUndoGameResult(namespace, winnerId, loserId)
   }
 
-  const recordTournamentWin = async (playerId: string) => {
+  const recordFinalsWin = async (playerId: string) => {
     if (!namespace.trim()) {
       throw new Error('No namespace configured')
     }
-    await firebaseRecordTournamentWin(namespace, playerId)
+    await firebaseRecordFinalsWin(namespace, playerId)
+  }
+
+  const recordFinalsLoss = async (playerId: string) => {
+    if (!namespace.trim()) {
+      throw new Error('No namespace configured')
+    }
+    await firebaseRecordFinalsLoss(namespace, playerId)
+  }
+
+  const recordTeamFinalsWin = async (playerIds: string[]) => {
+    if (!namespace.trim()) {
+      throw new Error('No namespace configured')
+    }
+    await firebaseRecordTeamFinalsWinForTeam(namespace, playerIds)
+  }
+
+  const recordTeamFinalsLoss = async (playerIds: string[]) => {
+    if (!namespace.trim()) {
+      throw new Error('No namespace configured')
+    }
+    await firebaseRecordTeamFinalsLossForTeam(namespace, playerIds)
   }
 
   const recordTeamGameResult = async (winnerPlayerIds: string[], loserPlayerIds: string[]) => {
@@ -115,12 +145,9 @@ export function usePlayers(namespace: string): UsePlayersResult {
     await firebaseUndoTeamGameResult(namespace, winnerPlayerIds, loserPlayerIds)
   }
 
-  const recordTeamTournamentWin = async (playerIds: string[]) => {
-    if (!namespace.trim()) {
-      throw new Error('No namespace configured')
-    }
-    await firebaseRecordTeamTournamentWinForTeam(namespace, playerIds)
-  }
+  // Legacy aliases
+  const recordTournamentWin = recordFinalsWin
+  const recordTeamTournamentWin = recordTeamFinalsWin
 
   return {
     players,
@@ -130,9 +157,13 @@ export function usePlayers(namespace: string): UsePlayersResult {
     deletePlayer,
     recordGameResult,
     undoGameResult,
-    recordTournamentWin,
+    recordFinalsWin,
+    recordFinalsLoss,
+    recordTeamFinalsWin,
+    recordTeamFinalsLoss,
     recordTeamGameResult,
     undoTeamGameResult,
+    recordTournamentWin,
     recordTeamTournamentWin,
   }
 }
