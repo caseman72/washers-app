@@ -227,17 +227,30 @@ function generateLosersBracket(
       const winnersRoundMatches = winnersBracket.filter(m => m.round === winnersRound)
       const newMatches: BracketNode[] = []
 
-      for (let i = 0; i < prevMatches.length; i++) {
+      // Need enough matches for both LB winners AND WB losers
+      // If more WB losers than LB winners, extra matches get BYE on LB side
+      const matchCount = Math.max(prevMatches.length, winnersRoundMatches.length)
+
+      for (let i = 0; i < matchCount; i++) {
         const match: BracketNode = {
           id: `l-r${lbRound}-${i}`,
           round: lbRound,
           position: i,
           bracket: 'losers',
         }
+
+        // If no LB winner feeding this match, it's a BYE (WB loser auto-advances)
+        if (i >= prevMatches.length) {
+          match.isByeMatch = true
+        }
+
         nodes.push(match)
         newMatches.push(match)
 
-        prevMatches[i].nextMatchId = match.id
+        // Link from previous LB match if exists
+        if (prevMatches[i]) {
+          prevMatches[i].nextMatchId = match.id
+        }
 
         // Link dropdowns from winners
         if (winnersRoundMatches[i]) {
@@ -253,18 +266,29 @@ function generateLosersBracket(
       // Next round: LB winners play each other
       lbRound++
       const consolidationMatches: BracketNode[] = []
-      for (let i = 0; i < prevMatches.length / 2; i++) {
+      const consolidationMatchCount = Math.ceil(prevMatches.length / 2)
+      for (let i = 0; i < consolidationMatchCount; i++) {
         const match: BracketNode = {
           id: `l-r${lbRound}-${i}`,
           round: lbRound,
           position: i,
           bracket: 'losers',
         }
+
+        // If odd number of prev matches, last consolidation match is a BYE
+        if (prevMatches.length % 2 === 1 && i === consolidationMatchCount - 1) {
+          match.isByeMatch = true
+        }
+
         nodes.push(match)
         consolidationMatches.push(match)
 
-        prevMatches[i * 2].nextMatchId = match.id
-        prevMatches[i * 2 + 1].nextMatchId = match.id
+        if (prevMatches[i * 2]) {
+          prevMatches[i * 2].nextMatchId = match.id
+        }
+        if (prevMatches[i * 2 + 1]) {
+          prevMatches[i * 2 + 1].nextMatchId = match.id
+        }
       }
       prevMatches = consolidationMatches
     } else {
