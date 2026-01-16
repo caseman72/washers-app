@@ -256,17 +256,38 @@ export function BracketScreen() {
   // Game 2 is only needed if LB winner won Game 1
   const needsGame2 = finalsGame1?.winnerId && finalsGame1.winnerId === finalsGame1.player2Id
 
-  // Compute game numbers - fixed at tournament creation, based on round and position
-  // Game numbers should NOT change as games complete
+  // Compute game numbers based on playability from INITIAL bracket structure
+  // Numbers are assigned once and never change as games complete
   const gameNumbers = useMemo(() => {
     if (!tournament) return new Map<string, number>()
     const numbers = new Map<string, number>()
     let gameNum = 1
 
-    // Helper: check if a match is a BYE (auto-advance, not a real game)
-    const isByeMatch = (match: BracketNode) => {
-      // A match is a BYE if it has a winner but is missing a player
-      return (match.player1Id && !match.player2Id) || (!match.player1Id && match.player2Id) || match.isByeMatch
+    // Helper: check if a match is structurally a BYE (only one player slot filled)
+    // This is based on bracket structure, not current game state
+    const isStructuralBye = (match: BracketNode) => {
+      // Check original structure: one player and marked as bye, OR only one player slot
+      if (match.isByeMatch) return true
+      // For R1 matches, check if only one player was assigned at creation
+      if (match.round === 1 && match.bracket === 'winners') {
+        // Count how many player slots have IDs (from original seeding)
+        const hasP1 = !!match.player1Id
+        const hasP2 = !!match.player2Id
+        return (hasP1 && !hasP2) || (!hasP1 && hasP2)
+      }
+      return false
+    }
+
+    // Helper: check if match is immediately playable from tournament start
+    // (both feeder matches are BYEs, so players are known immediately)
+    const isImmediatelyPlayable = (match: BracketNode) => {
+      if (isStructuralBye(match)) return false
+      if (match.round === 1) return true // R1 non-BYE matches are always playable first
+
+      // For later rounds, check if ALL feeder matches are structural BYEs
+      const feeders = tournament.bracket.filter(m => m.nextMatchId === match.id)
+      if (feeders.length === 0) return false
+      return feeders.every(f => isStructuralBye(f))
     }
 
     // Get all round numbers from both brackets
@@ -277,26 +298,36 @@ export function BracketScreen() {
       lbRoundNums.length > 0 ? lbRoundNums[lbRoundNums.length - 1] : 0
     )
 
-    // Number games by round in fixed order (WB then LB), skipping BYEs
+    // Number games by round, prioritizing immediately-playable matches
     for (let round = 1; round <= maxRound; round++) {
       const wbMatches = winnersRounds.get(round) || []
       const lbMatches = losersRounds.get(round) || []
+      const allMatches = [...wbMatches, ...lbMatches]
 
-      // WB matches first (sorted by position for consistency)
-      wbMatches
-        .filter((match: BracketNode) => !isByeMatch(match))
-        .sort((a: BracketNode, b: BracketNode) => a.position - b.position)
-        .forEach((match: BracketNode) => {
-          numbers.set(match.id, gameNum++)
-        })
+      // Separate into immediately playable vs waiting, skip structural BYEs
+      const immediate: BracketNode[] = []
+      const waiting: BracketNode[] = []
 
-      // LB matches second (sorted by position for consistency)
-      lbMatches
-        .filter((match: BracketNode) => !isByeMatch(match))
-        .sort((a: BracketNode, b: BracketNode) => a.position - b.position)
-        .forEach((match: BracketNode) => {
-          numbers.set(match.id, gameNum++)
-        })
+      allMatches.forEach((match: BracketNode) => {
+        if (isStructuralBye(match)) return
+        if (isImmediatelyPlayable(match)) {
+          immediate.push(match)
+        } else {
+          waiting.push(match)
+        }
+      })
+
+      // Sort each group by position for consistency
+      immediate.sort((a, b) => a.position - b.position)
+      waiting.sort((a, b) => a.position - b.position)
+
+      // Number immediate matches first, then waiting
+      immediate.forEach((match: BracketNode) => {
+        numbers.set(match.id, gameNum++)
+      })
+      waiting.forEach((match: BracketNode) => {
+        numbers.set(match.id, gameNum++)
+      })
 
       // Grand Finals G1 comes after last round
       if (round === maxRound && finalsGame1) {
