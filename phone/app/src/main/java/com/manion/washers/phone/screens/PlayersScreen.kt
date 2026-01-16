@@ -27,7 +27,7 @@ import com.manion.washers.phone.ui.theme.WatchColors
 fun PlayersScreen(
     onBackClick: () -> Unit = {}
 ) {
-    val namespace by SettingsRepository.namespace.collectAsState()
+    val baseNamespace by SettingsRepository.baseNamespace.collectAsState()
     val players by FirebasePlayersRepository.players.collectAsState()
     val loading by FirebasePlayersRepository.loading.collectAsState()
     val error by FirebasePlayersRepository.error.collectAsState()
@@ -35,10 +35,10 @@ fun PlayersScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf<Player?>(null) }
 
-    // Subscribe to players when namespace changes
-    LaunchedEffect(namespace) {
-        if (namespace.isNotBlank()) {
-            FirebasePlayersRepository.subscribeToPlayers(namespace)
+    // Subscribe to players when base namespace changes
+    LaunchedEffect(baseNamespace) {
+        if (baseNamespace.isNotBlank()) {
+            FirebasePlayersRepository.subscribeToPlayers(baseNamespace)
         }
     }
 
@@ -97,7 +97,7 @@ fun PlayersScreen(
                     .fillMaxWidth()
             ) {
                 when {
-                    namespace.isBlank() -> {
+                    baseNamespace.isBlank() -> {
                         // No namespace configured
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -217,7 +217,7 @@ fun PlayersScreen(
             AddPlayerDialog(
                 onDismiss = { showAddDialog = false },
                 onAdd = { name ->
-                    FirebasePlayersRepository.addPlayer(namespace, name)
+                    FirebasePlayersRepository.addPlayer(baseNamespace, name)
                     showAddDialog = false
                 }
             )
@@ -229,7 +229,7 @@ fun PlayersScreen(
                 playerName = player.name,
                 onDismiss = { showDeleteDialog = null },
                 onConfirm = {
-                    FirebasePlayersRepository.deletePlayer(namespace, player.id)
+                    FirebasePlayersRepository.deletePlayer(baseNamespace, player.id)
                     showDeleteDialog = null
                 }
             )

@@ -29,7 +29,7 @@ object FirebaseRepository {
      * Only writes if namespace is configured.
      */
     fun writeCurrentState(gameState: GameState) {
-        val namespace = SettingsRepository.namespace.value
+        val namespace = SettingsRepository.getFullNamespace()
         Log.d(TAG, "writeCurrentState called, namespace='$namespace'")
         if (namespace.isBlank()) {
             Log.d(TAG, "No namespace configured, skipping Firebase write")
@@ -80,7 +80,7 @@ object FirebaseRepository {
         player2Name: String,
         startedAt: Long
     ) {
-        val namespace = SettingsRepository.namespace.value
+        val namespace = SettingsRepository.getFullNamespace()
         if (namespace.isBlank()) {
             Log.d(TAG, "No namespace configured, skipping history write")
             return
@@ -117,7 +117,7 @@ object FirebaseRepository {
      * Called when entering Mirror mode to get names set by web tournament.
      */
     fun readAndSyncNames() {
-        val namespace = SettingsRepository.namespace.value
+        val namespace = SettingsRepository.getFullNamespace()
         Log.d(TAG, "readAndSyncNames called, namespace='$namespace'")
         if (namespace.isBlank()) {
             Log.d(TAG, "No namespace configured, skipping Firebase read")
@@ -170,7 +170,7 @@ object FirebaseRepository {
      * Calls callback with true if active tournament exists, false otherwise.
      */
     fun checkActiveTournament(callback: (Boolean) -> Unit) {
-        val namespace = SettingsRepository.namespace.value
+        val namespace = SettingsRepository.getFullNamespace()
         if (namespace.isBlank()) {
             callback(false)
             return

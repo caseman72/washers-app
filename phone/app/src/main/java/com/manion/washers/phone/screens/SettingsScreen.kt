@@ -20,7 +20,7 @@ import com.manion.washers.phone.ui.theme.WatchColors
 fun SettingsScreen(
     onBackClick: () -> Unit
 ) {
-    val namespace by SettingsRepository.namespace.collectAsState()
+    val baseNamespace by SettingsRepository.baseNamespace.collectAsState()
 
     Box(
         modifier = Modifier
@@ -42,14 +42,14 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Namespace field
+            // Base Namespace field (email only)
             OutlinedTextField(
-                value = namespace,
-                onValueChange = { SettingsRepository.setNamespace(it) },
+                value = baseNamespace,
+                onValueChange = { SettingsRepository.setBaseNamespace(it) },
                 label = { Text("Namespace") },
-                placeholder = { Text("e.g., user@example.com or user@example.com/1") },
+                placeholder = { Text("e.g., user@example.com") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WatchColors.Primary,
@@ -64,8 +64,7 @@ fun SettingsScreen(
             // Help text for namespace
             Text(
                 text = "Namespace identifies your games in Firebase.\n" +
-                       "Format: email or email/game_number\n" +
-                       "Games 1-64 are tournament mode (format locked to 1)",
+                       "Game number can be changed on Mirror/Keep Score screens.",
                 color = WatchColors.OnSurfaceDisabled,
                 fontSize = 12.sp,
                 lineHeight = 18.sp
@@ -75,7 +74,7 @@ fun SettingsScreen(
 
             // Info text
             Text(
-                text = "Format can be changed from Mirror/Keep Score screens",
+                text = "Format and game number can be changed from Mirror/Keep Score screens",
                 color = WatchColors.OnSurfaceDisabled,
                 fontSize = 12.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally)

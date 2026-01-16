@@ -10,16 +10,25 @@ import kotlinx.coroutines.flow.asStateFlow
 object SettingsRepository {
 
     private const val PREFS_NAME = "washers_settings"
-    private const val KEY_NAMESPACE = "namespace"
+    private const val KEY_BASE_NAMESPACE = "base_namespace"
+    private const val KEY_GAME_NUMBER = "game_number"
     private const val KEY_FORMAT = "format"
     private const val KEY_PLAYER1_NAME = "player1_name"
     private const val KEY_PLAYER2_NAME = "player2_name"
     private const val KEY_SHOW_ROUNDS = "show_rounds"
 
+    // Legacy key for migration
+    private const val KEY_NAMESPACE_LEGACY = "namespace"
+
     private var prefs: SharedPreferences? = null
 
-    private val _namespace = MutableStateFlow("")
-    val namespace: StateFlow<String> = _namespace.asStateFlow()
+    // Base namespace (email only, e.g., "casey@manion.com")
+    private val _baseNamespace = MutableStateFlow("")
+    val baseNamespace: StateFlow<String> = _baseNamespace.asStateFlow()
+
+    // Game number (0 = regular play, 1-64 = tournament)
+    private val _gameNumber = MutableStateFlow(0)
+    val gameNumber: StateFlow<Int> = _gameNumber.asStateFlow()
 
     private val _format = MutableStateFlow(1)
     val format: StateFlow<Int> = _format.asStateFlow()
@@ -42,7 +51,25 @@ object SettingsRepository {
 
     private fun loadSettings() {
         prefs?.let { p ->
-            _namespace.value = p.getString(KEY_NAMESPACE, "") ?: ""
+            // Check for legacy namespace and migrate if needed
+            val legacyNamespace = p.getString(KEY_NAMESPACE_LEGACY, null)
+            if (legacyNamespace != null && !p.contains(KEY_BASE_NAMESPACE)) {
+                // Migrate from legacy format
+                val parts = legacyNamespace.split("/", limit = 2)
+                _baseNamespace.value = parts[0]
+                _gameNumber.value = if (parts.size > 1) parts[1].toIntOrNull() ?: 0 else 0
+                // Save in new format
+                p.edit()
+                    .putString(KEY_BASE_NAMESPACE, _baseNamespace.value)
+                    .putInt(KEY_GAME_NUMBER, _gameNumber.value)
+                    .remove(KEY_NAMESPACE_LEGACY)
+                    .apply()
+                Log.d("SettingsRepository", "Migrated legacy namespace: $legacyNamespace -> base=${_baseNamespace.value}, game=${_gameNumber.value}")
+            } else {
+                _baseNamespace.value = p.getString(KEY_BASE_NAMESPACE, "") ?: ""
+                _gameNumber.value = p.getInt(KEY_GAME_NUMBER, 0)
+            }
+
             _format.value = p.getInt(KEY_FORMAT, 1)
             _player1Name.value = p.getString(KEY_PLAYER1_NAME, "") ?: ""
             _player2Name.value = p.getString(KEY_PLAYER2_NAME, "") ?: ""
@@ -50,10 +77,34 @@ object SettingsRepository {
         }
     }
 
-    fun setNamespace(value: String) {
-        Log.d("SettingsRepository", "setNamespace called with: '$value'")
-        _namespace.value = value
-        prefs?.edit()?.putString(KEY_NAMESPACE, value)?.apply()
+    /**
+     * Get full namespace combining base and game number.
+     * "casey@manion.com" + 5 → "casey@manion.com/5"
+     * "casey@manion.com" + 0 → "casey@manion.com/0"
+     */
+    fun getFullNamespace(): String {
+        val base = _baseNamespace.value
+        return if (base.isBlank()) "" else "$base/${_gameNumber.value}"
+    }
+
+    /**
+     * Set the base namespace (email only).
+     * Used by Settings screen.
+     */
+    fun setBaseNamespace(value: String) {
+        Log.d("SettingsRepository", "setBaseNamespace called with: '$value'")
+        _baseNamespace.value = value
+        prefs?.edit()?.putString(KEY_BASE_NAMESPACE, value)?.apply()
+    }
+
+    /**
+     * Set the game number.
+     * Used by Mirror/Keep Score screens.
+     */
+    fun setGameNumber(value: Int) {
+        Log.d("SettingsRepository", "setGameNumber called with: $value")
+        _gameNumber.value = value
+        prefs?.edit()?.putInt(KEY_GAME_NUMBER, value)?.apply()
     }
 
     fun setFormat(value: Int) {
@@ -77,30 +128,11 @@ object SettingsRepository {
     }
 
     /**
-     * Get the game number from the current namespace.
-     * "casey@manion.com/5" → 5
-     * "casey@manion.com" → 0 (no game number specified)
-     */
-    fun getGameNumber(): Int {
-        val parts = _namespace.value.split("/", limit = 2)
-        return if (parts.size > 1) parts[1].toIntOrNull() ?: 0 else 0
-    }
-
-    /**
-     * Get the base namespace (email) without the game number.
-     * "casey@manion.com/5" → "casey@manion.com"
-     */
-    fun getBaseNamespace(): String {
-        return _namespace.value.split("/", limit = 2)[0]
-    }
-
-    /**
      * Check if current game is a tournament game (games 1-64).
      * Tournament games have format locked to 1 and don't show rounds.
      */
     fun isTournamentGame(): Boolean {
-        val gameNumber = getGameNumber()
-        return gameNumber in 1..64
+        return _gameNumber.value in 1..64
     }
 
     /**

@@ -62,27 +62,29 @@ fun GameDisplayScreen(
         }
     }
 
-    // Observe namespace for Mirror mode
-    val namespace by SettingsRepository.namespace.collectAsState()
+    // Observe base namespace and game number separately (split storage)
+    val baseNamespace by SettingsRepository.baseNamespace.collectAsState()
+    val gameNumber by SettingsRepository.gameNumber.collectAsState()
+    val fullNamespace = SettingsRepository.getFullNamespace()
 
-    // Track previous namespace to detect changes
-    var previousNamespace by remember { mutableStateOf(namespace) }
+    // Track previous full namespace to detect changes
+    var previousNamespace by remember { mutableStateOf(fullNamespace) }
 
     // Reset game state when namespace changes (prevents stale rounds from triggering false wins)
-    LaunchedEffect(namespace) {
-        if (namespace != previousNamespace) {
+    LaunchedEffect(fullNamespace) {
+        if (fullNamespace != previousNamespace) {
             // Reset local state for Keep Score mode (preserves colors)
             localGameState = localGameState.resetAll()
             // Tell Watch to reset its state (Watch preserves colors)
             WearableSender.sendReset()
-            previousNamespace = namespace
+            previousNamespace = fullNamespace
         }
     }
 
     // Read player names from Firebase when entering Mirror mode or when namespace changes
     // Debounce to avoid firing on every keystroke
-    LaunchedEffect(mode, namespace) {
-        if (mode == AppMode.MIRROR && namespace.isNotBlank()) {
+    LaunchedEffect(mode, fullNamespace) {
+        if (mode == AppMode.MIRROR && fullNamespace.isNotBlank()) {
             kotlinx.coroutines.delay(500) // Wait 500ms after typing stops
             FirebaseRepository.readAndSyncNames()
         }
@@ -94,10 +96,7 @@ fun GameDisplayScreen(
     // Player picker state (for Keep Score mode)
     var showPlayerPicker by remember { mutableStateOf<Int?>(null) }
 
-    // Get base namespace for player lookup
-    val baseNamespace = namespace.split("/", limit = 2)[0]
-
-    // Subscribe to players for Keep Score mode
+    // Subscribe to players for Keep Score mode (uses baseNamespace directly)
     val players by FirebasePlayersRepository.players.collectAsState()
     LaunchedEffect(baseNamespace) {
         if (baseNamespace.isNotBlank() && mode == AppMode.KEEP_SCORE) {
@@ -107,7 +106,7 @@ fun GameDisplayScreen(
     val activePlayers = players.filter { !it.archived }
 
     // Check for active tournament when namespace changes to a tournament game (1-64)
-    LaunchedEffect(namespace) {
+    LaunchedEffect(fullNamespace) {
         if (mode == AppMode.MIRROR && SettingsRepository.isTournamentGame()) {
             kotlinx.coroutines.delay(600) // Wait after debounce for name sync
             FirebaseRepository.checkActiveTournament { hasActive ->
@@ -152,8 +151,7 @@ fun GameDisplayScreen(
                         onDismissTournamentWarning = { showTournamentWarning = false },
                         onFixTournamentWarning = {
                             // Set game number to 0 (regular play, not tournament)
-                            val email = namespace.split("/", limit = 2)[0]
-                            SettingsRepository.setNamespace("$email/0")
+                            SettingsRepository.setGameNumber(0)
                             showTournamentWarning = false
                         }
                     )
@@ -225,19 +223,32 @@ fun GameDisplayScreen(
                     val format by SettingsRepository.format.collectAsState()
                     val isTournament = SettingsRepository.isTournamentGame()
 
+                    // Base namespace label (set in Settings)
+                    Text(
+                        text = if (baseNamespace.isNotBlank()) baseNamespace else "Set namespace in Settings",
+                        color = if (baseNamespace.isNotBlank()) WatchColors.OnSurface else WatchColors.OnSurfaceDisabled,
+                        fontSize = 14.sp,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Namespace field
+                        // Game number field
                         OutlinedTextField(
-                            value = namespace,
-                            onValueChange = { SettingsRepository.setNamespace(it) },
-                            label = { Text("Namespace") },
+                            value = gameNumber.toString(),
+                            onValueChange = { value ->
+                                val num = value.filter { it.isDigit() }.toIntOrNull() ?: 0
+                                SettingsRepository.setGameNumber(num.coerceIn(0, 64))
+                            },
+                            label = { Text("Game #") },
                             singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                            modifier = Modifier.weight(1f),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.width(100.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = WatchColors.Primary,
                                 unfocusedBorderColor = WatchColors.Surface,
@@ -245,6 +256,8 @@ fun GameDisplayScreen(
                                 unfocusedLabelColor = WatchColors.OnSurfaceDisabled
                             )
                         )
+
+                        Spacer(modifier = Modifier.weight(1f))
 
                         // Format selector
                         FormatSelector(
@@ -321,7 +334,7 @@ private fun MirrorDisplay(
     onFixTournamentWarning: () -> Unit
 ) {
     val format by SettingsRepository.format.collectAsState()
-    val namespace by SettingsRepository.namespace.collectAsState()
+    val baseNamespace by SettingsRepository.baseNamespace.collectAsState()
     val player1Name by SettingsRepository.player1Name.collectAsState()
     val player2Name by SettingsRepository.player2Name.collectAsState()
     // Derive showRounds reactively from format > 1 (tournament games 1-64 have format locked to 1)
@@ -331,9 +344,6 @@ private fun MirrorDisplay(
     // Player picker state - disabled for tournament games
     var showPlayerPicker by remember { mutableStateOf<Int?>(null) }
     val players by FirebasePlayersRepository.players.collectAsState()
-
-    // Get base namespace (email only, without game number) for player lookup
-    val baseNamespace = namespace.split("/", limit = 2)[0]
 
     // Subscribe to players using base namespace (only for non-tournament)
     LaunchedEffect(baseNamespace) {
