@@ -123,8 +123,8 @@ fun GameDisplayScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Namespace field (Mirror mode only)
-                if (mode == AppMode.MIRROR) {
+                // Namespace field (Mirror and Keep Score modes)
+                if (mode == AppMode.MIRROR || mode == AppMode.KEEP_SCORE) {
                     OutlinedTextField(
                         value = namespace,
                         onValueChange = { SettingsRepository.setNamespace(it) },

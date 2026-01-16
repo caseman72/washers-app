@@ -19,7 +19,6 @@ import com.manion.washers.phone.ui.theme.WatchColors
 fun SettingsScreen(
     onBackClick: () -> Unit
 ) {
-    val namespace by SettingsRepository.namespace.collectAsState()
     val format by SettingsRepository.format.collectAsState()
     val showRounds by SettingsRepository.showRounds.collectAsState()
 
@@ -42,25 +41,6 @@ fun SettingsScreen(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
-
-            // Namespace (Email)
-            SettingSection(title = "Namespace") {
-                OutlinedTextField(
-                    value = namespace,
-                    onValueChange = { SettingsRepository.setNamespace(it) },
-                    label = { Text("Email") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = WatchColors.Primary,
-                        unfocusedBorderColor = WatchColors.Surface,
-                        focusedLabelColor = WatchColors.Primary,
-                        unfocusedLabelColor = WatchColors.OnSurfaceDisabled
-                    )
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             // Format selector
             SettingSection(title = "Format") {
