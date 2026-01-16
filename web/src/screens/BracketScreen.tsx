@@ -212,8 +212,9 @@ export function BracketScreen() {
   const navigate = useNavigate()
   const { id } = useParams()
   const settings = loadSettings()
-  const { players: playerList, recordGameResult, undoGameResult, recordTournamentWin, recordTeamGameResult, undoTeamGameResult, recordTeamTournamentWin } = usePlayers(settings.namespace)
-  const { tournament, loading, updateTournament, archiveTournament, deleteTournament } = useTournament(settings.namespace, id)
+  const namespace = settings.namespace
+  const { players: playerList, recordGameResult, undoGameResult, recordTournamentWin, recordTeamGameResult, undoTeamGameResult, recordTeamTournamentWin } = usePlayers(namespace)
+  const { tournament, loading, updateTournament, archiveTournament, deleteTournament } = useTournament(namespace, id)
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
 
   // Convert player list to Map for easy lookup
@@ -566,7 +567,7 @@ export function BracketScreen() {
                         showHeader={true}
                         player1Losses={0}
                         player2Losses={0}
-                        namespace={settings.namespace}
+                        namespace={namespace}
                         tournamentStartedAt={tournament.createdAt.getTime()}
                       />
                     ))}
@@ -590,7 +591,7 @@ export function BracketScreen() {
                     showHeader={true}
                     player1Losses={0}
                     player2Losses={1}
-                    namespace={settings.namespace}
+                    namespace={namespace}
                         tournamentStartedAt={tournament.createdAt.getTime()}
                   />
                 </div>
@@ -613,7 +614,7 @@ export function BracketScreen() {
                     showHeader={true}
                     player1Losses={1}
                     player2Losses={1}
-                    namespace={settings.namespace}
+                    namespace={namespace}
                         tournamentStartedAt={tournament.createdAt.getTime()}
                   />
                 </div>
@@ -649,7 +650,7 @@ export function BracketScreen() {
                           showHeader={true}
                           player1Losses={1}
                           player2Losses={1}
-                          namespace={settings.namespace}
+                          namespace={namespace}
                         tournamentStartedAt={tournament.createdAt.getTime()}
                         />
                       ))}

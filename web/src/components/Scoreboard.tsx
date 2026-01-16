@@ -131,12 +131,28 @@ const mainStyles = `
     touch-action: pan-y;
   }
 
+  .scoreboard.contained {
+    min-height: unset;
+    height: 100%;
+    width: 100%;
+    padding: 30px 0 0 0;
+    box-sizing: border-box;
+    justify-content: flex-start;
+  }
+
   .games-counter {
     display: flex;
     align-items: center;
     gap: 2rem;
     margin-bottom: 2rem;
     height: 68px;
+  }
+
+  .contained .games-counter {
+    gap: 0.5rem;
+    margin-bottom: 0;
+    height: 50px;
+    flex-shrink: 0;
   }
 
   .games {
@@ -146,6 +162,16 @@ const mainStyles = `
     border-radius: 0.5rem;
   }
 
+  .contained .games {
+    font-size: 1.75rem;
+    min-width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
   .games-label {
     font-size: 1rem;
     color: #aaa;
@@ -153,10 +179,22 @@ const mainStyles = `
     letter-spacing: 0.2em;
   }
 
+  .contained .games-label {
+    font-size: 1.125rem;
+    color: #888;
+    letter-spacing: 0.05em;
+    padding: 0 0.25rem;
+  }
+
   .scores {
     display: flex;
-    align-items: center;
     gap: 0;
+  }
+
+  .contained .scores {
+    flex: 1;
+    width: 100%;
+    margin-top: 10px;
   }
 
   .score-panel {
@@ -168,6 +206,13 @@ const mainStyles = `
     justify-content: stretch;
     overflow: hidden;
     border-radius: 1rem;
+  }
+
+  .contained .score-panel {
+    width: unset;
+    height: unset;
+    flex: 1;
+    border-radius: 0.5rem;
   }
 
   .btn-up, .btn-down {
@@ -183,6 +228,10 @@ const mainStyles = `
     transition: background 0.1s;
     background: rgba(0, 0, 0, 0.25);
     color: inherit;
+  }
+
+  .contained .btn-up, .contained .btn-down {
+    font-size: 1.75rem;
   }
 
   .btn-up:hover, .btn-down:hover {
@@ -208,6 +257,10 @@ const mainStyles = `
     width: 100%;
   }
 
+  .contained .score {
+    font-size: 4.5rem;
+  }
+
   .reset-btn {
     margin-top: 2rem;
     width: 120px;
@@ -225,11 +278,22 @@ const mainStyles = `
     color: white;
   }
 
+  .contained .reset-btn {
+    margin-top: 1rem;
+    width: 100px;
+    padding: 0.5rem 0;
+    font-size: 0.875rem;
+  }
+
   .page-dots {
     display: flex;
     gap: 0.25rem;
     justify-content: center;
     margin-top: 1.5rem;
+  }
+
+  .contained .page-dots {
+    margin-top: 0.75rem;
   }
 
   .dot {
@@ -320,14 +384,18 @@ const mainStyles = `
 interface ScoreboardProps {
   onGameComplete?: (winner: 1 | 2, session: GameSession) => void
   onStateChange?: (session: GameSession, colors: { p1: string; p2: string }) => void
+  contained?: boolean
+  format?: number
 }
 
-export function Scoreboard({ onGameComplete, onStateChange }: ScoreboardProps) {
+export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1 }: ScoreboardProps) {
   const [session, setSession] = useState<GameSession>({
     player1Score: 0,
     player2Score: 0,
     player1Games: 0,
     player2Games: 0,
+    player1Rounds: 0,
+    player2Rounds: 0,
   })
   const [showDonePrompt, setShowDonePrompt] = useState<1 | 2 | null>(null)
   const [player1Color, setPlayer1Color] = useState<ColorId>('orange')
@@ -439,18 +507,46 @@ export function Scoreboard({ onGameComplete, onStateChange }: ScoreboardProps) {
 
   const confirmWin = useCallback((winner: 1 | 2) => {
     setSession(prev => {
-      const newSession = {
-        ...prev,
-        player1Score: 0,
-        player2Score: 0,
-        player1Games: winner === 1 ? prev.player1Games + 1 : prev.player1Games,
-        player2Games: winner === 2 ? prev.player2Games + 1 : prev.player2Games,
+      const gamesNeeded = Math.floor(format / 2) + 1
+      const newPlayer1Games = winner === 1 ? prev.player1Games + 1 : prev.player1Games
+      const newPlayer2Games = winner === 2 ? prev.player2Games + 1 : prev.player2Games
+      const player1WinsSession = newPlayer1Games >= gamesNeeded
+      const player2WinsSession = newPlayer2Games >= gamesNeeded
+
+      let newSession: GameSession
+      if (player1WinsSession) {
+        newSession = {
+          player1Score: 0,
+          player2Score: 0,
+          player1Games: 0,
+          player2Games: 0,
+          player1Rounds: prev.player1Rounds + 1,
+          player2Rounds: prev.player2Rounds,
+        }
+      } else if (player2WinsSession) {
+        newSession = {
+          player1Score: 0,
+          player2Score: 0,
+          player1Games: 0,
+          player2Games: 0,
+          player1Rounds: prev.player1Rounds,
+          player2Rounds: prev.player2Rounds + 1,
+        }
+      } else {
+        newSession = {
+          player1Score: 0,
+          player2Score: 0,
+          player1Games: newPlayer1Games,
+          player2Games: newPlayer2Games,
+          player1Rounds: prev.player1Rounds,
+          player2Rounds: prev.player2Rounds,
+        }
       }
       onGameComplete?.(winner, newSession)
       return newSession
     })
     setShowDonePrompt(null)
-  }, [onGameComplete])
+  }, [onGameComplete, format])
 
   const cancelWin = useCallback((player: 1 | 2) => {
     incrementScore(player) // reset to 15 ... because you win or bust
@@ -463,6 +559,8 @@ export function Scoreboard({ onGameComplete, onStateChange }: ScoreboardProps) {
       player2Score: 0,
       player1Games: 0,
       player2Games: 0,
+      player1Rounds: 0,
+      player2Rounds: 0,
     })
     setShowDonePrompt(null)
   }, [])
@@ -475,12 +573,13 @@ export function Scoreboard({ onGameComplete, onStateChange }: ScoreboardProps) {
   const p1 = getColor(player1Color)
   const p2 = getColor(player2Color)
   const otherColor = colorPicker === 1 ? player2Color : player1Color
+  const baseClass = contained ? 'scoreboard contained' : 'scoreboard'
 
   // Color picker view (sub-screen of colors screen)
   if (colorPicker) {
     return (
       <div
-        className="scoreboard color-picker-view"
+        className={`${baseClass} color-picker-view`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -529,7 +628,7 @@ export function Scoreboard({ onGameComplete, onStateChange }: ScoreboardProps) {
   if (screen === 'colors') {
     return (
       <div
-        className="scoreboard"
+        className={baseClass}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -571,7 +670,7 @@ export function Scoreboard({ onGameComplete, onStateChange }: ScoreboardProps) {
 
   return (
     <div
-      className="scoreboard"
+      className={baseClass}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

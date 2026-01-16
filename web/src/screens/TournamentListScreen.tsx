@@ -138,7 +138,8 @@ const styles = `
 export function TournamentListScreen() {
   const navigate = useNavigate()
   const settings = loadSettings()
-  const { tournaments, loading } = useTournaments(settings.namespace)
+  const namespace = settings.namespace
+  const { tournaments, loading } = useTournaments(namespace)
 
   const archivedTournaments = tournaments.filter(t => t.archived)
 

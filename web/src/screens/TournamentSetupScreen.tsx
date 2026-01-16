@@ -236,8 +236,9 @@ const styles = `
 export function TournamentSetupScreen() {
   const navigate = useNavigate()
   const settings = loadSettings()
-  const { players: allPlayers, loading: playersLoading } = usePlayers(settings.namespace)
-  const { createTournament } = useTournaments(settings.namespace)
+  const namespace = settings.namespace
+  const { players: allPlayers, loading: playersLoading } = usePlayers(namespace)
+  const { createTournament } = useTournaments(namespace)
   const players = allPlayers.filter(p => !p.archived)
   const [tournamentName, setTournamentName] = useState('')
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<Set<string>>(new Set())

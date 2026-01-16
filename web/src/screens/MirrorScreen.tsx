@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { loadSettings, saveSettings } from './SettingsScreen'
+import { loadSettings, updateGameNamespace, getBaseNamespace, getGameNumber } from './SettingsScreen'
 import { useGameState } from '../hooks/useGameState'
 import { GameDisplay } from '../components/GameDisplay'
 
@@ -26,7 +26,7 @@ const styles = `
     display: flex;
     flex-direction: column;
     padding: 1rem;
-    background: #2a2a2a;
+    background: #3a3a3a;
   }
 
   .status-text {
@@ -36,11 +36,11 @@ const styles = `
   }
 
   .status-text.connected {
-    color: #27ae60;
+    color: #4caf50;
   }
 
   .status-text.waiting {
-    color: #888;
+    color: gray;
   }
 
   .spacer {
@@ -77,7 +77,7 @@ const styles = `
     padding: 0.875rem;
     font-size: 1rem;
     font-weight: 500;
-    background: #3a3a3a;
+    background: #515151;
     color: white;
     border: none;
     border-radius: 0.5rem;
@@ -85,7 +85,7 @@ const styles = `
   }
 
   .back-btn:hover {
-    background: #4a4a4a;
+    background: #616161;
   }
 `
 
@@ -93,27 +93,22 @@ export function MirrorScreen() {
   const navigate = useNavigate()
   const settings = loadSettings()
 
-  const [namespace, setNamespace] = useState(settings.namespace)
+  const [gameNamespace, setGameNamespace] = useState(settings.gameNamespace)
 
-  // Extract game number from namespace (e.g., "casey@manion.com/19" -> 19)
-  const getGameNumber = (ns: string): number => {
-    const match = ns.match(/\/(\d+)$/)
-    return match ? parseInt(match[1], 10) : 1
-  }
+  const baseNamespace = getBaseNamespace(gameNamespace)
+  const gameNumber = getGameNumber(gameNamespace)
 
-  const gameNumber = getGameNumber(namespace)
-
-  // Save namespace to settings when it changes (debounced)
+  // Save gameNamespace to settings when it changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (namespace !== settings.namespace) {
-        saveSettings({ ...settings, namespace })
+      if (gameNamespace !== settings.gameNamespace) {
+        updateGameNamespace(gameNamespace)
       }
     }, 500)
     return () => clearTimeout(timer)
-  }, [namespace, settings])
+  }, [gameNamespace, settings.gameNamespace])
 
-  const game = useGameState(namespace, gameNumber)
+  const game = useGameState(baseNamespace, gameNumber)
 
   const hasData = game.state !== null
   const isConnected = hasData && !game.loading
@@ -143,8 +138,8 @@ export function MirrorScreen() {
           <input
             type="text"
             className="namespace-input"
-            value={namespace}
-            onChange={(e) => setNamespace(e.target.value)}
+            value={gameNamespace}
+            onChange={(e) => setGameNamespace(e.target.value)}
             placeholder="casey@manion.com/1"
           />
         </div>

@@ -166,7 +166,7 @@ fun GameDisplayScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
-                        .background(WatchColors.Surface, RoundedCornerShape(8.dp))
+                        .background(WatchColors.Background, RoundedCornerShape(8.dp))
                         .clickable { onBackClick() },
                     contentAlignment = Alignment.Center
                 ) {

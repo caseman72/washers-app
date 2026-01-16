@@ -1,83 +1,86 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Scoreboard } from '../components/Scoreboard'
-import { loadSettings } from './SettingsScreen'
+import { loadSettings, updateGameNamespace, getBaseNamespace, getGameNumber } from './SettingsScreen'
 import { writeGameState } from '../lib/firebase'
 import type { GameSession } from '../types'
 
 const styles = `
   .keep-score-screen {
-    position: relative;
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
+    background: #1a1a1a;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
-  .keep-score-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+  .keep-score-game-area {
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+  }
+
+  .keep-score-bottom {
+    flex: 1;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    z-index: 50;
+    flex-direction: column;
+    padding: 1rem;
+    background: #3a3a3a;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+
+  .namespace-field {
+    margin-bottom: 0.75rem;
+  }
+
+  .namespace-label {
     font-size: 0.75rem;
     color: #888;
+    margin-bottom: 0.25rem;
   }
 
-  .game-number-input {
-    width: 4rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    background: #333;
+  .namespace-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    background: #1a1a1a;
     border: 1px solid #444;
-    border-radius: 0.25rem;
+    border-radius: 0.5rem;
     color: white;
-    text-align: center;
   }
 
-  .game-number-input:focus {
+  .namespace-input:focus {
     outline: none;
     border-color: #d35400;
   }
 
-  .namespace-display {
-    color: #d35400;
-    max-width: 150px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .back-btn-overlay {
-    position: fixed;
-    bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 0.5rem 1.5rem;
-    font-size: 0.875rem;
-    background: rgba(0, 0, 0, 0.6);
-    color: #aaa;
+  .back-btn {
+    width: 100%;
+    padding: 0.875rem;
+    font-size: 1rem;
+    font-weight: 500;
+    background: #515151;
+    color: white;
     border: none;
     border-radius: 0.5rem;
     cursor: pointer;
-    z-index: 50;
-    backdrop-filter: blur(4px);
   }
 
-  .back-btn-overlay:hover {
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
+  .back-btn:hover {
+    background: #616161;
   }
 
   .no-namespace {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
     text-align: center;
     color: #888;
   }
@@ -107,37 +110,42 @@ const styles = `
 export function KeepScoreScreen() {
   const navigate = useNavigate()
   const settings = loadSettings()
-  const hasNamespace = settings.namespace.trim().length > 0
+  const [gameNamespace, setGameNamespace] = useState(settings.gameNamespace)
 
-  const [gameNumber, setGameNumber] = useState(1)
+  const baseNamespace = getBaseNamespace(gameNamespace)
+  const gameNumber = getGameNumber(gameNamespace)
+  const hasNamespace = baseNamespace.trim().length > 0
+
   const [lastSession, setLastSession] = useState<GameSession | null>(null)
   const [lastColors, setLastColors] = useState<{ p1: string; p2: string }>({ p1: 'ORANGE', p2: 'BLACK' })
 
-  const handleGameNumberChange = (value: string) => {
-    const num = parseInt(value, 10)
-    if (!isNaN(num) && num >= 1) {
-      setGameNumber(num)
-    }
-  }
+  // Save gameNamespace to settings when it changes (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (gameNamespace !== settings.gameNamespace) {
+        updateGameNamespace(gameNamespace)
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [gameNamespace, settings.gameNamespace])
 
   // Sync to Firebase when session changes
+  // Don't send player1Name/player2Name - let Firebase preserve existing names
   useEffect(() => {
     if (!hasNamespace || !lastSession) return
 
-    writeGameState(settings.namespace, gameNumber, {
+    writeGameState(baseNamespace, gameNumber, {
       player1Score: lastSession.player1Score,
       player2Score: lastSession.player2Score,
       player1Games: lastSession.player1Games,
       player2Games: lastSession.player2Games,
-      player1Rounds: 0,
-      player2Rounds: 0,
+      player1Rounds: lastSession.player1Rounds,
+      player2Rounds: lastSession.player2Rounds,
       player1Color: lastColors.p1,
       player2Color: lastColors.p2,
-      player1Name: 'Player 1',
-      player2Name: 'Player 2',
       format: 1,
     }).catch(err => console.error('Failed to write game state:', err))
-  }, [lastSession, lastColors, gameNumber, settings.namespace, hasNamespace])
+  }, [lastSession, lastColors, gameNumber, baseNamespace, hasNamespace])
 
   const handleStateChange = useCallback((session: GameSession, colors: { p1: string; p2: string }) => {
     setLastSession(session)
@@ -146,22 +154,33 @@ export function KeepScoreScreen() {
 
   if (!hasNamespace) {
     return (
-      <div className="keep-score-screen" style={{ background: '#1a1a1a', minHeight: '100vh' }}>
-        <div className="no-namespace">
-          <div className="no-namespace-title">No Namespace Configured</div>
-          <div>Go to Settings to enter your namespace</div>
-          <button className="settings-link" onClick={() => navigate('/settings')}>
-            Open Settings
-          </button>
+      <div className="keep-score-screen">
+        <div className="keep-score-game-area" style={{ background: '#515151' }}>
+          <div className="no-namespace">
+            <div className="no-namespace-title">No Namespace Configured</div>
+            <div>Enter your namespace below</div>
+          </div>
         </div>
-        <div className="back-btn-overlay" style={{ background: 'rgba(0,0,0,0.8)' }}>
-          <button
-            style={{ background: 'transparent', border: 'none', color: '#aaa', cursor: 'pointer' }}
-            onClick={() => navigate('/')}
-          >
+
+        <div className="keep-score-bottom">
+          <div className="spacer" />
+
+          <div className="namespace-field">
+            <div className="namespace-label">Namespace</div>
+            <input
+              type="text"
+              className="namespace-input"
+              value={gameNamespace}
+              onChange={(e) => setGameNamespace(e.target.value)}
+              placeholder="casey@manion.com/1"
+            />
+          </div>
+
+          <button className="back-btn" onClick={() => navigate('/')}>
             Back to Menu
           </button>
         </div>
+
         <style>{styles}</style>
       </div>
     )
@@ -169,25 +188,31 @@ export function KeepScoreScreen() {
 
   return (
     <div className="keep-score-screen">
-      <div className="keep-score-header">
-        <span className="namespace-display">{settings.namespace}</span>
-        <span>/</span>
-        <span>Game</span>
-        <input
-          type="number"
-          className="game-number-input"
-          value={gameNumber}
-          onChange={(e) => handleGameNumberChange(e.target.value)}
-          min="1"
-        />
+      {/* Square game area */}
+      <div className="keep-score-game-area">
+        <Scoreboard onStateChange={handleStateChange} contained />
       </div>
-      <Scoreboard onStateChange={handleStateChange} />
-      <button
-        className="back-btn-overlay"
-        onClick={() => navigate('/')}
-      >
-        Back to Menu
-      </button>
+
+      {/* Bottom area - matches Mirror layout */}
+      <div className="keep-score-bottom">
+        <div className="spacer" />
+
+        <div className="namespace-field">
+          <div className="namespace-label">Namespace</div>
+          <input
+            type="text"
+            className="namespace-input"
+            value={gameNamespace}
+            onChange={(e) => setGameNamespace(e.target.value)}
+            placeholder="casey@manion.com/1"
+          />
+        </div>
+
+        <button className="back-btn" onClick={() => navigate('/')}>
+          Back to Menu
+        </button>
+      </div>
+
       <style>{styles}</style>
     </div>
   )

@@ -246,7 +246,8 @@ const styles = `
 export function PlayersScreen() {
   const navigate = useNavigate()
   const settings = loadSettings()
-  const { players, loading, error, addPlayer, deletePlayer } = usePlayers(settings.namespace)
+  const namespace = settings.namespace
+  const { players, loading, error, addPlayer, deletePlayer } = usePlayers(namespace)
   const [showAddModal, setShowAddModal] = useState(false)
   const [newPlayerName, setNewPlayerName] = useState('')
 
@@ -275,7 +276,7 @@ export function PlayersScreen() {
   }
 
   const activePlayers = players.filter(p => !p.archived)
-  const hasNamespace = settings.namespace.trim().length > 0
+  const hasNamespace = namespace.trim().length > 0
 
   if (!hasNamespace) {
     return (
@@ -306,7 +307,7 @@ export function PlayersScreen() {
         <div>
           <span className="players-title">Players</span>
           <span className="player-count"> ({activePlayers.length})</span>
-          <span className="namespace-display">{settings.namespace}</span>
+          <span className="namespace-display">{namespace}</span>
         </div>
         <button className="add-btn" onClick={() => setShowAddModal(true)}>
           + Add

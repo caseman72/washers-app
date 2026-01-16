@@ -127,7 +127,7 @@ export function HomeScreen() {
           onClick={() => navigate('/mirror')}
         >
           Mirror
-          <div className="mode-description">Watch live games</div>
+          <div className="mode-description">Watch live game</div>
         </button>
 
         <button

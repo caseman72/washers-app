@@ -304,12 +304,14 @@ Rounds checked:
 - [x] Firebase round history logging on round win
 - [x] Firebase read player names on namespace change (Mirror mode)
 - [x] Reset Watch state on namespace change (preserves colors, prevents stale rounds)
+- [x] Improved back button contrast for visibility
 
 ### Web App (React/TypeScript)
 - [x] Home screen (mode picker - Mirror / Keep Score / Settings)
 - [x] Settings screen (namespace, mirror game selector 1-8)
-- [x] Mirror mode - dual game display with Firebase realtime sync
-- [x] Keep Score mode - standalone scoring (clone of Watch)
+- [x] Mirror mode - single game display matching Phone layout exactly
+- [x] Keep Score mode - standalone scoring (clone of Watch) with Firebase sync
+- [x] Keep Score rounds tracking matches Phone (format 1: win → rounds+1, games=0)
 - [x] Color picker
 - [x] Win/bust logic
 - [x] Firebase realtime sync (anonymous auth)
@@ -327,6 +329,8 @@ Rounds checked:
 - [x] Auto-detect winners from Firebase (detects rounds INCREASE, not absolute value)
 - [x] Initialize game tables with player names from bracket
 - [x] Stable game numbering (based on structural playability, not dynamic state)
+- [x] 60-second edit window for match winners (fix accidental selections)
+- [x] Wins/losses undo when changing match winners
 - [ ] Live game tiles (all 8 games at once)
 
 ---
@@ -392,6 +396,8 @@ Rounds checked:
 - Interactive bracket display with winner selection
 - Team names displayed as "Player1 & Player2"
 - Grand Finals with conditional Game 2
+- 60-second edit window for match winners (fix mistakes)
+- Wins/losses undo when changing winner selection
 - Full Firebase sync for tournaments
 - Archive completed tournaments
 

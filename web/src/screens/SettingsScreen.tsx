@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom'
 const STORAGE_KEY = 'washers-settings'
 
 export interface Settings {
-  namespace: string
+  namespace: string      // Base namespace (e.g., "casey@manion.com")
+  gameNamespace: string  // Full namespace with game (e.g., "casey@manion.com/2")
 }
 
 const defaultSettings: Settings = {
   namespace: '',
+  gameNamespace: '',
 }
 
 export function loadSettings(): Settings {
@@ -25,6 +27,44 @@ export function loadSettings(): Settings {
 
 export function saveSettings(settings: Settings) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+}
+
+// Extract base namespace (strip /game suffix if present)
+// e.g., "casey@manion.com/2" -> "casey@manion.com"
+export function getBaseNamespace(ns: string): string {
+  const match = ns.match(/^(.+?)\/\d+$/)
+  return match ? match[1] : ns
+}
+
+// Extract game number from namespace
+// e.g., "casey@manion.com/2" -> 2
+export function getGameNumber(ns: string): number {
+  const match = ns.match(/\/(\d+)$/)
+  return match ? parseInt(match[1], 10) : 1
+}
+
+// Update namespace and sync to gameNamespace (preserving game number)
+export function updateNamespace(newNamespace: string): Settings {
+  const settings = loadSettings()
+  const gameNumber = getGameNumber(settings.gameNamespace)
+  const newGameNamespace = newNamespace ? `${newNamespace}/${gameNumber}` : ''
+  const newSettings = {
+    namespace: newNamespace,
+    gameNamespace: newGameNamespace,
+  }
+  saveSettings(newSettings)
+  return newSettings
+}
+
+// Update gameNamespace and sync to namespace (extracting base)
+export function updateGameNamespace(newGameNamespace: string): Settings {
+  const newNamespace = getBaseNamespace(newGameNamespace)
+  const newSettings = {
+    namespace: newNamespace,
+    gameNamespace: newGameNamespace,
+  }
+  saveSettings(newSettings)
+  return newSettings
 }
 
 const styles = `
@@ -107,10 +147,9 @@ export function SettingsScreen() {
     setSettings(loadSettings())
   }, [])
 
-  const updateSetting = <K extends keyof Settings>(key: K, value: Settings[K]) => {
-    const newSettings = { ...settings, [key]: value }
+  const handleNamespaceChange = (value: string) => {
+    const newSettings = updateNamespace(value)
     setSettings(newSettings)
-    saveSettings(newSettings)
   }
 
   return (
@@ -124,9 +163,9 @@ export function SettingsScreen() {
           className="settings-input"
           placeholder="casey@manion.com"
           value={settings.namespace}
-          onChange={(e) => updateSetting('namespace', e.target.value)}
+          onChange={(e) => handleNamespaceChange(e.target.value)}
         />
-        <div className="settings-hint">Your Firebase namespace (email)</div>
+        <div className="settings-hint">Your Firebase namespace (email only)</div>
       </div>
 
       <button className="back-btn" onClick={() => navigate('/')}>

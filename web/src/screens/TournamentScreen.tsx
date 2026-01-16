@@ -96,7 +96,8 @@ const styles = `
 export function TournamentScreen() {
   const navigate = useNavigate()
   const settings = loadSettings()
-  const { tournaments, loading } = useTournaments(settings.namespace)
+  const namespace = settings.namespace
+  const { tournaments, loading } = useTournaments(namespace)
 
   // Find active tournament (not archived, status is active or setup)
   const activeTournament = tournaments.find(t => !t.archived && (t.status === 'active' || t.status === 'setup'))

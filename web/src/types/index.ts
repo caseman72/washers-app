@@ -71,4 +71,6 @@ export interface GameSession {
   player2Score: number
   player1Games: number
   player2Games: number
+  player1Rounds: number
+  player2Rounds: number
 }

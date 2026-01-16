@@ -24,74 +24,88 @@ const styles = `
     width: 100%;
     height: 100%;
     background: #515151;
-    border-radius: 0.75rem;
     overflow: hidden;
-    padding: 1rem;
+    padding: 25px 16px;
+    box-sizing: border-box;
   }
 
   .game-header {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+    height: 50px;
+    flex-shrink: 0;
   }
 
   .games-badge {
-    font-size: 1.25rem;
+    font-size: 1.75rem;
     font-weight: bold;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    min-width: 2.5rem;
-    text-align: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    min-width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
   }
 
   .games-label {
-    font-size: 0.75rem;
+    font-size: 1.125rem;
     color: #888;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .player-names {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-    margin-bottom: 0.5rem;
-    gap: 0.5rem;
-  }
-
-  .player-name {
-    flex: 1;
-    text-align: center;
-    font-size: 0.875rem;
-    color: #ccc;
-    padding: 0.25rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 0.25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    letter-spacing: 0.05em;
+    padding: 0 0.25rem;
   }
 
   .scores-container {
     display: flex;
     flex: 1;
     width: 100%;
-    gap: 0.25rem;
+    margin-top: 10px;
+    gap: 0;
   }
 
   .score-panel {
     flex: 1;
     display: flex;
+    flex-direction: column;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  .score-panel-top {
+    flex: 0.7;
+    display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.5rem;
+    background: rgba(0, 0, 0, 0.25);
+  }
+
+  .player-name {
+    font-size: 1rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .score-panel-middle {
+    flex: 1.4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .score-value {
-    font-size: 4rem;
+    font-size: 4.5rem;
     font-weight: bold;
+  }
+
+  .score-panel-bottom {
+    flex: 0.7;
+    background: rgba(0, 0, 0, 0.25);
   }
 
   .game-loading,
@@ -139,7 +153,7 @@ export function GameDisplay({
   loading,
   error,
   gameNumber,
-  showRounds = true,
+  showRounds = false,
 }: GameDisplayProps) {
   if (loading) {
     return (
@@ -199,7 +213,7 @@ export function GameDisplay({
         >
           {p1GamesDisplay}
         </div>
-        <span className="games-label">Games</span>
+        <span className="games-label">GAMES</span>
         <div
           className="games-badge"
           style={{ background: p2Color.bg, color: p2Color.text }}
@@ -208,25 +222,31 @@ export function GameDisplay({
         </div>
       </div>
 
-      {/* Player names */}
-      <div className="player-names">
-        <div className="player-name">{state.player1Name || 'Player 1'}</div>
-        <div className="player-name">{state.player2Name || 'Player 2'}</div>
-      </div>
-
-      {/* Score panels */}
+      {/* Score panels with names inside */}
       <div className="scores-container">
         <div
           className="score-panel"
           style={{ background: p1Color.bg, color: p1Color.text }}
         >
-          <span className="score-value">{state.player1Score}</span>
+          <div className="score-panel-top">
+            <span className="player-name">{state.player1Name || 'Player 1'}</span>
+          </div>
+          <div className="score-panel-middle">
+            <span className="score-value">{state.player1Score}</span>
+          </div>
+          <div className="score-panel-bottom" />
         </div>
         <div
           className="score-panel"
           style={{ background: p2Color.bg, color: p2Color.text }}
         >
-          <span className="score-value">{state.player2Score}</span>
+          <div className="score-panel-top">
+            <span className="player-name">{state.player2Name || 'Player 2'}</span>
+          </div>
+          <div className="score-panel-middle">
+            <span className="score-value">{state.player2Score}</span>
+          </div>
+          <div className="score-panel-bottom" />
         </div>
       </div>
 
