@@ -206,6 +206,33 @@ const styles = `
     cursor: pointer;
     font-size: 1rem;
   }
+
+  /* Mobile: vertical list layout */
+  @media (max-width: 600px) {
+    .bracket-rounds {
+      flex-direction: column;
+      overflow-x: visible;
+      gap: 2rem;
+      padding: 0;
+    }
+
+    .bracket-round {
+      min-width: auto;
+      width: 100%;
+    }
+
+    .round-label {
+      font-size: 0.875rem;
+      font-weight: bold;
+      text-align: left;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid #333;
+    }
+
+    .round-matches {
+      gap: 0.75rem;
+    }
+  }
 `
 
 export function BracketScreen() {
