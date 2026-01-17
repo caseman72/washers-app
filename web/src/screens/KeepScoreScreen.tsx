@@ -106,10 +106,26 @@ const styles = `
     color: white;
     cursor: pointer;
     min-width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
-  .format-btn:hover {
+  .format-btn:hover:not(.locked) {
     border-color: #d35400;
+  }
+
+  .format-btn.locked {
+    cursor: default;
+    opacity: 0.7;
+    padding: 0.5rem 1rem;
+  }
+
+  .format-locked-label {
+    font-size: 0.6rem;
+    font-weight: normal;
+    color: #888;
   }
 
   .back-btn {
@@ -337,6 +353,9 @@ export function KeepScoreScreen() {
   const baseNamespace = settings.namespace
   const hasNamespace = baseNamespace.trim().length > 0
 
+  // Tournament games (1-64) have format locked to 1
+  const isTournamentGame = gameNumber >= 1 && gameNumber <= 64
+
   const [lastSession, setLastSession] = useState<GameSession | null>(null)
   const [lastColors, setLastColors] = useState<{ p1: string; p2: string }>({ p1: 'ORANGE', p2: 'BLACK' })
 
@@ -427,7 +446,15 @@ export function KeepScoreScreen() {
     setShowTournamentWarning(false)
   }
 
+  // Lock format to 1 for tournament games
+  useEffect(() => {
+    if (isTournamentGame && format !== 1) {
+      setFormat(1)
+    }
+  }, [isTournamentGame, format])
+
   const cycleFormat = () => {
+    if (isTournamentGame) return // Locked for tournament games
     const formats = [1, 3, 5, 7]
     const currentIndex = formats.indexOf(format)
     const nextIndex = (currentIndex + 1) % formats.length
@@ -466,8 +493,12 @@ export function KeepScoreScreen() {
 
             <div className="spacer" />
 
-            <button className="format-btn" onClick={cycleFormat}>
-              Bo{format}
+            <button
+              className={`format-btn ${isTournamentGame ? 'locked' : ''}`}
+              onClick={cycleFormat}
+            >
+              <span>Bo{format}</span>
+              {isTournamentGame && <span className="format-locked-label">locked</span>}
             </button>
           </div>
 
@@ -544,8 +575,12 @@ export function KeepScoreScreen() {
 
           <div className="spacer" />
 
-          <button className="format-btn" onClick={cycleFormat}>
-            Bo{format}
+          <button
+            className={`format-btn ${isTournamentGame ? 'locked' : ''}`}
+            onClick={cycleFormat}
+          >
+            <span>Bo{format}</span>
+            {isTournamentGame && <span className="format-locked-label">locked</span>}
           </button>
         </div>
 

@@ -215,6 +215,7 @@ All January 2026 tasks completed. Ready for next feature.
 - [x] Wins/losses undo when changing match winners
 - [x] React modal dialogs (replaced browser confirm/alert)
 - [x] Bracket light theme toggle (for TV display)
+- [x] Format locked indicator for tournament games (1-64)
 - [ ] Live game tiles (all 8 games at once)
 
 ---

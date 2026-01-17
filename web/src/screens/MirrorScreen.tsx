@@ -93,12 +93,22 @@ const styles = `
     border: 1px solid #444;
     border-radius: 0.5rem;
     color: white;
-    cursor: pointer;
     min-width: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
-  .format-btn:hover {
-    border-color: #d35400;
+  .format-btn.locked {
+    opacity: 0.7;
+    padding: 0.5rem 1rem;
+  }
+
+  .format-locked-label {
+    font-size: 0.6rem;
+    font-weight: normal;
+    color: #888;
   }
 
   .back-btn {
@@ -197,6 +207,9 @@ export function MirrorScreen() {
   // Get format from Firebase data (read-only display)
   const firebaseFormat = game.state?.format || 1
 
+  // Tournament games (1-64) have format locked to 1
+  const isTournamentGame = gameNumber >= 1 && gameNumber <= 64
+
   // Save gameNumber to settings when it changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -278,8 +291,9 @@ export function MirrorScreen() {
 
           <div className="spacer" />
 
-          <div className="format-btn" style={{ cursor: 'default' }}>
-            Bo{firebaseFormat}
+          <div className={`format-btn ${isTournamentGame ? 'locked' : ''}`} style={{ cursor: 'default' }}>
+            <span>Bo{firebaseFormat}</span>
+            {isTournamentGame && <span className="format-locked-label">locked</span>}
           </div>
         </div>
 
