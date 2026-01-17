@@ -134,6 +134,11 @@ fun GameDisplayScreen(
                     android.util.Log.d("GameDisplayScreen", "No data in Firebase, initializing with defaults")
                     val defaultState = GameState()
                     localGameState = defaultState
+                    // Clear player names before writing defaults to avoid writing stale names from previous game
+                    // For tournament games (1-64), names come from the bracket
+                    // For non-tournament games, user sets names manually
+                    SettingsRepository.setPlayer1Name("")
+                    SettingsRepository.setPlayer2Name("")
                     FirebaseRepository.writeCurrentState(defaultState)
                 }
                 initialDataLoaded = true
