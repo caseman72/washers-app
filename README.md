@@ -140,13 +140,13 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 
 ## Current Task
 
-**✅ Keep Score Fixes - Complete**
+**✅ Mirror Mode Fix - Complete**
 
-Fixed Keep Score game switching issues on both web and phone:
-- Game Complete detection now computes game numbers from bracket structure
-- Keep Score loads existing game state from Firebase on mount
-- Fixed stale data writes when switching between games (loadedForGame tracking)
-- Firebase writes use updateChildren to preserve player names/IDs
+Fixed Mirror mode on phone to prevent stale data writes:
+- Added writePlayerNamesOnly() function for safe name updates
+- Mirror mode no longer writes scores/games/rounds to Firebase
+- Player selection only writes names (not cached watch state)
+- Format changes in Mirror mode don't write to Firebase (metadata only)
 
 Ready for next feature.
 
@@ -196,6 +196,7 @@ Ready for next feature.
 - [x] Keep Score loads game state from Firebase on mount (persists between sessions)
 - [x] Keep Score game switching fix (prevents stale data writes)
 - [x] Firebase writes preserve player names/IDs (updateChildren vs setValue)
+- [x] Mirror mode safe writes (only player names, not stale game state)
 
 ### Web App (React/TypeScript)
 - [x] Home screen (mode picker - Mirror / Keep Score / Settings)
