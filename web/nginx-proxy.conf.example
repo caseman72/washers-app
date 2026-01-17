@@ -1,0 +1,27 @@
+# Add to /opt/homebrew/etc/nginx/servers/
+# Example: washers.manion.org
+
+server {
+    listen         80;
+    server_name    washers.manion.org;
+
+    return 302 "https://washers.manion.org$request_uri";
+}
+
+server {
+    listen 443 ssl;
+    server_name    washers.manion.org;
+
+    ssl_certificate /opt/homebrew/etc/nginx/ssl/washers.manion.org.2026.pem;
+    ssl_certificate_key /opt/homebrew/etc/nginx/ssl/washers.manion.org.2026.key;
+
+    location / {
+        proxy_pass http://127.0.0.1:5173;
+        proxy_redirect     off;
+
+        proxy_set_header   Host             $host;
+        proxy_set_header   X-Real-IP        $remote_addr;
+        proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;
+        proxy_max_temp_file_size 0;
+    }
+}

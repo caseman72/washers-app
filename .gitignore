@@ -1,6 +1,8 @@
 # Firebase secrets
 **/google-services.json
 secrets.properties
+buildDockerImage.sh
+updateDockerImage.sh
 
 # Keystores
 *.keystore
