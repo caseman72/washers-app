@@ -121,17 +121,14 @@ fun GameDisplayScreen(
             initialDataLoaded = false
             loadedForGameNumber = null
 
-            android.util.Log.d("GameDisplayScreen", "Loading game state for game $gameNumber")
             // Capture gameNumber for the callback (in case it changes before callback runs)
             val loadingGameNumber = gameNumber
             FirebaseRepository.readGameState { state ->
                 if (state != null) {
                     // Firebase has data - use it
-                    android.util.Log.d("GameDisplayScreen", "Loaded state from Firebase: $state")
                     localGameState = state
                 } else {
                     // No data in Firebase - use defaults and write them
-                    android.util.Log.d("GameDisplayScreen", "No data in Firebase, initializing with defaults")
                     val defaultState = GameState()
                     localGameState = defaultState
                     // Clear player names before writing defaults to avoid writing stale names from previous game

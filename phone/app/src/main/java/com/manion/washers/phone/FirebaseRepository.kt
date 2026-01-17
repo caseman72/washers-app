@@ -64,7 +64,9 @@ object FirebaseRepository {
             data["player2Name"] = SettingsRepository.player2Name.value
         }
 
-        ref.setValue(data)
+        // Use updateChildren instead of setValue to preserve fields we don't write
+        // (like player1Id, player2Id for tournament games)
+        ref.updateChildren(data)
             .addOnSuccessListener {
                 Log.i(TAG, "SUCCESS: Wrote current state to Firebase path: $path")
                 onComplete?.invoke()
