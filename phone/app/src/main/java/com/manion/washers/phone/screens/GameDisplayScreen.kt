@@ -440,10 +440,9 @@ fun GameDisplayScreen(
                             onFormatChange = { newFormat ->
                                 SettingsRepository.setFormat(newFormat)
                                 WearableSender.sendFormat(newFormat)
-                                // Update Firebase with new format
-                                if (mode == AppMode.MIRROR) {
-                                    FirebaseRepository.writeCurrentState(displayState)
-                                } else if (mode == AppMode.KEEP_SCORE) {
+                                // Only update Firebase for Keep Score mode
+                                // Mirror mode: format is metadata, not game state - watch handles state
+                                if (mode == AppMode.KEEP_SCORE) {
                                     FirebaseRepository.writeCurrentState(localGameState)
                                 }
                             }
@@ -602,8 +601,9 @@ private fun MirrorDisplay(
                     } else {
                         SettingsRepository.setPlayer2Name(player.name)
                     }
-                    // Update Firebase with new player name
-                    FirebaseRepository.writeCurrentState(gameState)
+                    // Only write player names to Firebase (not game state)
+                    // This prevents stale phone cache from overwriting watch scores
+                    FirebaseRepository.writePlayerNamesOnly()
                     showPlayerPicker = null
                 },
                 onDismiss = { showPlayerPicker = null }

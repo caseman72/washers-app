@@ -124,6 +124,44 @@ object FirebaseRepository {
     }
 
     /**
+     * Write only player names and format to Firebase (for Mirror mode).
+     * Does NOT write scores/games/rounds - those come from the watch.
+     * This prevents stale phone cache from overwriting live watch data.
+     */
+    fun writePlayerNamesOnly() {
+        val namespace = SettingsRepository.getFullNamespace()
+        Log.d(TAG, "writePlayerNamesOnly called, namespace='$namespace'")
+        if (namespace.isBlank()) {
+            Log.d(TAG, "No namespace configured, skipping Firebase write")
+            return
+        }
+
+        val (email, table) = parseNamespace(namespace)
+        val path = "games/$email/$table/current"
+        Log.d(TAG, "Writing player names only to path: $path")
+        val ref = database.getReference(path)
+
+        val isTournamentGame = SettingsRepository.isTournamentGame()
+
+        // Only write names for non-tournament games (tournament names are set by bracket)
+        if (!isTournamentGame) {
+            val data = mapOf<String, Any>(
+                "player1Name" to SettingsRepository.player1Name.value,
+                "player2Name" to SettingsRepository.player2Name.value,
+                "updatedAt" to ServerValue.TIMESTAMP
+            )
+
+            ref.updateChildren(data)
+                .addOnSuccessListener {
+                    Log.i(TAG, "SUCCESS: Wrote player names to Firebase path: $path")
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "FAILED to write player names to $path: ${e.message}", e)
+                }
+        }
+    }
+
+    /**
      * Read current game state from Firebase and sync player names.
      * Called when entering Mirror mode to get names set by web tournament.
      */
