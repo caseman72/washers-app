@@ -176,6 +176,39 @@ const styles = `
   .cancel-winner-btn:hover {
     color: white;
   }
+
+  /* Light theme overrides */
+  .match-card.light {
+    background: #fff;
+    border-color: #ddd;
+    color: #333;
+  }
+
+  .match-card.light .match-player {
+    border-bottom-color: #eee;
+  }
+
+  .match-card.light .match-player.tbd {
+    color: #999;
+  }
+
+  .match-card.light .match-player.bye-slot {
+    color: #bbb;
+  }
+
+  .match-card.light .game-number {
+    background: #f5f5f5;
+    color: #666;
+    border-bottom-color: #eee;
+  }
+
+  .match-card.light .loss-count {
+    color: #999;
+  }
+
+  .match-card.light.clickable:hover {
+    border-color: #d35400;
+  }
 `
 
 interface MatchCardProps {
@@ -193,6 +226,7 @@ interface MatchCardProps {
   player2Losses?: number
   namespace?: string
   tournamentStartedAt?: number
+  theme?: 'dark' | 'light'
 }
 
 // Helper to get team name from team ID
@@ -222,6 +256,7 @@ export function MatchCard({
   player2Losses,
   namespace,
   tournamentStartedAt,
+  theme = 'dark',
 }: MatchCardProps) {
   const [liveGame, setLiveGame] = useState<FirebaseGameState | null>(null)
   const isDoubles = tournamentType === 'doubles'
@@ -358,7 +393,7 @@ export function MatchCard({
   return (
     <>
       <div
-        className={`match-card ${clickable ? 'clickable' : ''} ${hasWinner ? 'completed' : ''} ${isBye ? 'bye' : ''} ${isLive ? 'live' : ''}`}
+        className={`match-card ${theme} ${clickable ? 'clickable' : ''} ${hasWinner ? 'completed' : ''} ${isBye ? 'bye' : ''} ${isLive ? 'live' : ''}`}
         onClick={handleClick}
       >
         {(gameNumber !== undefined || showHeader) && (

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePlayers } from '../hooks/usePlayers'
+import { useConfirm, useAlert } from '../contexts/ModalContext'
 import { loadSettings } from './SettingsScreen'
 
 const styles = `
@@ -293,6 +294,8 @@ const styles = `
 
 export function PlayersScreen() {
   const navigate = useNavigate()
+  const confirm = useConfirm()
+  const alert = useAlert()
   const settings = loadSettings()
   const namespace = settings.namespace
   const { players, loading, error, addPlayer, deletePlayer } = usePlayers(namespace)
@@ -308,18 +311,23 @@ export function PlayersScreen() {
       setShowAddModal(false)
     } catch (err) {
       console.error('Failed to add player:', err)
-      alert('Failed to add player')
+      await alert('Failed to add player')
     }
   }
 
   const handleDeletePlayer = async (playerId: string) => {
-    if (!confirm('Delete this player?')) return
+    const confirmed = await confirm({
+      message: 'Delete this player?',
+      confirmText: 'Delete',
+      danger: true
+    })
+    if (!confirmed) return
 
     try {
       await deletePlayer(playerId)
     } catch (err) {
       console.error('Failed to delete player:', err)
-      alert('Failed to delete player')
+      await alert('Failed to delete player')
     }
   }
 

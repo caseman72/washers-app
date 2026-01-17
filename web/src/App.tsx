@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { ModalProvider } from './contexts/ModalContext'
 import { HomeScreen } from './screens/HomeScreen'
 import { MirrorScreen } from './screens/MirrorScreen'
 import { KeepScoreScreen } from './screens/KeepScoreScreen'
@@ -12,6 +13,7 @@ import { BracketScreen } from './screens/BracketScreen'
 function App() {
   return (
     <BrowserRouter>
+      <ModalProvider>
       <Routes>
         <Route path="/" element={<HomeScreen />} />
         <Route path="/mirror" element={<MirrorScreen />} />
@@ -23,6 +25,7 @@ function App() {
         <Route path="/tournament/list" element={<TournamentListScreen />} />
         <Route path="/tournament/:id" element={<BracketScreen />} />
       </Routes>
+      </ModalProvider>
     </BrowserRouter>
   )
 }

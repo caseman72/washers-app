@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Player, BracketNode } from '../types'
 import { usePlayers } from '../hooks/usePlayers'
 import { useTournament } from '../hooks/useTournaments'
+import { useConfirm } from '../contexts/ModalContext'
 import { loadSettings } from './SettingsScreen'
 import { MatchCard } from '../components/MatchCard'
 import { getMatchesByRound, advanceWinner } from '../lib/bracket'
@@ -233,16 +234,111 @@ const styles = `
       gap: 0.75rem;
     }
   }
+
+  /* Light theme */
+  .bracket-screen.light {
+    background: #f5f5f5;
+    color: #333;
+  }
+
+  .bracket-screen.light .bracket-header {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .bracket-screen.light .section-title {
+    color: #666;
+    border-bottom-color: #ddd;
+  }
+
+  .bracket-screen.light .round-label {
+    color: #888;
+  }
+
+  .bracket-screen.light .bracket-footer {
+    background: #fff;
+    border-top: 1px solid #ddd;
+  }
+
+  .bracket-screen.light .back-btn {
+    background: #e0e0e0;
+    color: #666;
+  }
+
+  .bracket-screen.light .back-btn:hover {
+    background: #d0d0d0;
+    color: #333;
+  }
+
+  .bracket-screen.light .archive-btn {
+    background: #888;
+  }
+
+  .bracket-screen.light .archive-btn:hover {
+    background: #999;
+  }
+
+  .bracket-screen.light .archived-banner {
+    background: #ddd;
+    color: #666;
+  }
+
+  .bracket-screen.light .no-tournament {
+    color: #666;
+  }
+
+  .theme-toggle {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    background: #333;
+    color: #aaa;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    margin-right: 0.5rem;
+  }
+
+  .theme-toggle:hover {
+    background: #444;
+    color: white;
+  }
+
+  .bracket-screen.light .theme-toggle {
+    background: #e0e0e0;
+    color: #666;
+  }
+
+  .bracket-screen.light .theme-toggle:hover {
+    background: #d0d0d0;
+    color: #333;
+  }
+
+  @media (max-width: 600px) {
+    .bracket-screen.light .round-label {
+      border-bottom-color: #ddd;
+    }
+  }
 `
 
 export function BracketScreen() {
   const navigate = useNavigate()
+  const confirm = useConfirm()
   const { id } = useParams()
   const settings = loadSettings()
   const namespace = settings.namespace
   const { players: playerList, recordTournamentGameResult, undoTournamentGameResult, recordFinalsWin, recordFinalsLoss, undoFinalsWin, undoFinalsLoss, recordTeamGameResult, undoTeamGameResult, recordTeamFinalsWin, recordTeamFinalsLoss, undoTeamFinalsWin, undoTeamFinalsLoss } = usePlayers(namespace)
   const { tournament, loading, updateTournament, archiveTournament, deleteTournament } = useTournament(namespace, id)
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('bracketTheme')
+    return (saved === 'light' || saved === 'dark') ? saved : 'dark'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('bracketTheme', theme)
+  }, [theme])
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
   // Convert player list to Map for easy lookup
   const players = useMemo(() => {
@@ -495,7 +591,11 @@ export function BracketScreen() {
   }
 
   const handleArchive = async () => {
-    if (!confirm('Archive this tournament? You can still view it later.')) return
+    const confirmed = await confirm({
+      message: 'Archive this tournament? You can still view it later.',
+      confirmText: 'Archive'
+    })
+    if (!confirmed) return
     try {
       await archiveTournament()
       navigate('/tournament/list')
@@ -505,7 +605,12 @@ export function BracketScreen() {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Delete this tournament? This cannot be undone.')) return
+    const confirmed = await confirm({
+      message: 'Delete this tournament? This cannot be undone.',
+      confirmText: 'Delete',
+      danger: true
+    })
+    if (!confirmed) return
     try {
       await deleteTournament()
       navigate('/tournament')
@@ -541,7 +646,7 @@ export function BracketScreen() {
 
   if (loading) {
     return (
-      <div className="bracket-screen">
+      <div className={`bracket-screen ${theme}`}>
         <div className="bracket-header">
           <span className="bracket-title">Tournament</span>
         </div>
@@ -555,7 +660,7 @@ export function BracketScreen() {
 
   if (!tournament) {
     return (
-      <div className="bracket-screen">
+      <div className={`bracket-screen ${theme}`}>
         <div className="bracket-header">
           <span className="bracket-title">Tournament</span>
         </div>
@@ -579,15 +684,20 @@ export function BracketScreen() {
   const maxWinnersRound = Math.max(...Array.from(winnersRounds.keys()))
 
   return (
-    <div className="bracket-screen">
+    <div className={`bracket-screen ${theme}`}>
       {tournament.archived && (
         <div className="archived-banner">This tournament is archived</div>
       )}
       <div className="bracket-header">
         <span className="bracket-title">{tournament.name}</span>
-        <span className={`bracket-status ${tournament.status}`}>
-          {tournament.status}
-        </span>
+        <div>
+          <button className="theme-toggle" onClick={toggleTheme}>
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
+          <span className={`bracket-status ${tournament.status}`}>
+            {tournament.status}
+          </span>
+        </div>
       </div>
 
       <div className="bracket-content">
@@ -628,6 +738,7 @@ export function BracketScreen() {
                         player2Losses={0}
                         namespace={namespace}
                         tournamentStartedAt={tournament.createdAt.getTime()}
+                        theme={theme}
                       />
                     ))}
                   </div>
@@ -651,7 +762,8 @@ export function BracketScreen() {
                     player1Losses={0}
                     player2Losses={1}
                     namespace={namespace}
-                        tournamentStartedAt={tournament.createdAt.getTime()}
+                    tournamentStartedAt={tournament.createdAt.getTime()}
+                    theme={theme}
                   />
                 </div>
               </div>
@@ -674,7 +786,8 @@ export function BracketScreen() {
                     player1Losses={1}
                     player2Losses={1}
                     namespace={namespace}
-                        tournamentStartedAt={tournament.createdAt.getTime()}
+                    tournamentStartedAt={tournament.createdAt.getTime()}
+                    theme={theme}
                   />
                 </div>
               </div>
@@ -710,7 +823,8 @@ export function BracketScreen() {
                           player1Losses={1}
                           player2Losses={1}
                           namespace={namespace}
-                        tournamentStartedAt={tournament.createdAt.getTime()}
+                          tournamentStartedAt={tournament.createdAt.getTime()}
+                          theme={theme}
                         />
                       ))}
                     </div>

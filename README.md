@@ -144,33 +144,6 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 
 All January 2026 tasks completed. Ready for next feature.
 
-### Completed This Session: Player Stats Restructure
-
-Restructured player stats to properly separate tournament match stats from championship stats:
-
-| Field | Description |
-|-------|-------------|
-| `wins` / `losses` | Non-tournament games (game 0, 65-99) |
-| `tournamentWins` / `tournamentLosses` | Singles tournament match stats |
-| `teamWins` / `teamLosses` | Doubles tournament match stats |
-| `finalsWins` / `finalsLosses` | Singles championship (grand finals) |
-| `teamFinalsWins` / `teamFinalsLosses` | Doubles championship (grand finals) |
-
-**Stats Display** (both Web and Phone):
-- **W/L** = non-tournament wins/losses
-- **1v1** = singles tournament match wins/losses
-- **2v2** = doubles tournament match wins/losses
-- **Champ** = combined championship wins/losses
-
-**Files Modified**:
-- `web/src/types/index.ts` - Player interface
-- `web/src/lib/firebase-players.ts` - Firebase functions for all stats
-- `web/src/hooks/usePlayers.ts` - Hook with record/undo functions
-- `web/src/screens/BracketScreen.tsx` - Uses correct stat functions
-- `web/src/screens/PlayersScreen.tsx` - Updated stats display
-- `phone/.../FirebasePlayersRepository.kt` - Player data class + Firebase
-- `phone/.../screens/PlayersScreen.kt` - Updated stats display
-
 ---
 
 ## Development Status
@@ -240,6 +213,8 @@ Restructured player stats to properly separate tournament match stats from champ
 - [x] Stable game numbering (based on structural playability, not dynamic state)
 - [x] 60-second edit window for match winners (fix accidental selections)
 - [x] Wins/losses undo when changing match winners
+- [x] React modal dialogs (replaced browser confirm/alert)
+- [x] Bracket light theme toggle (for TV display)
 - [ ] Live game tiles (all 8 games at once)
 
 ---
@@ -314,6 +289,7 @@ Restructured player stats to properly separate tournament match stats from champ
 - Wins/losses undo when changing winner selection
 - Full Firebase sync for tournaments
 - Archive completed tournaments
+- Light/dark theme toggle for TV display (persists in localStorage)
 
 **Future**:
 - Live game tiles (all 8 games at once)
