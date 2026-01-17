@@ -146,6 +146,7 @@ Fixed Keep Score game switching issues on both web and phone:
 - Game Complete detection now computes game numbers from bracket structure
 - Keep Score loads existing game state from Firebase on mount
 - Fixed stale data writes when switching between games (loadedForGame tracking)
+- Firebase writes use updateChildren to preserve player names/IDs
 
 Ready for next feature.
 
@@ -194,6 +195,7 @@ Ready for next feature.
 - [x] Improved back button contrast for visibility
 - [x] Keep Score loads game state from Firebase on mount (persists between sessions)
 - [x] Keep Score game switching fix (prevents stale data writes)
+- [x] Firebase writes preserve player names/IDs (updateChildren vs setValue)
 
 ### Web App (React/TypeScript)
 - [x] Home screen (mode picker - Mirror / Keep Score / Settings)
