@@ -2,9 +2,197 @@
 > washers-web@0.1.0 dev
 > vite
 
-Re-optimizing dependencies because vite config has changed
 
-  VITE v5.4.21  ready in 119 ms
+  VITE v5.4.21  ready in 206 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
+8:06:16 PM [vite] hmr update /src/screens/TournamentScreen.tsx
+8:06:16 PM [vite] hmr update /src/screens/TournamentScreen.tsx
+8:08:45 PM [vite] hmr update /src/screens/TournamentScreen.tsx
+8:10:13 PM [vite] hmr update /src/screens/PlayersScreen.tsx
+8:10:40 PM [vite] hmr update /src/screens/PlayersScreen.tsx
+8:12:55 PM [vite] hmr update /src/App.tsx
+8:12:55 PM [vite] Internal server error: /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/src/App.tsx: Unterminated JSX contents. (28:20)
+
+  26 |         <Route path="/tournament/:id" element={<BracketScreen />} />
+  27 |       </Routes>
+> 28 |     </BrowserRouter>
+     |                     ^
+  29 |   )
+  30 | }
+  31 |
+  Plugin: vite:react-babel
+  File: /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/src/App.tsx:28:20
+  26 |          <Route path="/tournament/:id" element={<BracketScreen />} />
+  27 |        </Routes>
+  28 |      </BrowserRouter>
+     |                      ^
+  29 |    )
+  30 |  }
+      at constructor (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:367:19)
+      at TypeScriptParserMixin.raise (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:6624:19)
+      at TypeScriptParserMixin.jsxReadToken (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4477:20)
+      at TypeScriptParserMixin.getTokenFromCode (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4803:12)
+      at TypeScriptParserMixin.getTokenFromCode (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10042:11)
+      at TypeScriptParserMixin.nextToken (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:5807:10)
+      at TypeScriptParserMixin.next (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:5717:10)
+      at TypeScriptParserMixin.eat (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:5721:12)
+      at TypeScriptParserMixin.expect (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:6923:15)
+      at TypeScriptParserMixin.jsxParseClosingElementAt (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4709:10)
+      at TypeScriptParserMixin.jsxParseElementAt (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4724:37)
+      at TypeScriptParserMixin.jsxParseElementAt (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4727:32)
+      at TypeScriptParserMixin.jsxParseElement (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4778:17)
+      at TypeScriptParserMixin.parseExprAtom (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4788:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11145:23)
+      at TypeScriptParserMixin.parseUpdate (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11130:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11110:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9890:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10963:61)
+      at TypeScriptParserMixin.parseExprOps (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10968:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10945:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10895:21)
+      at /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9828:39
+      at TypeScriptParserMixin.tryParse (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:6932:20)
+      at TypeScriptParserMixin.parseMaybeAssign (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9828:18)
+      at /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10864:39
+      at TypeScriptParserMixin.allowInAnd (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12500:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10864:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12567:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11747:28)
+      at TypeScriptParserMixin.parseExprAtom (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11395:23)
+      at TypeScriptParserMixin.parseExprAtom (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4793:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11145:23)
+      at TypeScriptParserMixin.parseUpdate (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11130:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11110:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9890:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10963:61)
+      at TypeScriptParserMixin.parseExprOps (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10968:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10945:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10895:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9839:20)
+      at TypeScriptParserMixin.parseExpressionBase (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10848:23)
+      at /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10844:39
+      at TypeScriptParserMixin.allowInAnd (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12495:16)
+      at TypeScriptParserMixin.parseExpression (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10844:17)
+      at TypeScriptParserMixin.parseReturnStatement (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:13218:28)
+      at TypeScriptParserMixin.parseStatementContent (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12874:21)
+      at TypeScriptParserMixin.parseStatementContent (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12823:17)
+8:12:55 PM [vite] Internal server error: /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/src/App.tsx: Unterminated JSX contents. (28:20)
+
+  26 |         <Route path="/tournament/:id" element={<BracketScreen />} />
+  27 |       </Routes>
+> 28 |     </BrowserRouter>
+     |                     ^
+  29 |   )
+  30 | }
+  31 |
+  Plugin: vite:react-babel
+  File: /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/src/App.tsx:28:20
+  26 |          <Route path="/tournament/:id" element={<BracketScreen />} />
+  27 |        </Routes>
+  28 |      </BrowserRouter>
+     |                      ^
+  29 |    )
+  30 |  }
+      at constructor (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:367:19)
+      at TypeScriptParserMixin.raise (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:6624:19)
+      at TypeScriptParserMixin.jsxReadToken (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4477:20)
+      at TypeScriptParserMixin.getTokenFromCode (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4803:12)
+      at TypeScriptParserMixin.getTokenFromCode (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10042:11)
+      at TypeScriptParserMixin.nextToken (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:5807:10)
+      at TypeScriptParserMixin.next (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:5717:10)
+      at TypeScriptParserMixin.eat (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:5721:12)
+      at TypeScriptParserMixin.expect (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:6923:15)
+      at TypeScriptParserMixin.jsxParseClosingElementAt (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4709:10)
+      at TypeScriptParserMixin.jsxParseElementAt (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4724:37)
+      at TypeScriptParserMixin.jsxParseElementAt (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4727:32)
+      at TypeScriptParserMixin.jsxParseElement (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4778:17)
+      at TypeScriptParserMixin.parseExprAtom (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4788:19)
+      at TypeScriptParserMixin.parseExprSubscripts (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11145:23)
+      at TypeScriptParserMixin.parseUpdate (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11130:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11110:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9890:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10963:61)
+      at TypeScriptParserMixin.parseExprOps (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10968:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10945:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10895:21)
+      at /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9828:39
+      at TypeScriptParserMixin.tryParse (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:6932:20)
+      at TypeScriptParserMixin.parseMaybeAssign (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9828:18)
+      at /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10864:39
+      at TypeScriptParserMixin.allowInAnd (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12500:12)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10864:17)
+      at TypeScriptParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12567:17)
+      at TypeScriptParserMixin.parseParenAndDistinguishExpression (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11747:28)
+      at TypeScriptParserMixin.parseExprAtom (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11395:23)
+      at TypeScriptParserMixin.parseExprAtom (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:4793:20)
+      at TypeScriptParserMixin.parseExprSubscripts (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11145:23)
+      at TypeScriptParserMixin.parseUpdate (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11130:21)
+      at TypeScriptParserMixin.parseMaybeUnary (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:11110:23)
+      at TypeScriptParserMixin.parseMaybeUnary (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9890:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10963:61)
+      at TypeScriptParserMixin.parseExprOps (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10968:23)
+      at TypeScriptParserMixin.parseMaybeConditional (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10945:23)
+      at TypeScriptParserMixin.parseMaybeAssign (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10895:21)
+      at TypeScriptParserMixin.parseMaybeAssign (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9839:20)
+      at TypeScriptParserMixin.parseExpressionBase (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10848:23)
+      at /Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10844:39
+      at TypeScriptParserMixin.allowInAnd (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12495:16)
+      at TypeScriptParserMixin.parseExpression (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:10844:17)
+      at TypeScriptParserMixin.parseReturnStatement (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:13218:28)
+      at TypeScriptParserMixin.parseStatementContent (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12874:21)
+      at TypeScriptParserMixin.parseStatementContent (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:9569:18)
+      at TypeScriptParserMixin.parseStatementLike (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12843:17)
+      at TypeScriptParserMixin.parseStatementListItem (/Volumes/Macintosh 2TB/Projects/manion/washers-app/web/node_modules/@babel/parser/lib/index.js:12823:17)
+8:12:59 PM [vite] hmr update /src/App.tsx
+8:13:11 PM [vite] hmr update /src/screens/PlayersScreen.tsx
+8:13:22 PM [vite] hmr update /src/screens/PlayersScreen.tsx
+8:13:43 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:13:47 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:13:57 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:17:14 PM [vite] hmr update /src/contexts/ModalContext.tsx
+8:17:14 PM [vite] hmr invalidate /src/contexts/ModalContext.tsx Could not Fast Refresh ("useAlert" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+8:17:14 PM [vite] hmr update /src/App.tsx, /src/screens/PlayersScreen.tsx, /src/screens/BracketScreen.tsx
+8:24:12 PM [vite] hmr update /src/components/MatchCard.tsx
+8:24:22 PM [vite] hmr update /src/components/MatchCard.tsx
+8:24:27 PM [vite] hmr update /src/components/MatchCard.tsx
+8:24:36 PM [vite] hmr update /src/components/MatchCard.tsx
+8:24:51 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:24:58 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:25:07 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:25:28 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:25:34 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:25:40 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:25:54 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:26:00 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:26:09 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:26:18 PM [vite] hmr update /src/screens/BracketScreen.tsx
+8:30:34 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+8:30:40 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+8:30:46 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+8:30:59 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+8:31:07 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+8:32:36 PM [vite] hmr update /src/screens/MirrorScreen.tsx
+8:32:41 PM [vite] hmr update /src/screens/MirrorScreen.tsx
+8:32:46 PM [vite] hmr update /src/screens/MirrorScreen.tsx
+8:36:24 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+8:36:30 PM [vite] hmr update /src/screens/MirrorScreen.tsx
+11:17:41 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+11:17:48 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+11:18:50 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+11:19:00 PM [vite] hmr update /src/screens/KeepScoreScreen.tsx
+11:19:58 PM [vite] hmr update /src/App.tsx
+11:20:03 PM [vite] hmr update /src/App.tsx
+11:24:36 PM [vite] hmr update /src/App.tsx
+11:26:21 PM [vite] hmr update /src/App.tsx
+11:29:16 PM [vite] hmr update /src/App.tsx
+11:35:03 PM [vite] hmr update /src/App.tsx
+12:05:27 AM [vite] hmr update /src/screens/SettingsScreen.tsx
+12:05:27 AM [vite] hmr invalidate /src/screens/SettingsScreen.tsx Could not Fast Refresh ("getFullNamespace" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+12:05:27 AM [vite] hmr update /src/App.tsx, /src/screens/TournamentScreen.tsx, /src/screens/TournamentListScreen.tsx, /src/screens/MirrorScreen.tsx, /src/screens/PlayersScreen.tsx, /src/screens/TournamentSetupScreen.tsx, /src/screens/KeepScoreScreen.tsx, /src/screens/BracketScreen.tsx
+12:05:50 AM [vite] hmr update /src/screens/SettingsScreen.tsx
+12:05:50 AM [vite] hmr invalidate /src/screens/SettingsScreen.tsx Could not Fast Refresh ("getFullNamespace" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+12:05:50 AM [vite] hmr update /src/App.tsx, /src/screens/TournamentScreen.tsx, /src/screens/TournamentListScreen.tsx, /src/screens/MirrorScreen.tsx, /src/screens/PlayersScreen.tsx, /src/screens/TournamentSetupScreen.tsx, /src/screens/KeepScoreScreen.tsx, /src/screens/BracketScreen.tsx

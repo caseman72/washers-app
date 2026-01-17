@@ -5,7 +5,7 @@ const STORAGE_KEY = 'washers-settings'
 
 export interface Settings {
   namespace: string   // Base namespace (e.g., "casey@manion.com")
-  gameNumber: number  // Game number (0-64)
+  gameNumber: number  // Game number (0-99)
 }
 
 const defaultSettings: Settings = {
@@ -69,7 +69,7 @@ export function updateGameNumber(newGameNumber: number): Settings {
   const settings = loadSettings()
   const newSettings = {
     ...settings,
-    gameNumber: Math.max(0, Math.min(64, newGameNumber)),
+    gameNumber: Math.max(0, Math.min(99, newGameNumber)),
   }
   saveSettings(newSettings)
   return newSettings
