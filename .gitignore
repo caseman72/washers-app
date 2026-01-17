@@ -3,7 +3,7 @@
 secrets.properties
 buildDockerImage.sh
 updateDockerImage.sh
-#web/nohup.out
+web/nohup.out
 
 # Keystores
 *.keystore
