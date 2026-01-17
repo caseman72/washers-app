@@ -56,9 +56,27 @@ fun GameDisplayScreen(
     // Local state for Keep Score mode
     var localGameState by remember { mutableStateOf(GameState()) }
 
+    // Track if current tournament game is already complete (declared early for use in LaunchedEffect)
+    var isGameComplete by remember { mutableStateOf(false) }
+
+    // Track if initial data has been loaded from Firebase (and for which game)
+    var initialDataLoaded by remember { mutableStateOf(false) }
+    var loadedForGameNumber by remember { mutableStateOf<Int?>(null) }
+
     // Sync Keep Score state to Firebase
-    LaunchedEffect(localGameState) {
+    LaunchedEffect(localGameState, isGameComplete, initialDataLoaded, loadedForGameNumber, gameNumber) {
         if (mode == AppMode.KEEP_SCORE) {
+            // Skip write until initial data is loaded for THIS game number
+            // This prevents writing stale data from a previous game after game number changes
+            if (!initialDataLoaded || loadedForGameNumber != gameNumber) {
+                return@LaunchedEffect
+            }
+
+            // Skip write if game is already complete (don't overwrite finished tournament games)
+            if (isGameComplete) {
+                return@LaunchedEffect
+            }
+
             FirebaseRepository.writeCurrentState(localGameState)
         }
     }
@@ -93,6 +111,76 @@ fun GameDisplayScreen(
 
     // Tournament warning dialog state
     var showTournamentWarning by remember { mutableStateOf(false) }
+
+    // Load initial game state from Firebase when game number changes (Keep Score mode)
+    // This ensures we start with the correct state when switching games
+    LaunchedEffect(gameNumber, mode, baseNamespace) {
+        if (mode == AppMode.KEEP_SCORE && baseNamespace.isNotBlank()) {
+            // Reset loaded state when game number changes
+            initialDataLoaded = false
+            loadedForGameNumber = null
+
+            android.util.Log.d("GameDisplayScreen", "Loading game state for game $gameNumber")
+            // Capture gameNumber for the callback (in case it changes before callback runs)
+            val loadingGameNumber = gameNumber
+            FirebaseRepository.readGameState { state ->
+                if (state != null) {
+                    // Firebase has data - use it
+                    android.util.Log.d("GameDisplayScreen", "Loaded state from Firebase: $state")
+                    localGameState = state
+                } else {
+                    // No data in Firebase - use defaults and write them
+                    android.util.Log.d("GameDisplayScreen", "No data in Firebase, initializing with defaults")
+                    val defaultState = GameState()
+                    localGameState = defaultState
+                    FirebaseRepository.writeCurrentState(defaultState)
+                }
+                initialDataLoaded = true
+                loadedForGameNumber = loadingGameNumber
+            }
+        } else if (mode == AppMode.KEEP_SCORE) {
+            // No namespace - just use defaults
+            initialDataLoaded = true
+            loadedForGameNumber = gameNumber
+        }
+    }
+
+    // Check if tournament game is complete (has winner in bracket)
+    LaunchedEffect(gameNumber, mode, baseNamespace) {
+        val isTournament = gameNumber in 1..64
+        if (mode == AppMode.KEEP_SCORE && isTournament && baseNamespace.isNotBlank()) {
+            FirebaseRepository.checkGameComplete(gameNumber) { complete ->
+                isGameComplete = complete
+                android.util.Log.d("GameDisplayScreen", "Game $gameNumber complete: $complete")
+            }
+        } else {
+            // Non-tournament games are never "complete" in this sense
+            isGameComplete = false
+        }
+    }
+
+    // Track previous rounds to detect series wins in Mirror mode (for auto-advance)
+    var prevRounds by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+
+    // Auto-advance game number when tournament game is won in Mirror mode
+    LaunchedEffect(watchGameState?.player1Rounds, watchGameState?.player2Rounds) {
+        if (mode != AppMode.MIRROR) return@LaunchedEffect
+        val state = watchGameState ?: return@LaunchedEffect
+        val isTournament = SettingsRepository.isTournamentGame()
+        if (!isTournament) return@LaunchedEffect
+
+        val currentRounds = Pair(state.player1Rounds, state.player2Rounds)
+        val prev = prevRounds
+
+        if (prev != null) {
+            // Detect if either player's rounds increased (series win)
+            if ((currentRounds.first > prev.first || currentRounds.second > prev.second) && gameNumber < 64) {
+                SettingsRepository.setGameNumber(gameNumber + 1)
+            }
+        }
+
+        prevRounds = currentRounds
+    }
 
     // Player picker state (for Keep Score mode)
     var showPlayerPicker by remember { mutableStateOf<Int?>(null) }
@@ -146,10 +234,64 @@ fun GameDisplayScreen(
                             showTournamentWarning = false
                         }
                     )
-                    AppMode.KEEP_SCORE -> KeepScorePager(
-                        gameState = localGameState,
-                        onGameStateChange = { localGameState = it }
-                    )
+                    AppMode.KEEP_SCORE -> {
+                        if (!initialDataLoaded) {
+                            // Show loading while reading from Firebase
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Loading...",
+                                    color = WatchColors.Primary,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else if (isGameComplete) {
+                            // Show "Game Complete" message instead of scoreboard
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "Game Complete",
+                                        color = WatchColors.Primary,
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "This tournament game has already been played.",
+                                        color = WatchColors.OnSurfaceDisabled,
+                                        fontSize = 14.sp,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 32.dp)
+                                    )
+                                }
+                            }
+                        } else {
+                            KeepScorePager(
+                                gameState = localGameState,
+                                onGameStateChange = { localGameState = it },
+                                onSeriesWin = { newState, onAdvance ->
+                                    // Write to Firebase first, then advance game number
+                                    FirebaseRepository.writeCurrentState(newState) {
+                                        // Mark as loading BEFORE advancing (prevents race condition)
+                                        initialDataLoaded = false
+                                        onAdvance()
+                                        // Reset local state for the new game (preserves colors)
+                                        // The LaunchedEffect will load the correct state from Firebase
+                                        localGameState = localGameState.resetAll()
+                                    }
+                                    // DON'T update local state here - wait for callback
+                                }
+                            )
+                        }
+                    }
                     AppMode.SETTINGS, AppMode.PLAYERS -> { /* Not used */ }
                 }
             }
@@ -829,12 +971,14 @@ private fun ScorePanelWithName(
 
 /**
  * Keep Score mode with pager (Page 0: Game, Page 1: Colors)
+ * @param onSeriesWin Called when a series is won - receives the new state, returns callback to run after Firebase write
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun KeepScorePager(
     gameState: GameState,
-    onGameStateChange: (GameState) -> Unit
+    onGameStateChange: (GameState) -> Unit,
+    onSeriesWin: ((GameState, () -> Unit) -> Unit)? = null
 ) {
     var colorPickerFor by remember { mutableStateOf<Int?>(null) }
     var winConfirmationFor by remember { mutableStateOf<Int?>(null) }
@@ -876,6 +1020,9 @@ private fun KeepScorePager(
 
         // Win confirmation overlay
         winConfirmationFor?.let { player ->
+            val isTournament = SettingsRepository.isTournamentGame()
+            val currentGameNumber = SettingsRepository.gameNumber.value
+
             WinConfirmationDialog(
                 player = player,
                 playerColor = if (player == 1) gameState.player1Color else gameState.player2Color,
@@ -889,8 +1036,17 @@ private fun KeepScorePager(
                         // Show series win celebration before applying state
                         seriesWinFor = player
                     } else {
-                        // Apply win directly (need to pass format to ensure correct session tracking)
-                        onGameStateChange(gameState.copy(format = format).confirmWin(player))
+                        // Apply win directly
+                        val newState = gameState.copy(format = format).confirmWin(player)
+
+                        // For tournament games, use onSeriesWin to handle Firebase timing
+                        if (isTournament && currentGameNumber < 64 && onSeriesWin != null) {
+                            onSeriesWin(newState) {
+                                SettingsRepository.setGameNumber(currentGameNumber + 1)
+                            }
+                        } else {
+                            onGameStateChange(newState)
+                        }
                     }
                     winConfirmationFor = null
                 },
@@ -904,6 +1060,9 @@ private fun KeepScorePager(
 
         // Series win celebration overlay
         seriesWinFor?.let { player ->
+            val isTournament = SettingsRepository.isTournamentGame()
+            val currentGameNumber = SettingsRepository.gameNumber.value
+
             SeriesWinDialog(
                 player = player,
                 playerColor = if (player == 1) gameState.player1Color else gameState.player2Color,
@@ -923,8 +1082,19 @@ private fun KeepScorePager(
                         startedAt = sessionStartTime
                     )
 
-                    // Use format from settings to ensure correct session tracking
-                    onGameStateChange(gameState.copy(format = format).confirmWin(player))
+                    // Get the new state after the win
+                    val newState = gameState.copy(format = format).confirmWin(player)
+
+                    // If we have a series win handler, use it (handles Firebase timing)
+                    if (onSeriesWin != null && isTournament && currentGameNumber < 64) {
+                        onSeriesWin(newState) {
+                            // This runs after Firebase write completes
+                            SettingsRepository.setGameNumber(currentGameNumber + 1)
+                        }
+                    } else {
+                        // No auto-advance needed, just update state
+                        onGameStateChange(newState)
+                    }
 
                     // Reset session start time for next session
                     sessionStartTime = System.currentTimeMillis()

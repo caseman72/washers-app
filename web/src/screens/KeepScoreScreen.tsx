@@ -1,11 +1,19 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Scoreboard } from '../components/Scoreboard'
+import { Scoreboard, ColorId } from '../components/Scoreboard'
 import { loadSettings, updateGameNumber } from './SettingsScreen'
 import { writeGameState, subscribeToGame } from '../lib/firebase'
 import { subscribeToPlayers } from '../lib/firebase-players'
-import { checkActiveTournament } from '../lib/firebase-tournaments'
+import { checkActiveTournament, checkGameComplete } from '../lib/firebase-tournaments'
 import type { GameSession, Player } from '../types'
+
+// Initial data loaded from Firebase
+interface InitialGameData {
+  session: GameSession
+  colors: { p1: ColorId; p2: ColorId }
+  loaded: boolean  // true once we've read from Firebase (even if no data)
+  loadedForGame: number | null  // which game number this data was loaded for
+}
 
 const styles = `
   .keep-score-screen {
@@ -340,6 +348,29 @@ const styles = `
   .modal-btn.fix:hover {
     background: #e55d00;
   }
+
+  .game-complete {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    background: #515151;
+  }
+
+  .game-complete-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #d35400;
+    margin-bottom: 0.75rem;
+  }
+
+  .game-complete-message {
+    font-size: 1rem;
+    color: #888;
+    max-width: 280px;
+  }
 `
 
 export function KeepScoreScreen() {
@@ -353,6 +384,7 @@ export function KeepScoreScreen() {
   const [players, setPlayers] = useState<Player[]>([])
   const [showPlayerPicker, setShowPlayerPicker] = useState<1 | 2 | null>(null)
   const [showTournamentWarning, setShowTournamentWarning] = useState(false)
+  const [isGameComplete, setIsGameComplete] = useState(false)
 
   const baseNamespace = settings.namespace
   const hasNamespace = baseNamespace.trim().length > 0
@@ -363,6 +395,96 @@ export function KeepScoreScreen() {
   const [lastSession, setLastSession] = useState<GameSession | null>(null)
   const [lastColors, setLastColors] = useState<{ p1: string; p2: string }>({ p1: 'ORANGE', p2: 'BLACK' })
 
+  // Track pending auto-advance (set when game completes, cleared after Firebase write)
+  const pendingAdvanceRef = useRef(false)
+
+  // Initial data loaded from Firebase (used to initialize Scoreboard)
+  const [initialData, setInitialData] = useState<InitialGameData>({
+    session: { player1Score: 0, player2Score: 0, player1Games: 0, player2Games: 0, player1Rounds: 0, player2Rounds: 0 },
+    colors: { p1: 'orange', p2: 'black' },
+    loaded: false,
+    loadedForGame: null,
+  })
+
+  // Helper to convert Firebase color string to ColorId
+  const toColorId = (color: string | undefined): ColorId => {
+    const valid: ColorId[] = ['orange', 'black', 'silver', 'red', 'white', 'blue', 'yellow', 'purple', 'green', 'brown']
+    const lower = (color || '').toLowerCase() as ColorId
+    return valid.includes(lower) ? lower : 'orange'
+  }
+
+  // Load initial game data from Firebase when game number changes
+  // This ensures Scoreboard starts with the correct state
+  useEffect(() => {
+    if (!hasNamespace) {
+      setInitialData(prev => ({ ...prev, loaded: true, loadedForGame: gameNumber }))
+      return
+    }
+
+    // Reset loaded state when game number changes
+    setInitialData(prev => ({ ...prev, loaded: false, loadedForGame: null }))
+
+    const unsubscribe = subscribeToGame(baseNamespace, gameNumber, (state) => {
+      if (state) {
+        // Firebase has data - use it for initial values
+        setInitialData({
+          session: {
+            player1Score: state.player1Score ?? 0,
+            player2Score: state.player2Score ?? 0,
+            player1Games: state.player1Games ?? 0,
+            player2Games: state.player2Games ?? 0,
+            player1Rounds: state.player1Rounds ?? 0,
+            player2Rounds: state.player2Rounds ?? 0,
+          },
+          colors: {
+            p1: toColorId(state.player1Color),
+            p2: toColorId(state.player2Color),
+          },
+          loaded: true,
+          loadedForGame: gameNumber,
+        })
+        // Also set player names for tournament games
+        if (isTournamentGame) {
+          const name1 = state.player1Name
+          const name2 = state.player2Name
+          setPlayer1Name(name1 && name1 !== 'TBD' ? name1 : '')
+          setPlayer2Name(name2 && name2 !== 'TBD' ? name2 : '')
+        }
+      } else {
+        // No data in Firebase - use defaults and write them
+        const defaultSession = { player1Score: 0, player2Score: 0, player1Games: 0, player2Games: 0, player1Rounds: 0, player2Rounds: 0 }
+        const defaultColors = { p1: 'orange' as ColorId, p2: 'black' as ColorId }
+        setInitialData({
+          session: defaultSession,
+          colors: defaultColors,
+          loaded: true,
+          loadedForGame: gameNumber,
+        })
+        // Write defaults to Firebase (initialize the table)
+        writeGameState(baseNamespace, gameNumber, {
+          player1Score: 0,
+          player2Score: 0,
+          player1Games: 0,
+          player2Games: 0,
+          player1Rounds: 0,
+          player2Rounds: 0,
+          player1Color: 'ORANGE',
+          player2Color: 'BLACK',
+          format: isTournamentGame ? 1 : format,
+        }).catch(err => console.error('Failed to initialize game:', err))
+        // Clear player names
+        if (isTournamentGame) {
+          setPlayer1Name('')
+          setPlayer2Name('')
+        }
+      }
+      // Unsubscribe after first read - we only need initial data
+      unsubscribe()
+    })
+
+    return unsubscribe
+  }, [baseNamespace, hasNamespace, gameNumber, isTournamentGame, format])
+
   // Subscribe to players
   useEffect(() => {
     if (!hasNamespace) return
@@ -372,16 +494,43 @@ export function KeepScoreScreen() {
     return unsubscribe
   }, [baseNamespace, hasNamespace])
 
-  // For tournament games, read player names from Firebase (set by bracket)
+  // For tournament games, keep player names in sync with Firebase (bracket may update them)
   useEffect(() => {
-    if (!hasNamespace || !isTournamentGame) return
+    if (!hasNamespace || !isTournamentGame) {
+      return
+    }
     const unsubscribe = subscribeToGame(baseNamespace, gameNumber, (state) => {
       if (state) {
-        if (state.player1Name) setPlayer1Name(state.player1Name)
-        if (state.player2Name) setPlayer2Name(state.player2Name)
+        // Set names - clear if blank or TBD
+        const name1 = state.player1Name
+        const name2 = state.player2Name
+        if (name1 && name1 !== 'TBD') {
+          setPlayer1Name(name1)
+        } else {
+          setPlayer1Name('')
+        }
+        if (name2 && name2 !== 'TBD') {
+          setPlayer2Name(name2)
+        } else {
+          setPlayer2Name('')
+        }
+      } else {
+        // No data - clear names
+        setPlayer1Name('')
+        setPlayer2Name('')
       }
     })
     return unsubscribe
+  }, [baseNamespace, hasNamespace, gameNumber, isTournamentGame])
+
+  // Check if tournament game is complete (has winner in bracket)
+  useEffect(() => {
+    if (!hasNamespace || !isTournamentGame) {
+      setIsGameComplete(false)
+      return
+    }
+    // Check tournament bracket for completion status
+    checkGameComplete(baseNamespace, gameNumber).then(setIsGameComplete)
   }, [baseNamespace, hasNamespace, gameNumber, isTournamentGame])
 
   // Save gameNumber to settings when it changes (debounced)
@@ -398,14 +547,11 @@ export function KeepScoreScreen() {
   useEffect(() => {
     if (!hasNamespace) return
 
-    const session = lastSession || {
-      player1Score: 0,
-      player2Score: 0,
-      player1Games: 0,
-      player2Games: 0,
-      player1Rounds: 0,
-      player2Rounds: 0,
-    }
+    // Don't write until Scoreboard reports actual state
+    // This prevents overwriting existing data on mount
+    if (!lastSession) return
+
+    const session = lastSession
 
     const gameState: Record<string, unknown> = {
       player1Score: session.player1Score,
@@ -418,17 +564,49 @@ export function KeepScoreScreen() {
       player2Color: lastColors.p2,
       format,
     }
-    // Only include names if they have a value (Firebase rejects undefined)
-    if (player1Name) gameState.player1Name = player1Name
-    if (player2Name) gameState.player2Name = player2Name
+    // Only include names for non-tournament games (tournament names are set by bracket)
+    if (!isTournamentGame) {
+      if (player1Name) gameState.player1Name = player1Name
+      if (player2Name) gameState.player2Name = player2Name
+    }
 
-    writeGameState(baseNamespace, gameNumber, gameState).catch(err => console.error('Failed to write game state:', err))
-  }, [lastSession, lastColors, gameNumber, baseNamespace, hasNamespace, player1Name, player2Name, format])
+    // Skip write if game is already complete (don't overwrite finished tournament games)
+    if (isGameComplete) {
+      return
+    }
+
+    // Skip write until initial data is loaded for THIS game number
+    // This prevents writing stale data from a previous game after game number changes
+    // (React batches setState calls, so loaded might still be true for the old game)
+    if (!initialData.loaded || initialData.loadedForGame !== gameNumber) {
+      return
+    }
+
+    writeGameState(baseNamespace, gameNumber, gameState)
+      .then(() => {
+        // Auto-advance after successful write if pending
+        if (pendingAdvanceRef.current && isTournamentGame && gameNumber < 64) {
+          pendingAdvanceRef.current = false
+          const nextGame = gameNumber + 1
+          setGameNumber(nextGame)
+          setGameNumberInput(nextGame.toString())
+        }
+      })
+      .catch(err => console.error('Failed to write game state:', err))
+  }, [lastSession, lastColors, gameNumber, baseNamespace, hasNamespace, player1Name, player2Name, format, isTournamentGame, isGameComplete, initialData.loaded])
 
   const handleStateChange = useCallback((session: GameSession, colors: { p1: string; p2: string }) => {
     setLastSession(session)
     setLastColors(colors)
   }, [])
+
+  // Auto-advance game number when tournament game is won
+  // Sets a flag - actual advance happens after Firebase write completes
+  const handleGameComplete = useCallback(() => {
+    if (isTournamentGame && gameNumber < 64) {
+      pendingAdvanceRef.current = true
+    }
+  }, [isTournamentGame, gameNumber])
 
   const handleGameNumberChange = (value: string) => {
     // Only update input display while typing - actual gameNumber updates on blur
@@ -552,7 +730,28 @@ export function KeepScoreScreen() {
     <div className="keep-score-screen">
       {/* Square game area */}
       <div className="keep-score-game-area">
-        <Scoreboard onStateChange={handleStateChange} contained format={format} />
+        {isGameComplete ? (
+          <div className="game-complete">
+            <div className="game-complete-title">Game Complete</div>
+            <div className="game-complete-message">
+              This tournament game has already been played.
+            </div>
+          </div>
+        ) : !initialData.loaded ? (
+          <div className="game-complete">
+            <div className="game-complete-title">Loading...</div>
+          </div>
+        ) : (
+          <Scoreboard
+            key={gameNumber}
+            onStateChange={handleStateChange}
+            onGameComplete={handleGameComplete}
+            contained
+            format={format}
+            initialSession={initialData.session}
+            initialColors={initialData.colors}
+          />
+        )}
       </div>
 
       {/* Bottom area - matches Phone layout */}

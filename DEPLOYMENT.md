@@ -227,4 +227,4 @@ https://washers.manion.org
 ---
 
 ## Roadmap
-- [ ] Live game tiles view (all 8 games at once)
+- (No pending features)

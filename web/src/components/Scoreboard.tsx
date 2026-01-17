@@ -17,7 +17,7 @@ const COLORS = [
   { id: 'brown', name: 'Brown', bg: '#795548', text: '#ffffff' },
 ] as const
 
-type ColorId = typeof COLORS[number]['id']
+export type ColorId = typeof COLORS[number]['id']
 
 const getColor = (id: ColorId) => COLORS.find(c => c.id === id)!
 
@@ -401,20 +401,24 @@ interface ScoreboardProps {
   format?: number
   player1Name?: string
   player2Name?: string
+  initialSession?: GameSession
+  initialColors?: { p1: ColorId; p2: ColorId }
 }
 
-export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1, player1Name: _player1Name, player2Name: _player2Name }: ScoreboardProps) {
-  const [session, setSession] = useState<GameSession>({
-    player1Score: 0,
-    player2Score: 0,
-    player1Games: 0,
-    player2Games: 0,
-    player1Rounds: 0,
-    player2Rounds: 0,
-  })
+const defaultSession: GameSession = {
+  player1Score: 0,
+  player2Score: 0,
+  player1Games: 0,
+  player2Games: 0,
+  player1Rounds: 0,
+  player2Rounds: 0,
+}
+
+export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1, player1Name: _player1Name, player2Name: _player2Name, initialSession, initialColors }: ScoreboardProps) {
+  const [session, setSession] = useState<GameSession>(initialSession ?? defaultSession)
   const [showDonePrompt, setShowDonePrompt] = useState<1 | 2 | null>(null)
-  const [player1Color, setPlayer1Color] = useState<ColorId>('orange')
-  const [player2Color, setPlayer2Color] = useState<ColorId>('black')
+  const [player1Color, setPlayer1Color] = useState<ColorId>(initialColors?.p1 ?? 'orange')
+  const [player2Color, setPlayer2Color] = useState<ColorId>(initialColors?.p2 ?? 'black')
   const [screen, setScreen] = useState<'game' | 'colors'>('game')
   const [colorPicker, setColorPicker] = useState<1 | 2 | null>(null)
 

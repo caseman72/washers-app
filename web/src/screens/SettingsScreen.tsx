@@ -8,6 +8,10 @@ export interface Settings {
   gameNumber: number  // Game number (0-99)
 }
 
+function getDefaultNamespace(): string {
+  return `gobeavs.${Date.now()}`
+}
+
 const defaultSettings: Settings = {
   namespace: '',
   gameNumber: 0,
@@ -24,12 +28,21 @@ export function loadSettings(): Settings {
         const namespace = getBaseNamespaceFromLegacy(parsed.gameNamespace)
         return { namespace, gameNumber }
       }
-      return { ...defaultSettings, ...parsed }
+      const settings = { ...defaultSettings, ...parsed }
+      // Generate default namespace if empty
+      if (!settings.namespace) {
+        settings.namespace = getDefaultNamespace()
+        saveSettings(settings)
+      }
+      return settings
     }
   } catch (e) {
     console.error('Failed to load settings:', e)
   }
-  return defaultSettings
+  // No stored settings - generate default namespace and save
+  const settings = { ...defaultSettings, namespace: getDefaultNamespace() }
+  saveSettings(settings)
+  return settings
 }
 
 export function saveSettings(settings: Settings) {

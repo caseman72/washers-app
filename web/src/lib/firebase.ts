@@ -123,6 +123,24 @@ export async function writeGameState(
   await update(gameRef, updateData)
 }
 
+// Clear all tournament game slots (1-64) - called when starting a new tournament
+export async function clearTournamentGames(namespace: string): Promise<void> {
+  await ensureAuth()
+
+  const sanitized = sanitizeEmail(namespace)
+
+  // Clear all 64 tournament game slots in parallel
+  const clearPromises = []
+  for (let i = 1; i <= 64; i++) {
+    const path = `games/${sanitized}/${i}/current`
+    const gameRef = ref(database, path)
+    clearPromises.push(set(gameRef, null))
+  }
+
+  await Promise.all(clearPromises)
+  console.log(`Cleared tournament games 1-64 for namespace: ${namespace}`)
+}
+
 // Subscribe to game state
 export function subscribeToGame(
   namespace: string,

@@ -49,6 +49,10 @@ object SettingsRepository {
         }
     }
 
+    private fun generateDefaultNamespace(): String {
+        return "gobeavs.${System.currentTimeMillis()}"
+    }
+
     private fun loadSettings() {
         prefs?.let { p ->
             // Check for legacy namespace and migrate if needed
@@ -68,6 +72,14 @@ object SettingsRepository {
             } else {
                 _baseNamespace.value = p.getString(KEY_BASE_NAMESPACE, "") ?: ""
                 _gameNumber.value = p.getInt(KEY_GAME_NUMBER, 0)
+            }
+
+            // Generate default namespace if empty
+            if (_baseNamespace.value.isBlank()) {
+                val defaultNamespace = generateDefaultNamespace()
+                _baseNamespace.value = defaultNamespace
+                p.edit().putString(KEY_BASE_NAMESPACE, defaultNamespace).apply()
+                Log.d("SettingsRepository", "Generated default namespace: $defaultNamespace")
             }
 
             _format.value = p.getInt(KEY_FORMAT, 1)

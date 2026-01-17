@@ -16,8 +16,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.res.Configuration
 import com.manion.washers.phone.FirebasePlayersRepository
 import com.manion.washers.phone.Player
 import com.manion.washers.phone.SettingsRepository
@@ -242,6 +244,9 @@ private fun PlayerCard(
     player: Player,
     onDeleteClick: () -> Unit
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -258,22 +263,24 @@ private fun PlayerCard(
                 fontWeight = FontWeight.Medium
             )
 
-            // Stats row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatText(label = "W:", value = player.wins, isWin = true)
-                StatText(label = "L:", value = player.losses, isWin = false)
-                if (player.tournamentWins > 0 || player.tournamentLosses > 0) {
-                    StatPair(label = "1v1:", wins = player.tournamentWins, losses = player.tournamentLosses)
-                }
-                if (player.teamWins > 0 || player.teamLosses > 0) {
-                    StatPair(label = "2v2:", wins = player.teamWins, losses = player.teamLosses)
-                }
-                val totalChampWins = player.finalsWins + player.teamFinalsWins
-                val totalChampLosses = player.finalsLosses + player.teamFinalsLosses
-                if (totalChampWins > 0 || totalChampLosses > 0) {
-                    StatPair(label = "Champ:", wins = totalChampWins, losses = totalChampLosses)
+            // Stats row - only show in landscape mode
+            if (isLandscape) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatText(label = "W:", value = player.wins, isWin = true)
+                    StatText(label = "L:", value = player.losses, isWin = false)
+                    if (player.tournamentWins > 0 || player.tournamentLosses > 0) {
+                        StatPair(label = "1v1:", wins = player.tournamentWins, losses = player.tournamentLosses)
+                    }
+                    if (player.teamWins > 0 || player.teamLosses > 0) {
+                        StatPair(label = "2v2:", wins = player.teamWins, losses = player.teamLosses)
+                    }
+                    val totalChampWins = player.finalsWins + player.teamFinalsWins
+                    val totalChampLosses = player.finalsLosses + player.teamFinalsLosses
+                    if (totalChampWins > 0 || totalChampLosses > 0) {
+                        StatPair(label = "Champ:", wins = totalChampWins, losses = totalChampLosses)
+                    }
                 }
             }
         }

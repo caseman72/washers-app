@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { loadSettings, updateGameNumber } from './SettingsScreen'
 import { useGameState } from '../hooks/useGameState'
@@ -209,6 +209,31 @@ export function MirrorScreen() {
 
   // Tournament games (1-64) have format locked to 1
   const isTournamentGame = gameNumber >= 1 && gameNumber <= 64
+
+  // Track previous rounds to detect series wins
+  const prevRoundsRef = useRef<{ p1: number; p2: number } | null>(null)
+
+  // Auto-advance game number when tournament game is won (rounds increase)
+  useEffect(() => {
+    if (!game.state || !isTournamentGame) return
+
+    const currentRounds = {
+      p1: game.state.player1Rounds || 0,
+      p2: game.state.player2Rounds || 0
+    }
+
+    if (prevRoundsRef.current !== null) {
+      const prevRounds = prevRoundsRef.current
+      // Detect if either player's rounds increased (series win)
+      if ((currentRounds.p1 > prevRounds.p1 || currentRounds.p2 > prevRounds.p2) && gameNumber < 64) {
+        const nextGame = gameNumber + 1
+        setGameNumber(nextGame)
+        setGameNumberInput(nextGame.toString())
+      }
+    }
+
+    prevRoundsRef.current = currentRounds
+  }, [game.state?.player1Rounds, game.state?.player2Rounds, isTournamentGame, gameNumber])
 
   // Save gameNumber to settings when it changes (debounced)
   useEffect(() => {

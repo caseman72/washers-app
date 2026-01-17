@@ -1,5 +1,5 @@
 import { ref, onValue, off, push, set, update, remove } from 'firebase/database'
-import { database, ensureAuth, sanitizeEmail } from './firebase'
+import { database, ensureAuth, sanitizeEmail, clearTournamentGames } from './firebase'
 import { Tournament, BracketNode, Team } from '../types'
 
 // Firebase tournament data structure
@@ -136,6 +136,9 @@ function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
 export async function createTournament(namespace: string, tournament: Tournament): Promise<string> {
   await ensureAuth()
 
+  // Clear all 64 tournament game slots first to wipe stale data from previous tournaments
+  await clearTournamentGames(namespace)
+
   const sanitized = sanitizeEmail(namespace)
   const path = `tournaments/${sanitized}`
   const tournamentsRef = ref(database, path)
@@ -206,6 +209,156 @@ export async function deleteTournament(namespace: string, tournamentId: string):
 
   await remove(tournamentRef)
   console.log(`Deleted tournament ${tournamentId}`)
+}
+
+// Compute game numbers from bracket structure (same algorithm as BracketScreen)
+// Returns a Map from matchId to gameNumber
+function computeGameNumbers(bracket: BracketNode[]): Map<string, number> {
+  const numbers = new Map<string, number>()
+  let gameNum = 1
+
+  // Helper: check if a match is structurally a BYE
+  const isStructuralBye = (match: BracketNode) => {
+    if (match.isByeMatch) return true
+    if (match.round === 1 && match.bracket === 'winners') {
+      const hasP1 = !!match.player1Id
+      const hasP2 = !!match.player2Id
+      return (hasP1 && !hasP2) || (!hasP1 && hasP2)
+    }
+    return false
+  }
+
+  // Helper: check if match is immediately playable
+  const isImmediatelyPlayable = (match: BracketNode) => {
+    if (isStructuralBye(match)) return false
+    if (match.round === 1 && match.bracket === 'winners') return true
+    const feeders = bracket.filter(m => m.nextMatchId === match.id)
+    if (feeders.length === 0) return false
+    return feeders.every(f => isStructuralBye(f))
+  }
+
+  // Get matches by round and bracket type
+  const getMatchesByRound = (bracketType: 'winners' | 'losers') => {
+    const rounds = new Map<number, BracketNode[]>()
+    bracket
+      .filter(m => m.bracket === bracketType && m.id !== 'grand-finals' && m.id !== 'grand-finals-2')
+      .forEach(match => {
+        const round = match.round
+        if (!rounds.has(round)) rounds.set(round, [])
+        rounds.get(round)!.push(match)
+      })
+    return rounds
+  }
+
+  const winnersRounds = getMatchesByRound('winners')
+  const losersRounds = getMatchesByRound('losers')
+
+  const wbRoundNums = Array.from(winnersRounds.keys()).sort((a, b) => a - b)
+  const lbRoundNums = Array.from(losersRounds.keys()).sort((a, b) => a - b)
+  const maxRound = Math.max(
+    wbRoundNums.length > 0 ? wbRoundNums[wbRoundNums.length - 1] : 0,
+    lbRoundNums.length > 0 ? lbRoundNums[lbRoundNums.length - 1] : 0
+  )
+
+  const finalsGame1 = bracket.find(m => m.id === 'grand-finals')
+  const finalsGame2 = bracket.find(m => m.id === 'grand-finals-2')
+
+  // Number games by round
+  for (let round = 1; round <= maxRound; round++) {
+    const wbMatches = winnersRounds.get(round) || []
+    const lbMatches = losersRounds.get(round) || []
+    const allMatches = [...wbMatches, ...lbMatches]
+
+    const immediate: BracketNode[] = []
+    const waiting: BracketNode[] = []
+
+    allMatches.forEach(match => {
+      if (isStructuralBye(match)) return
+      if (isImmediatelyPlayable(match)) {
+        immediate.push(match)
+      } else {
+        waiting.push(match)
+      }
+    })
+
+    immediate.sort((a, b) => a.position - b.position)
+    waiting.sort((a, b) => a.position - b.position)
+
+    immediate.forEach(match => numbers.set(match.id, gameNum++))
+    waiting.forEach(match => numbers.set(match.id, gameNum++))
+
+    if (round === maxRound && finalsGame1) {
+      numbers.set(finalsGame1.id, gameNum++)
+    }
+  }
+
+  if (finalsGame2) {
+    numbers.set(finalsGame2.id, gameNum++)
+  }
+
+  return numbers
+}
+
+// Check if a specific game number is complete in the active tournament
+// Returns true if the game has a winner set in the bracket
+export async function checkGameComplete(namespace: string, gameNumber: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const sanitized = sanitizeEmail(namespace)
+    const path = `tournaments/${sanitized}`
+    const tournamentsRef = ref(database, path)
+
+    onValue(
+      tournamentsRef,
+      (snapshot) => {
+        const data = snapshot.val()
+        off(tournamentsRef)
+
+        if (!data) {
+          resolve(false)
+          return
+        }
+
+        // Find the active tournament
+        const activeTournament = Object.values(data).find((tournament: any) => {
+          const archived = tournament.archived || false
+          const status = tournament.status || ''
+          return !archived && (status === 'active' || status === 'setup')
+        }) as any
+
+        if (!activeTournament || !activeTournament.bracket) {
+          resolve(false)
+          return
+        }
+
+        // Compute game numbers from bracket structure
+        const gameNumbers = computeGameNumbers(activeTournament.bracket)
+
+        // Find the match with this game number
+        let matchId: string | null = null
+        for (const [id, num] of gameNumbers) {
+          if (num === gameNumber) {
+            matchId = id
+            break
+          }
+        }
+
+        if (!matchId) {
+          resolve(false)
+          return
+        }
+
+        // Find the match and check if it has a winner
+        const match = activeTournament.bracket.find((node: any) => node.id === matchId)
+        resolve(match?.winnerId ? true : false)
+      },
+      (error) => {
+        console.error(`Error checking game complete: ${error}`)
+        off(tournamentsRef)
+        resolve(false)
+      },
+      { onlyOnce: true }
+    )
+  })
 }
 
 // Check if there's an active tournament for a namespace

@@ -134,15 +134,20 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 - [x] Player stats (wins/losses, tournament match stats, championship stats)
 
 ### Phase 3: Future
-- [ ] Live game tiles view (all 8 games at once)
+- (No pending features)
 
 ---
 
 ## Current Task
 
-**✅ January 2026 Update - Complete**
+**✅ Keep Score Fixes - Complete**
 
-All January 2026 tasks completed. Ready for next feature.
+Fixed Keep Score game switching issues on both web and phone:
+- Game Complete detection now computes game numbers from bracket structure
+- Keep Score loads existing game state from Firebase on mount
+- Fixed stale data writes when switching between games (loadedForGame tracking)
+
+Ready for next feature.
 
 ---
 
@@ -187,6 +192,8 @@ All January 2026 tasks completed. Ready for next feature.
 - [x] Firebase read player names on namespace change (Mirror mode)
 - [x] Reset Watch state on namespace change (preserves colors, prevents stale rounds)
 - [x] Improved back button contrast for visibility
+- [x] Keep Score loads game state from Firebase on mount (persists between sessions)
+- [x] Keep Score game switching fix (prevents stale data writes)
 
 ### Web App (React/TypeScript)
 - [x] Home screen (mode picker - Mirror / Keep Score / Settings)
@@ -219,7 +226,9 @@ All January 2026 tasks completed. Ready for next feature.
 - [x] Keep Score reads player names from Firebase for tournament games
 - [x] Player name selection locked for tournament games (1-64)
 - [x] 404 page for unknown routes
-- [ ] Live game tiles (all 8 games at once)
+- [x] Keep Score loads game state from Firebase on mount (persists between sessions)
+- [x] Keep Score game switching fix (prevents stale data writes)
+- [x] Game Complete detection uses computed game numbers from bracket
 
 ---
 
@@ -294,7 +303,4 @@ All January 2026 tasks completed. Ready for next feature.
 - Full Firebase sync for tournaments
 - Archive completed tournaments
 - Light/dark theme toggle for TV display (persists in localStorage)
-
-**Future**:
-- Live game tiles (all 8 games at once)
     
