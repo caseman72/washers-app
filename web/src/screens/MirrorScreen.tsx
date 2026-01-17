@@ -10,7 +10,7 @@ const styles = `
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background: #1a1a1a;
+    background: #3a3a3a;
     color: white;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }

@@ -355,7 +355,6 @@ export function PlayersScreen() {
         <div>
           <span className="players-title">Players</span>
           <span className="player-count"> ({activePlayers.length})</span>
-          <span className="namespace-display">{namespace}</span>
         </div>
         <button className="add-btn" onClick={() => setShowAddModal(true)}>
           + Add
