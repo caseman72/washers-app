@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Scoreboard } from '../components/Scoreboard'
 import { loadSettings, updateGameNumber } from './SettingsScreen'
-import { writeGameState } from '../lib/firebase'
+import { writeGameState, subscribeToGame } from '../lib/firebase'
 import { subscribeToPlayers } from '../lib/firebase-players'
 import { checkActiveTournament } from '../lib/firebase-tournaments'
 import type { GameSession, Player } from '../types'
@@ -55,8 +55,12 @@ const styles = `
     color: #666;
   }
 
-  .player-name-label:hover {
+  .player-name-label:hover:not(.locked) {
     color: white;
+  }
+
+  .player-name-label.locked {
+    cursor: default;
   }
 
   .spacer {
@@ -368,6 +372,18 @@ export function KeepScoreScreen() {
     return unsubscribe
   }, [baseNamespace, hasNamespace])
 
+  // For tournament games, read player names from Firebase (set by bracket)
+  useEffect(() => {
+    if (!hasNamespace || !isTournamentGame) return
+    const unsubscribe = subscribeToGame(baseNamespace, gameNumber, (state) => {
+      if (state) {
+        if (state.player1Name) setPlayer1Name(state.player1Name)
+        if (state.player2Name) setPlayer2Name(state.player2Name)
+      }
+    })
+    return unsubscribe
+  }, [baseNamespace, hasNamespace, gameNumber, isTournamentGame])
+
   // Save gameNumber to settings when it changes (debounced)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -544,14 +560,14 @@ export function KeepScoreScreen() {
         {/* Player name labels */}
         <div className="player-names-row">
           <span
-            className={`player-name-label ${!player1Name ? 'empty' : ''}`}
-            onClick={() => setShowPlayerPicker(1)}
+            className={`player-name-label ${!player1Name ? 'empty' : ''} ${isTournamentGame ? 'locked' : ''}`}
+            onClick={() => !isTournamentGame && setShowPlayerPicker(1)}
           >
             {player1Name || 'Player 1'}
           </span>
           <span
-            className={`player-name-label ${!player2Name ? 'empty' : ''}`}
-            onClick={() => setShowPlayerPicker(2)}
+            className={`player-name-label ${!player2Name ? 'empty' : ''} ${isTournamentGame ? 'locked' : ''}`}
+            onClick={() => !isTournamentGame && setShowPlayerPicker(2)}
           >
             {player2Name || 'Player 2'}
           </span>

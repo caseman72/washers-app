@@ -9,6 +9,7 @@ import { TournamentScreen } from './screens/TournamentScreen'
 import { TournamentSetupScreen } from './screens/TournamentSetupScreen'
 import { TournamentListScreen } from './screens/TournamentListScreen'
 import { BracketScreen } from './screens/BracketScreen'
+import { NotFoundScreen } from './screens/NotFoundScreen'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/tournament/new" element={<TournamentSetupScreen />} />
         <Route path="/tournament/list" element={<TournamentListScreen />} />
         <Route path="/tournament/:id" element={<BracketScreen />} />
+        <Route path="*" element={<NotFoundScreen />} />
       </Routes>
       </ModalProvider>
     </BrowserRouter>
