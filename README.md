@@ -216,6 +216,9 @@ All January 2026 tasks completed. Ready for next feature.
 - [x] React modal dialogs (replaced browser confirm/alert)
 - [x] Bracket light theme toggle (for TV display)
 - [x] Format locked indicator for tournament games (1-64)
+- [x] Keep Score reads player names from Firebase for tournament games
+- [x] Player name selection locked for tournament games (1-64)
+- [x] 404 page for unknown routes
 - [ ] Live game tiles (all 8 games at once)
 
 ---

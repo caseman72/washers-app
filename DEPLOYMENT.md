@@ -61,6 +61,29 @@ Tournament games (1-64) show "locked" on format button, matching phone behavior.
 
 ---
 
+### Tournament Game Names
+Keep Score screen reads player names from Firebase for tournament games (1-64).
+
+**Files modified:**
+- `web/src/screens/KeepScoreScreen.tsx` - Subscribe to Firebase, lock player selection
+
+**Features:**
+- Player names auto-populated from bracket data
+- Player name selection disabled for tournament games (1-64)
+
+---
+
+### 404 Page
+Added catch-all route for unknown URLs.
+
+**Files created:**
+- `web/src/screens/NotFoundScreen.tsx` - 404 page component
+
+**Files modified:**
+- `web/src/App.tsx` - Added `<Route path="*">` catch-all
+
+---
+
 ## Docker Image Build & Push to Registry
 
 ### Step 1: Build Docker Image
