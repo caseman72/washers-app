@@ -83,13 +83,28 @@ const styles = `
     background: #1a1a1a;
     color: white;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    padding: 2rem;
   }
 
   .settings-header {
-    font-size: 1.75rem;
+    padding: 1rem;
+    background: #111;
+  }
+
+  .settings-title {
+    font-size: 1.25rem;
     font-weight: bold;
-    margin-bottom: 2rem;
+  }
+
+  .settings-content {
+    flex: 1;
+    padding: 2rem;
+  }
+
+  .settings-footer {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    background: #111;
   }
 
   .settings-section {
@@ -124,15 +139,13 @@ const styles = `
   }
 
   .back-btn {
-    margin-top: auto;
-    padding: 1rem 2rem;
+    padding: 0.75rem 1.5rem;
     font-size: 1rem;
     background: #333;
     color: #aaa;
     border: none;
     border-radius: 0.5rem;
     cursor: pointer;
-    max-width: 200px;
   }
 
   .back-btn:hover {
@@ -162,23 +175,29 @@ export function SettingsScreen() {
 
   return (
     <div className="settings-screen">
-      <h1 className="settings-header">Settings</h1>
-
-      <div className="settings-section">
-        <div className="settings-label">Namespace</div>
-        <input
-          type="text"
-          className="settings-input"
-          placeholder="casey@manion.com"
-          value={settings.namespace}
-          onChange={(e) => handleNamespaceChange(e.target.value)}
-        />
-        <div className="settings-hint">Your Firebase namespace (email only)</div>
+      <div className="settings-header">
+        <div className="settings-title">Settings</div>
       </div>
 
-      <button className="back-btn" onClick={() => navigate('/')}>
-        Back to Menu
-      </button>
+      <div className="settings-content">
+        <div className="settings-section">
+          <div className="settings-label">Namespace</div>
+          <input
+            type="text"
+            className="settings-input"
+            placeholder="casey@manion.com"
+            value={settings.namespace}
+            onChange={(e) => handleNamespaceChange(e.target.value)}
+          />
+          <div className="settings-hint">Your Firebase namespace (email only)</div>
+        </div>
+      </div>
+
+      <div className="settings-footer">
+        <button className="back-btn" onClick={() => navigate('/')}>
+          Back to Menu
+        </button>
+      </div>
 
       <style>{styles}</style>
     </div>

@@ -72,13 +72,14 @@ const styles = `
   }
 
   .tournament-footer {
+    display: flex;
+    justify-content: center;
     padding: 1rem;
     background: #111;
   }
 
   .back-btn {
-    width: 100%;
-    padding: 0.75rem;
+    padding: 0.75rem 1.5rem;
     font-size: 1rem;
     background: #333;
     color: #aaa;
