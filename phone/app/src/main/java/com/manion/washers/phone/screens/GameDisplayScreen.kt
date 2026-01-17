@@ -56,6 +56,12 @@ fun GameDisplayScreen(
     // Local state for Keep Score mode
     var localGameState by remember { mutableStateOf(GameState()) }
 
+    // Observe base namespace and game number separately (split storage)
+    // Declared early because they're used in multiple LaunchedEffects
+    val baseNamespace by SettingsRepository.baseNamespace.collectAsState()
+    val gameNumber by SettingsRepository.gameNumber.collectAsState()
+    val fullNamespace = SettingsRepository.getFullNamespace()
+
     // Track if current tournament game is already complete (declared early for use in LaunchedEffect)
     var isGameComplete by remember { mutableStateOf(false) }
 
@@ -80,11 +86,6 @@ fun GameDisplayScreen(
             FirebaseRepository.writeCurrentState(localGameState)
         }
     }
-
-    // Observe base namespace and game number separately (split storage)
-    val baseNamespace by SettingsRepository.baseNamespace.collectAsState()
-    val gameNumber by SettingsRepository.gameNumber.collectAsState()
-    val fullNamespace = SettingsRepository.getFullNamespace()
 
     // Track previous full namespace to detect changes
     var previousNamespace by remember { mutableStateOf(fullNamespace) }
