@@ -1,0 +1,20 @@
+# Firebase config (contains API keys)
+GoogleService-Info.plist
+
+# Xcode
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Build
+build/
+*.ipa
+
+# CocoaPods (if used later)
+Pods/
+
+# Swift Package Manager
+.swiftpm/
+.build/
