@@ -19,7 +19,8 @@
       "Bash(npx tsc --noEmit:*)",
       "Bash(cd:*)",
       "Bash(./gradlew assembleDebug:*)",
-      "Bash(export JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" && *)"
+      "Bash(export JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" && *)",
+      "Bash(./gradlew compileDebugKotlin:*)"
     ]
   }
 }
