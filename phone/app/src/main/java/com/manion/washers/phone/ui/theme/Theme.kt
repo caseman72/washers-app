@@ -17,7 +17,6 @@ object WatchColors {
     val Secondary = Color(0xFF4CAF50)        // Green (confirm buttons)
     val OnSurface = Color.White
     val OnSurfaceDisabled = Color.Gray
-    val DialogOverlay = Color(0xDD000000)    // Semi-transparent black
 }
 
 private val DarkColorScheme = darkColorScheme(

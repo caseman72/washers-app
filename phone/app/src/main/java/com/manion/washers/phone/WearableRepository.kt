@@ -103,13 +103,13 @@ object WearableRepository {
 
         val p1Color = try {
             PlayerColor.valueOf(p1ColorName)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             PlayerColor.DEFAULT_PLAYER1
         }
 
         val p2Color = try {
             PlayerColor.valueOf(p2ColorName)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             PlayerColor.DEFAULT_PLAYER2
         }
 
@@ -126,14 +126,5 @@ object WearableRepository {
             player2Name = p2Name,
             format = format
         )
-    }
-
-    /**
-     * Reset connection state (for testing).
-     */
-    fun reset() {
-        _gameState.value = null
-        _isConnected.value = false
-        sessionStartTime = System.currentTimeMillis()
     }
 }

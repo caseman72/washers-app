@@ -2,8 +2,10 @@ package com.manion.washers.phone.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -37,6 +39,7 @@ fun ModePickerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -55,7 +58,6 @@ fun ModePickerScreen(
                 title = "Mirror",
                 description = "Display watch game",
                 selected = initialMode == AppMode.MIRROR,
-                enabled = true,
                 onClick = { onModeSelected(AppMode.MIRROR) }
             )
 
@@ -65,7 +67,6 @@ fun ModePickerScreen(
                 title = "Keep Score",
                 description = "Standalone scoring",
                 selected = initialMode == AppMode.KEEP_SCORE,
-                enabled = true,
                 onClick = { onModeSelected(AppMode.KEEP_SCORE) }
             )
 
@@ -75,7 +76,6 @@ fun ModePickerScreen(
                 title = "Players",
                 description = "Manage player roster",
                 selected = initialMode == AppMode.PLAYERS,
-                enabled = true,
                 onClick = { onModeSelected(AppMode.PLAYERS) }
             )
 
@@ -85,7 +85,6 @@ fun ModePickerScreen(
                 title = "Settings",
                 description = "Namespace config",
                 selected = initialMode == AppMode.SETTINGS,
-                enabled = true,
                 onClick = { onModeSelected(AppMode.SETTINGS) }
             )
         }
@@ -97,15 +96,9 @@ private fun ModeOption(
     title: String,
     description: String,
     selected: Boolean,
-    enabled: Boolean,
     onClick: () -> Unit
 ) {
-    val backgroundColor = when {
-        !enabled -> WatchColors.SurfaceDisabled
-        selected -> WatchColors.SurfaceSelected
-        else -> WatchColors.Surface
-    }
-    val textColor = if (enabled) WatchColors.OnSurface else WatchColors.OnSurfaceDisabled
+    val backgroundColor = if (selected) WatchColors.SurfaceSelected else WatchColors.Surface
 
     Row(
         modifier = Modifier
@@ -113,7 +106,6 @@ private fun ModeOption(
             .background(backgroundColor, RoundedCornerShape(8.dp))
             .selectable(
                 selected = selected,
-                enabled = enabled,
                 role = Role.RadioButton,
                 onClick = onClick
             )
@@ -123,12 +115,9 @@ private fun ModeOption(
         RadioButton(
             selected = selected,
             onClick = null,
-            enabled = enabled,
             colors = RadioButtonDefaults.colors(
                 selectedColor = WatchColors.Primary,
-                unselectedColor = WatchColors.OnSurfaceDisabled,
-                disabledSelectedColor = WatchColors.OnSurfaceDisabled,
-                disabledUnselectedColor = WatchColors.SurfaceDisabled
+                unselectedColor = WatchColors.OnSurfaceDisabled
             )
         )
 
@@ -137,13 +126,13 @@ private fun ModeOption(
         Column {
             Text(
                 text = title,
-                color = textColor,
+                color = WatchColors.OnSurface,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = description,
-                color = textColor.copy(alpha = 0.7f),
+                color = WatchColors.OnSurface.copy(alpha = 0.7f),
                 fontSize = 14.sp
             )
         }

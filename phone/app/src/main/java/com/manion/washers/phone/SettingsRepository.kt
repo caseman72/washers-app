@@ -3,6 +3,7 @@ package com.manion.washers.phone
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +16,6 @@ object SettingsRepository {
     private const val KEY_FORMAT = "format"
     private const val KEY_PLAYER1_NAME = "player1_name"
     private const val KEY_PLAYER2_NAME = "player2_name"
-    private const val KEY_SHOW_ROUNDS = "show_rounds"
 
     // Legacy key for migration
     private const val KEY_NAMESPACE_LEGACY = "namespace"
@@ -39,9 +39,6 @@ object SettingsRepository {
     private val _player2Name = MutableStateFlow("")
     val player2Name: StateFlow<String> = _player2Name.asStateFlow()
 
-    private val _showRounds = MutableStateFlow(false)
-    val showRounds: StateFlow<Boolean> = _showRounds.asStateFlow()
-
     fun initialize(context: Context) {
         if (prefs == null) {
             prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -63,11 +60,11 @@ object SettingsRepository {
                 _baseNamespace.value = parts[0]
                 _gameNumber.value = if (parts.size > 1) parts[1].toIntOrNull() ?: 0 else 0
                 // Save in new format
-                p.edit()
-                    .putString(KEY_BASE_NAMESPACE, _baseNamespace.value)
-                    .putInt(KEY_GAME_NUMBER, _gameNumber.value)
-                    .remove(KEY_NAMESPACE_LEGACY)
-                    .apply()
+                p.edit {
+                    putString(KEY_BASE_NAMESPACE, _baseNamespace.value)
+                    putInt(KEY_GAME_NUMBER, _gameNumber.value)
+                    remove(KEY_NAMESPACE_LEGACY)
+                }
                 Log.d("SettingsRepository", "Migrated legacy namespace: $legacyNamespace -> base=${_baseNamespace.value}, game=${_gameNumber.value}")
             } else {
                 _baseNamespace.value = p.getString(KEY_BASE_NAMESPACE, "") ?: ""
@@ -78,14 +75,13 @@ object SettingsRepository {
             if (_baseNamespace.value.isBlank()) {
                 val defaultNamespace = generateDefaultNamespace()
                 _baseNamespace.value = defaultNamespace
-                p.edit().putString(KEY_BASE_NAMESPACE, defaultNamespace).apply()
+                p.edit { putString(KEY_BASE_NAMESPACE, defaultNamespace) }
                 Log.d("SettingsRepository", "Generated default namespace: $defaultNamespace")
             }
 
             _format.value = p.getInt(KEY_FORMAT, 1)
             _player1Name.value = p.getString(KEY_PLAYER1_NAME, "") ?: ""
             _player2Name.value = p.getString(KEY_PLAYER2_NAME, "") ?: ""
-            _showRounds.value = p.getBoolean(KEY_SHOW_ROUNDS, false)
         }
     }
 
@@ -106,7 +102,7 @@ object SettingsRepository {
     fun setBaseNamespace(value: String) {
         Log.d("SettingsRepository", "setBaseNamespace called with: '$value'")
         _baseNamespace.value = value
-        prefs?.edit()?.putString(KEY_BASE_NAMESPACE, value)?.apply()
+        prefs?.edit { putString(KEY_BASE_NAMESPACE, value) }
     }
 
     /**
@@ -116,27 +112,22 @@ object SettingsRepository {
     fun setGameNumber(value: Int) {
         Log.d("SettingsRepository", "setGameNumber called with: $value")
         _gameNumber.value = value
-        prefs?.edit()?.putInt(KEY_GAME_NUMBER, value)?.apply()
+        prefs?.edit { putInt(KEY_GAME_NUMBER, value) }
     }
 
     fun setFormat(value: Int) {
         _format.value = value
-        prefs?.edit()?.putInt(KEY_FORMAT, value)?.apply()
+        prefs?.edit { putInt(KEY_FORMAT, value) }
     }
 
     fun setPlayer1Name(value: String) {
         _player1Name.value = value
-        prefs?.edit()?.putString(KEY_PLAYER1_NAME, value)?.apply()
+        prefs?.edit { putString(KEY_PLAYER1_NAME, value) }
     }
 
     fun setPlayer2Name(value: String) {
         _player2Name.value = value
-        prefs?.edit()?.putString(KEY_PLAYER2_NAME, value)?.apply()
-    }
-
-    fun setShowRounds(value: Boolean) {
-        _showRounds.value = value
-        prefs?.edit()?.putBoolean(KEY_SHOW_ROUNDS, value)?.apply()
+        prefs?.edit { putString(KEY_PLAYER2_NAME, value) }
     }
 
     /**
@@ -145,19 +136,5 @@ object SettingsRepository {
      */
     fun isTournamentGame(): Boolean {
         return _gameNumber.value in 1..64
-    }
-
-    /**
-     * Get effective format: tournament games are always format 1.
-     */
-    fun getEffectiveFormat(): Int {
-        return if (isTournamentGame()) 1 else _format.value
-    }
-
-    /**
-     * Check if rounds should be shown (format > 1 and not a tournament game).
-     */
-    fun shouldShowRounds(): Boolean {
-        return !isTournamentGame() && _format.value > 1
     }
 }

@@ -45,7 +45,7 @@ object FirebaseRepository {
 
         val isTournamentGame = SettingsRepository.isTournamentGame()
 
-        val data = mutableMapOf<String, Any>(
+        val data = mutableMapOf(
             "player1Score" to gameState.player1Score,
             "player2Score" to gameState.player2Score,
             "player1Games" to gameState.player1Games,
@@ -145,7 +145,7 @@ object FirebaseRepository {
 
         // Only write names for non-tournament games (tournament names are set by bracket)
         if (!isTournamentGame) {
-            val data = mapOf<String, Any>(
+            val data = mapOf(
                 "player1Name" to SettingsRepository.player1Name.value,
                 "player2Name" to SettingsRepository.player2Name.value,
                 "updatedAt" to ServerValue.TIMESTAMP
@@ -446,7 +446,7 @@ object FirebaseRepository {
         }
 
         if (finalsGame2 != null) {
-            numbers[finalsGame2.id] = gameNum++
+            numbers[finalsGame2.id] = gameNum
         }
 
         return numbers

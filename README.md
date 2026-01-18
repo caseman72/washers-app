@@ -140,13 +140,14 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 
 ## Current Task
 
-**✅ Mirror Mode Fix - Complete**
+**✅ Code Cleanup - Complete**
 
-Fixed Mirror mode on phone to prevent stale data writes:
-- Added writePlayerNamesOnly() function for safe name updates
-- Mirror mode no longer writes scores/games/rounds to Firebase
-- Player selection only writes names (not cached watch state)
-- Format changes in Mirror mode don't write to Firebase (metadata only)
+Fixed build warnings and added landscape scroll support:
+- Phone: Added vertical scroll to mode picker for landscape mode
+- Phone: Removed unused imports, functions, and properties across all files
+- Phone: Converted SharedPreferences to KTX edit{} syntax
+- Phone: Fixed memory leak warnings with applicationContext
+- Watch: Removed unused imports and functions
 
 Ready for next feature.
 

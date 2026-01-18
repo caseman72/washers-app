@@ -9,12 +9,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.text.input.KeyboardType
@@ -26,9 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -613,62 +608,6 @@ private fun MirrorDisplay(
 }
 
 @Composable
-private fun GamesCounter(
-    player1Games: Int,
-    player2Games: Int
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(40.dp)
-            .background(WatchColors.Surface, RoundedCornerShape(8.dp))
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "$player1Games",
-            color = WatchColors.OnSurface,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "GAMES",
-            color = WatchColors.OnSurfaceDisabled,
-            fontSize = 16.sp
-        )
-        Text(
-            text = "$player2Games",
-            color = WatchColors.OnSurface,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Composable
-private fun ScorePanel(
-    score: Int,
-    color: PlayerColor,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .background(color.background, RoundedCornerShape(8.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "$score",
-            color = color.text,
-            fontSize = 72.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
 private fun ScoreControlPanel(
     score: Int,
     color: PlayerColor,
@@ -841,138 +780,6 @@ private fun GamesCounterWithBadges(
 }
 
 /**
- * Score panel with darker top/bottom areas (display only, matches watch visual)
- */
-@Composable
-private fun ScorePanelWithButtons(
-    score: Int,
-    color: PlayerColor,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(RoundedCornerShape(8.dp)),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Top area (darker, no button)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.7f)
-                .background(color.darker)
-        )
-
-        // Score (main color)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1.4f)
-                .background(color.background),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "$score",
-                color = color.text,
-                fontSize = 72.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        // Bottom area (darker, no button)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.7f)
-                .background(color.darker)
-        )
-    }
-}
-
-/**
- * Score panel with editable name in top area (for Mirror mode)
- */
-@Composable
-private fun ScorePanelWithName(
-    score: Int,
-    color: PlayerColor,
-    name: String,
-    placeholder: String,
-    onNameChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(RoundedCornerShape(8.dp)),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Top area with editable name
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.7f)
-                .background(color.darker),
-            contentAlignment = Alignment.Center
-        ) {
-            BasicTextField(
-                value = name,
-                onValueChange = onNameChange,
-                textStyle = TextStyle(
-                    color = color.text,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center
-                ),
-                singleLine = true,
-                cursorBrush = SolidColor(color.text),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp),
-                decorationBox = { innerTextField ->
-                    Box(contentAlignment = Alignment.Center) {
-                        if (name.isEmpty()) {
-                            Text(
-                                text = placeholder,
-                                color = color.text.copy(alpha = 0.5f),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        innerTextField()
-                    }
-                }
-            )
-        }
-
-        // Score (main color)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1.4f)
-                .background(color.background),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "$score",
-                color = color.text,
-                fontSize = 72.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        // Bottom area (darker)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.7f)
-                .background(color.darker)
-        )
-    }
-}
-
-/**
  * Keep Score mode with pager (Page 0: Game, Page 1: Colors)
  * @param onSeriesWin Called when a series is won - receives the new state, returns callback to run after Firebase write
  */
@@ -1015,7 +822,6 @@ private fun KeepScorePager(
         // Page indicator dots
         PageIndicator(
             currentPage = pagerState.currentPage,
-            pageCount = 2,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 8.dp)
@@ -1286,14 +1092,13 @@ private fun KeepScoreColorsScreen(
 @Composable
 private fun PageIndicator(
     currentPage: Int,
-    pageCount: Int,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        repeat(pageCount) { index ->
+        repeat(2) { index ->
             Box(
                 modifier = Modifier
                     .size(8.dp)

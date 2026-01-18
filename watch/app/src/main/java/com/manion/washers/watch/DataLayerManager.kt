@@ -66,8 +66,6 @@ class DataLayerManager private constructor(context: Context) {
             }
         }
 
-        fun getLastGameState(): GameState? = lastGameState
-
         fun setFormatFromPhone(format: Int) {
             Log.d(TAG, "Format received from phone: $format, current: ${_formatFromPhone.value}, pending: $pendingFormat")
             // Show dialog if:
