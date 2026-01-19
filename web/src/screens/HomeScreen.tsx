@@ -182,7 +182,7 @@ export function HomeScreen() {
       </div>
 
       <div className="rules-link">
-        <a href="/rules.html" target="_blank" rel="noopener noreferrer">Official Rules</a>
+        <a href="/rules" target="_blank" rel="noopener noreferrer">Official Rules</a>
       </div>
 
       <style>{styles}</style>
