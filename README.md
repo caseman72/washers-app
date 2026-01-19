@@ -165,6 +165,14 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 
 Ready for next feature.
 
+### Breadcrumbs (iPhone App)
+
+Next session TODO:
+- Add player names to Mirror view (like Android phone app)
+- Compare current state vs initial commit `31e1e38` to see UI changes
+- Files: `iphone/washers/Views/MirrorView.swift`, `iphone/washers/Views/Components/ScoreboardView.swift`
+- Layout tweaks in progress (2 Spacers to push mirror up)
+
 ---
 
 ## Development Status
