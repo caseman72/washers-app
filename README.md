@@ -157,14 +157,11 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 
 ## Current Task
 
-**✅ iPhone App - Complete**
+**✅ Rules Link & Cleanup - Complete**
 
-Added iPhone app with Firebase integration:
-- SwiftUI app with Mirror, Keep Score, Players, Settings screens
-- Firebase Auth (anonymous) and Realtime Database sync
-- Game # picker (0-99) and format picker (Bo1/3/5/7) in Keep Score
-- Real-time player management
-- Matches existing web/phone functionality
+- Added Official Rules link to web home page (`/rules.html`)
+- iPhone UI polish (scoreboard spacing, corner radius, game picker placement)
+- Dockerfile lint warning fix (skip SecretsUsedInArgOrEnv)
 
 Ready for next feature.
 
