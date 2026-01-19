@@ -24,7 +24,7 @@ struct ScoreboardView: View {
             ZStack {
                 Color.boardBackground
 
-                VStack(spacing: 0) {
+                VStack(spacing: 10) {
                     // Games counter header
                     gamesHeader(size: size)
                         .frame(height: size * 0.12)
@@ -113,7 +113,7 @@ struct ScoreboardView: View {
                 if interactive { showColorPicker = 2 }
             }
         }
-        .padding(.horizontal, size * 0.05)
+        .padding(.horizontal, size * 0.20)
     }
 
     @ViewBuilder
@@ -170,6 +170,7 @@ struct ScoreboardView: View {
             }
         }
         .background(color.background)
+        .cornerRadius(8)
     }
 
     @ViewBuilder

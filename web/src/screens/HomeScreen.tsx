@@ -112,6 +112,21 @@ const styles = `
     letter-spacing: 0.1em;
     margin-bottom: 0.5rem;
   }
+
+  .rules-link {
+    margin-top: 2rem;
+    font-size: 0.875rem;
+    color: #666;
+  }
+
+  .rules-link a {
+    color: #4a9eff;
+    text-decoration: none;
+  }
+
+  .rules-link a:hover {
+    text-decoration: underline;
+  }
 `
 
 export function HomeScreen() {
@@ -164,6 +179,10 @@ export function HomeScreen() {
           Tournament
           <div className="mode-description">Create or view brackets</div>
         </button>
+      </div>
+
+      <div className="rules-link">
+        <a href="/rules.html" target="_blank" rel="noopener noreferrer">Official Rules</a>
       </div>
 
       <style>{styles}</style>

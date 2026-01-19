@@ -30,19 +30,6 @@ struct MirrorView: View {
                         }
                         Spacer()
 
-                        // Game # button
-                        Button(action: { showGamePicker = true }) {
-                            Text("Game \(settings.mirrorGame)")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color(white: 0.25))
-                                .cornerRadius(8)
-                        }
-
-                        Spacer()
-
                         // Connection indicator
                         Circle()
                             .fill(firebase.currentGame != nil ? Color.green : Color.red)
@@ -50,8 +37,7 @@ struct MirrorView: View {
                             .padding(.trailing, 8)
                     }
                     .padding()
-
-                    Spacer()
+                    
 
                     if settings.namespace.isEmpty {
                         // No namespace configured
@@ -83,15 +69,49 @@ struct MirrorView: View {
                         .padding(.horizontal, 16)
                     }
 
-                    Spacer()
 
                     // Status
-                    if !settings.namespace.isEmpty {
-                        Text(settings.namespace)
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                            .padding(.bottom, 8)
+                    Text(firebase.currentGame != nil ? "Connected" : "Waiting for data...")
+                        .foregroundColor(firebase.currentGame != nil ? Color.green : Color.gray)
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                        .padding(.bottom, 8)
+                    
+                    Spacer()
+                    Spacer()
+                    
+                    // Header
+                    HStack {
+                        Button(action: { selectedScreen = .home }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.left")
+                                Text("Menu")
+                            }
+                            .foregroundColor(.orange)
+                        }
+                        Spacer()
+
+                        // Game # button
+                        Button(action: { showGamePicker = true }) {
+                            Text("Game \(settings.mirrorGame)")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color(white: 0.25))
+                                .cornerRadius(8)
+                        }
+
+                        Spacer()
+
+                        // Connection indicator
+                        Circle()
+                            .fill(firebase.currentGame != nil ? Color.green : Color.red)
+                            .frame(width: 10, height: 10)
+                            .padding(.trailing, 8)
                     }
+                    .padding()
+                    
                 }
             }
         }
