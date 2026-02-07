@@ -82,6 +82,14 @@
 11. Bundle ID: `com.manion.washers.iphone`
 12. Download `GoogleService-Info.plist` and add to `iphone/washers/`
 
+### Debug Keystore (Watch/Phone apps)
+
+The Watch and Phone apps require a debug keystore for signing. Generate one at the repo root:
+
+```bash
+keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+```
+
 ### Build
 
 ```bash
