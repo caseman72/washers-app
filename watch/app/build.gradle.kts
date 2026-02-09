@@ -10,7 +10,7 @@ android {
     defaultConfig {
         applicationId = "com.manion.washers"
         minSdk = 30  // Wear OS 3.0+ (Galaxy Watch 4+)
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
     }
@@ -47,27 +47,33 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 dependencies {
     // Wear OS
     implementation("androidx.wear:wear:1.3.0")
 
     // Compose for Wear OS
-    implementation("androidx.wear.compose:compose-material:1.2.1")
-    implementation("androidx.wear.compose:compose-foundation:1.2.1")
-    implementation("androidx.wear.compose:compose-ui-tooling:1.2.1")
+    implementation("androidx.wear.compose:compose-material:1.5.6")
+    implementation("androidx.wear.compose:compose-foundation:1.5.6")
+    implementation("androidx.wear.compose:compose-ui-tooling:1.5.6")
 
     // Core Compose
-    implementation("androidx.compose.ui:ui:1.5.4")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.5.4")
-    implementation("androidx.compose.foundation:foundation:1.5.4")
-    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation("androidx.compose.ui:ui:1.10.2")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.10.2")
+    implementation("androidx.compose.foundation:foundation:1.10.2")
+    implementation("androidx.activity:activity-compose:1.12.3")
 
     // Lifecycle
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
 
     // Data Layer API (Watch ↔ Phone communication)
-    implementation("com.google.android.gms:play-services-wearable:18.1.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("com.google.android.gms:play-services-wearable:19.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 
-    debugImplementation("androidx.compose.ui:ui-tooling:1.5.4")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.10.2")
 }
