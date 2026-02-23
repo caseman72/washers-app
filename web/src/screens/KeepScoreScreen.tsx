@@ -36,7 +36,7 @@ const styles = `
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 1rem;
+    padding: 0.5rem 1rem 1rem;
     background: #3a3a3a;
     width: 100%;
     max-width: 475px;
@@ -96,8 +96,8 @@ const styles = `
     width: 100%;
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    background: #1a1a1a;
-    border: 1px solid #444;
+    background: #2a2a2a;
+    border: 1px solid #333;
     border-radius: 0.5rem;
     color: white;
     text-align: center;
@@ -112,8 +112,8 @@ const styles = `
     padding: 0.75rem 1rem;
     font-size: 1rem;
     font-weight: bold;
-    background: #1a1a1a;
-    border: 1px solid #444;
+    background: #2a2a2a;
+    border: 1px solid #333;
     border-radius: 0.5rem;
     color: white;
     cursor: pointer;
@@ -144,7 +144,7 @@ const styles = `
     width: 170px;
     padding: 0.75rem 0;
     font-size: 1.125rem;
-    background: #1a1a1a;
+    background: #2a2a2a;
     color: #888;
     border: none;
     border-radius: 0.5rem;
