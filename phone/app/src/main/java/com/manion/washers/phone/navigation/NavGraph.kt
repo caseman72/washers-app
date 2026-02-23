@@ -1,6 +1,10 @@
 package com.manion.washers.phone.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -30,6 +34,11 @@ object Routes {
 fun NavGraph() {
     val navController = rememberNavController()
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+    ) {
     NavHost(
         navController = navController,
         startDestination = Routes.LOADING
@@ -105,5 +114,6 @@ fun NavGraph() {
                 }
             )
         }
+    }
     }
 }

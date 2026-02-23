@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -203,13 +204,16 @@ fun GameDisplayScreen(
 
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
-    // Cap game display at 475dp on larger screens, use full width on smaller screens
-    val gameDisplaySize = minOf(screenWidth, 475.dp)
+    val screenHeight = configuration.screenHeightDp.dp
+    // Cap game display at 475dp and leave room for bottom controls
+    val bottomAreaHeight = 220.dp
+    val gameDisplaySize = minOf(screenWidth, screenHeight - bottomAreaHeight, 475.dp)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
