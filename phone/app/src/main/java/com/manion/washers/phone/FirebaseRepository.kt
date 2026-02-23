@@ -54,7 +54,7 @@ object FirebaseRepository {
             "player2Rounds" to gameState.player2Rounds,
             "player1Color" to gameState.player1Color.name,
             "player2Color" to gameState.player2Color.name,
-            "format" to gameState.format,
+            "format" to if (isTournamentGame) 1 else SettingsRepository.format.value,
             "updatedAt" to ServerValue.TIMESTAMP
         )
 
