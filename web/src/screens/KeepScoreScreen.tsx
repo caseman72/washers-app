@@ -424,8 +424,8 @@ export function KeepScoreScreen() {
   // Track pending auto-advance (set when game completes, cleared after Firebase write)
   const pendingAdvanceRef = useRef(false)
 
-  // Suppress writes when processing incoming Firebase updates
-  const suppressWriteRef = useRef(false)
+  // Track last state received from Firebase to avoid write-back loops
+  const lastFirebaseStateRef = useRef<string>('')
 
   // Initial data loaded from Firebase (used to initialize Scoreboard)
   const [initialData, setInitialData] = useState<InitialGameData>({
@@ -474,20 +474,25 @@ export function KeepScoreScreen() {
           setInitialData({ session, colors, loaded: true, loadedForGame: gameNumber })
           isFirstLoadRef.current = false
         } else {
-          // Subsequent updates — push live to Scoreboard and suppress write-back
-          suppressWriteRef.current = true
+          // Subsequent updates — push live to Scoreboard
           setLiveSession(session)
           setLiveColors(colors)
-          // Allow writes again after React processes the state updates
-          setTimeout(() => { suppressWriteRef.current = false }, 100)
         }
 
         // Always sync player names and format
         const name1 = state.player1Name
         const name2 = state.player2Name
-        setPlayer1Name(name1 && name1 !== 'TBD' ? name1 : '')
-        setPlayer2Name(name2 && name2 !== 'TBD' ? name2 : '')
+        const p1Name = name1 && name1 !== 'TBD' ? name1 : ''
+        const p2Name = name2 && name2 !== 'TBD' ? name2 : ''
+        setPlayer1Name(p1Name)
+        setPlayer2Name(p2Name)
         if (state.format) setFormat(state.format)
+
+        // Track what Firebase sent so we don't write it back
+        lastFirebaseStateRef.current = JSON.stringify({
+          s: session, c: colors,
+          f: state.format, n1: p1Name, n2: p2Name,
+        })
       } else if (isFirstLoadRef.current) {
         // No data in Firebase on first load - use defaults and write them
         const defaultSession = { player1Score: 0, player2Score: 0, player1Games: 0, player2Games: 0, player1Rounds: 0, player2Rounds: 0 }
@@ -582,14 +587,24 @@ export function KeepScoreScreen() {
   useEffect(() => {
     if (!hasNamespace) return
 
-    // Don't write back changes that came from Firebase
-    if (suppressWriteRef.current) return
-
     // Don't write until Scoreboard reports actual state
     // This prevents overwriting existing data on mount
     if (!lastSession) return
 
     const session = lastSession
+    const colors = {
+      p1: toColorId(lastColors.p1),
+      p2: toColorId(lastColors.p2),
+    }
+
+    // Skip write if state matches what Firebase last sent us (avoid write-back loop)
+    const currentSnapshot = JSON.stringify({
+      s: session, c: colors,
+      f: format, n1: player1Name, n2: player2Name,
+    })
+    if (currentSnapshot === lastFirebaseStateRef.current) {
+      return
+    }
 
     const gameState: Record<string, unknown> = {
       player1Score: session.player1Score,
