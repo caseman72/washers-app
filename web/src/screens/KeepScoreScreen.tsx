@@ -426,6 +426,7 @@ export function KeepScoreScreen() {
 
   // Track last state received from Firebase to avoid write-back loops
   const lastFirebaseStateRef = useRef<string>('')
+  const formatRef = useRef(format)
 
   // Initial data loaded from Firebase (used to initialize Scoreboard)
   const [initialData, setInitialData] = useState<InitialGameData>({
@@ -514,7 +515,7 @@ export function KeepScoreScreen() {
           player2Rounds: 0,
           player1Color: 'ORANGE',
           player2Color: 'BLACK',
-          format: isTournamentGame ? 1 : format,
+          format: isTournamentGame ? 1 : formatRef.current,
         }).catch(err => console.error('Failed to initialize game:', err))
         // Clear player names
         setPlayer1Name('')
@@ -523,7 +524,7 @@ export function KeepScoreScreen() {
     })
 
     return unsubscribe
-  }, [baseNamespace, hasNamespace, gameNumber, isTournamentGame, format])
+  }, [baseNamespace, hasNamespace, gameNumber, isTournamentGame])
 
   // Subscribe to players
   useEffect(() => {
@@ -695,6 +696,7 @@ export function KeepScoreScreen() {
     if (isTournamentGame && format !== 1) {
       setFormat(1)
     }
+    formatRef.current = format
   }, [isTournamentGame, format])
 
   const cycleFormat = () => {
