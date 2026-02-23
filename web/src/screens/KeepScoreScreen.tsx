@@ -404,6 +404,8 @@ export function KeepScoreScreen() {
   const [showTournamentWarning, setShowTournamentWarning] = useState(false)
   const [isGameComplete, setIsGameComplete] = useState(false)
   const [resetKey, setResetKey] = useState(0)
+  const [resetColorsKey, setResetColorsKey] = useState(0)
+  const [scoreboardScreen, setScoreboardScreen] = useState<'game' | 'colors'>('game')
 
   const baseNamespace = settings.namespace
   const hasNamespace = baseNamespace.trim().length > 0
@@ -765,6 +767,8 @@ export function KeepScoreScreen() {
             key={`${gameNumber}-${resetKey}`}
             onStateChange={handleStateChange}
             onGameComplete={handleGameComplete}
+            onScreenChange={setScoreboardScreen}
+            resetColorsKey={resetColorsKey}
             contained
             format={format}
             initialSession={resetKey > 0 ? undefined : initialData.session}
@@ -775,10 +779,19 @@ export function KeepScoreScreen() {
 
       {/* Bottom area - matches Phone layout */}
       <div className="keep-score-bottom">
-        {/* Reset button */}
+        {/* Reset button - changes based on active scoreboard screen */}
         {initialData.loaded && !isGameComplete && (
-          <button className="reset-btn" onClick={() => setResetKey(k => k + 1)}>
-            Reset
+          <button
+            className="reset-btn"
+            onClick={() => {
+              if (scoreboardScreen === 'colors') {
+                setResetColorsKey(k => k + 1)
+              } else {
+                setResetKey(k => k + 1)
+              }
+            }}
+          >
+            Reset{scoreboardScreen === 'colors' ? ' Colors' : ''}
           </button>
         )}
 

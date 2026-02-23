@@ -403,6 +403,8 @@ interface ScoreboardProps {
   player2Name?: string
   initialSession?: GameSession
   initialColors?: { p1: ColorId; p2: ColorId }
+  onScreenChange?: (screen: 'game' | 'colors') => void
+  resetColorsKey?: number
 }
 
 const defaultSession: GameSession = {
@@ -414,7 +416,7 @@ const defaultSession: GameSession = {
   player2Rounds: 0,
 }
 
-export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1, player1Name: _player1Name, player2Name: _player2Name, initialSession, initialColors }: ScoreboardProps) {
+export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1, player1Name: _player1Name, player2Name: _player2Name, initialSession, initialColors, onScreenChange, resetColorsKey }: ScoreboardProps) {
   const [session, setSession] = useState<GameSession>(initialSession ?? defaultSession)
   const [showDonePrompt, setShowDonePrompt] = useState<1 | 2 | null>(null)
   const [player1Color, setPlayer1Color] = useState<ColorId>(initialColors?.p1 ?? 'orange')
@@ -490,6 +492,11 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
     onStateChange?.(session, { p1: player1Color.toUpperCase(), p2: player2Color.toUpperCase() })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, player1Color, player2Color])
+
+  // Notify parent of screen changes
+  useEffect(() => {
+    onScreenChange?.(screen)
+  }, [screen, onScreenChange])
 
   const selectColor = useCallback((player: 1 | 2, color: ColorId) => {
     if (player === 1) {
@@ -577,6 +584,13 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
     setPlayer2Color('black')
   }, [])
 
+  // Reset colors when parent triggers via key change
+  useEffect(() => {
+    if (resetColorsKey && resetColorsKey > 0) {
+      resetColors()
+    }
+  }, [resetColorsKey, resetColors])
+
   const p1 = getColor(player1Color)
   const p2 = getColor(player2Color)
   const otherColor = colorPicker === 1 ? player2Color : player1Color
@@ -660,9 +674,6 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
             onClick={() => setColorPicker(2)}
           />
         </div>
-
-        {/* Reset colors button */}
-        <button className="reset-btn" onClick={resetColors}>Reset</button>
 
         {/* Page dots */}
         <div className="page-dots">
