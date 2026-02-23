@@ -1,8 +1,11 @@
 package com.manion.washers.phone
 
 import android.util.Log
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
+import com.google.firebase.database.ValueEventListener
 
 /**
  * Repository for syncing game state to Firebase Realtime Database.
@@ -450,6 +453,85 @@ object FirebaseRepository {
         }
 
         return numbers
+    }
+
+    /**
+     * Subscribe to real-time game state updates from Firebase.
+     * Returns an unsubscribe function.
+     */
+    fun subscribeToGameState(onUpdate: (GameState?) -> Unit): () -> Unit {
+        val namespace = SettingsRepository.getFullNamespace()
+        if (namespace.isBlank()) {
+            onUpdate(null)
+            return {}
+        }
+
+        val (email, table) = parseNamespace(namespace)
+        val path = "games/$email/$table/current"
+        val ref = database.getReference(path)
+
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    val player1Score = snapshot.child("player1Score").getValue(Int::class.java) ?: 0
+                    val player2Score = snapshot.child("player2Score").getValue(Int::class.java) ?: 0
+                    val player1Games = snapshot.child("player1Games").getValue(Int::class.java) ?: 0
+                    val player2Games = snapshot.child("player2Games").getValue(Int::class.java) ?: 0
+                    val player1Rounds = snapshot.child("player1Rounds").getValue(Int::class.java) ?: 0
+                    val player2Rounds = snapshot.child("player2Rounds").getValue(Int::class.java) ?: 0
+                    val player1ColorStr = snapshot.child("player1Color").getValue(String::class.java) ?: "ORANGE"
+                    val player2ColorStr = snapshot.child("player2Color").getValue(String::class.java) ?: "BLACK"
+                    val player1Name = snapshot.child("player1Name").getValue(String::class.java) ?: ""
+                    val player2Name = snapshot.child("player2Name").getValue(String::class.java) ?: ""
+                    val format = snapshot.child("format").getValue(Int::class.java) ?: 1
+
+                    val player1Color = try { PlayerColor.valueOf(player1ColorStr) } catch (_: Exception) { PlayerColor.ORANGE }
+                    val player2Color = try { PlayerColor.valueOf(player2ColorStr) } catch (_: Exception) { PlayerColor.BLACK }
+
+                    val gameState = GameState(
+                        player1Score = player1Score,
+                        player2Score = player2Score,
+                        player1Games = player1Games,
+                        player2Games = player2Games,
+                        player1Rounds = player1Rounds,
+                        player2Rounds = player2Rounds,
+                        player1Color = player1Color,
+                        player2Color = player2Color,
+                        format = format
+                    )
+
+                    // Sync player names
+                    if (player1Name.isNotBlank() && player1Name != "TBD") {
+                        SettingsRepository.setPlayer1Name(player1Name)
+                    }
+                    if (player2Name.isNotBlank() && player2Name != "TBD") {
+                        SettingsRepository.setPlayer2Name(player2Name)
+                    }
+
+                    // Sync format to settings
+                    if (!SettingsRepository.isTournamentGame()) {
+                        SettingsRepository.setFormat(format)
+                    }
+
+                    onUpdate(gameState)
+                } else {
+                    onUpdate(null)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "Firebase subscription cancelled: ${error.message}")
+                onUpdate(null)
+            }
+        }
+
+        ref.addValueEventListener(listener)
+        Log.d(TAG, "Subscribed to game state at: $path")
+
+        return {
+            ref.removeEventListener(listener)
+            Log.d(TAG, "Unsubscribed from game state at: $path")
+        }
     }
 
     /**

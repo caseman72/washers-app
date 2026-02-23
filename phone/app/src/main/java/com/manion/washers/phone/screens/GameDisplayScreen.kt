@@ -64,6 +64,9 @@ fun GameDisplayScreen(
     var initialDataLoaded by remember { mutableStateOf(false) }
     var loadedForGameNumber by remember { mutableStateOf<Int?>(null) }
 
+    // Track last state received from Firebase to suppress write-back loops
+    var lastFirebaseSnapshot by remember { mutableStateOf("") }
+
     // Sync Keep Score state to Firebase
     LaunchedEffect(localGameState, isGameComplete, initialDataLoaded, loadedForGameNumber, gameNumber) {
         if (mode == AppMode.KEEP_SCORE) {
@@ -75,6 +78,16 @@ fun GameDisplayScreen(
 
             // Skip write if game is already complete (don't overwrite finished tournament games)
             if (isGameComplete) {
+                return@LaunchedEffect
+            }
+
+            // Skip write-back if state matches what we just received from Firebase
+            val currentSnapshot = "${localGameState.player1Score},${localGameState.player2Score}," +
+                "${localGameState.player1Games},${localGameState.player2Games}," +
+                "${localGameState.player1Rounds},${localGameState.player2Rounds}," +
+                "${localGameState.player1Color},${localGameState.player2Color}," +
+                "${SettingsRepository.format.value}"
+            if (currentSnapshot == lastFirebaseSnapshot) {
                 return@LaunchedEffect
             }
 
@@ -108,38 +121,46 @@ fun GameDisplayScreen(
     // Tournament warning dialog state
     var showTournamentWarning by remember { mutableStateOf(false) }
 
-    // Load initial game state from Firebase when game number changes (Keep Score mode)
-    // This ensures we start with the correct state when switching games
-    LaunchedEffect(gameNumber, mode, baseNamespace) {
+    // Subscribe to real-time game state from Firebase
+    DisposableEffect(gameNumber, mode, baseNamespace) {
         if (mode == AppMode.KEEP_SCORE && baseNamespace.isNotBlank()) {
             // Reset loaded state when game number changes
             initialDataLoaded = false
             loadedForGameNumber = null
 
-            // Capture gameNumber for the callback (in case it changes before callback runs)
             val loadingGameNumber = gameNumber
-            FirebaseRepository.readGameState { state ->
+            var isFirstUpdate = true
+            val unsubscribe = FirebaseRepository.subscribeToGameState { state ->
                 if (state != null) {
-                    // Firebase has data - use it
                     localGameState = state
-                } else {
-                    // No data in Firebase - use defaults and write them
+                    // Track snapshot to prevent write-back
+                    lastFirebaseSnapshot = "${state.player1Score},${state.player2Score}," +
+                        "${state.player1Games},${state.player2Games}," +
+                        "${state.player1Rounds},${state.player2Rounds}," +
+                        "${state.player1Color},${state.player2Color}," +
+                        "${state.format}"
+                } else if (isFirstUpdate) {
+                    // No data in Firebase on first load - use defaults and write them
                     val defaultState = GameState()
                     localGameState = defaultState
-                    // Clear player names before writing defaults to avoid writing stale names from previous game
-                    // For tournament games (1-64), names come from the bracket
-                    // For non-tournament games, user sets names manually
                     SettingsRepository.setPlayer1Name("")
                     SettingsRepository.setPlayer2Name("")
                     FirebaseRepository.writeCurrentState(defaultState)
                 }
-                initialDataLoaded = true
-                loadedForGameNumber = loadingGameNumber
+                if (isFirstUpdate) {
+                    initialDataLoaded = true
+                    loadedForGameNumber = loadingGameNumber
+                    isFirstUpdate = false
+                }
             }
+
+            onDispose { unsubscribe() }
         } else if (mode == AppMode.KEEP_SCORE) {
-            // No namespace - just use defaults
             initialDataLoaded = true
             loadedForGameNumber = gameNumber
+            onDispose { }
+        } else {
+            onDispose { }
         }
     }
 
