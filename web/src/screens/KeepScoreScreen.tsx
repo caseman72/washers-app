@@ -785,7 +785,7 @@ export function KeepScoreScreen() {
               }
             }}
           >
-            Reset{scoreboardScreen === 'colors' ? ' Colors' : ''}
+            Reset
           </button>
         )}
 
