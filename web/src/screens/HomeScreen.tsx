@@ -57,15 +57,6 @@ const styles = `
     transform: scale(0.98);
   }
 
-  .mode-btn.mirror {
-    background: #2980b9;
-    color: white;
-  }
-
-  .mode-btn.mirror:hover {
-    background: #3498db;
-  }
-
   .mode-btn.keep-score {
     background: #27ae60;
     color: white;
@@ -160,19 +151,11 @@ export function HomeScreen() {
 
         <div className="mode-buttons">
           <button
-            className="mode-btn mirror"
-            onClick={() => navigate('/mirror')}
-          >
-            Mirror
-            <div className="mode-description">Watch live game</div>
-          </button>
-
-          <button
             className="mode-btn keep-score"
             onClick={() => navigate('/keep-score')}
           >
             Keep Score
-            <div className="mode-description">Standalone scoring</div>
+            <div className="mode-description">Score tracking</div>
           </button>
 
           <button
