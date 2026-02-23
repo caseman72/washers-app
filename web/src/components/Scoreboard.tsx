@@ -572,18 +572,6 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
     setShowDonePrompt(null)
   }, [])
 
-  const resetSession = useCallback(() => {
-    setSession({
-      player1Score: 0,
-      player2Score: 0,
-      player1Games: 0,
-      player2Games: 0,
-      player1Rounds: 0,
-      player2Rounds: 0,
-    })
-    setShowDonePrompt(null)
-  }, [])
-
   const resetColors = useCallback(() => {
     setPlayer1Color('orange')
     setPlayer2Color('black')
@@ -725,11 +713,6 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
           <button className="btn-down" onClick={() => decrementScore(2)}>−</button>
         </div>
       </div>
-
-      {/* Reset button */}
-      <button className="reset-btn" onClick={resetSession}>
-        Reset
-      </button>
 
       {/* Page dots - click to go to colors screen */}
       <div className="page-dots">

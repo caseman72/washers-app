@@ -140,6 +140,24 @@ const styles = `
     color: #888;
   }
 
+  .reset-btn {
+    width: 170px;
+    padding: 0.75rem 0;
+    font-size: 1.125rem;
+    background: #1a1a1a;
+    color: #888;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    align-self: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .reset-btn:hover {
+    background: #333;
+    color: white;
+  }
+
   .back-btn {
     width: 100%;
     padding: 0.875rem;
@@ -385,6 +403,7 @@ export function KeepScoreScreen() {
   const [showPlayerPicker, setShowPlayerPicker] = useState<1 | 2 | null>(null)
   const [showTournamentWarning, setShowTournamentWarning] = useState(false)
   const [isGameComplete, setIsGameComplete] = useState(false)
+  const [resetKey, setResetKey] = useState(0)
 
   const baseNamespace = settings.namespace
   const hasNamespace = baseNamespace.trim().length > 0
@@ -743,19 +762,26 @@ export function KeepScoreScreen() {
           </div>
         ) : (
           <Scoreboard
-            key={gameNumber}
+            key={`${gameNumber}-${resetKey}`}
             onStateChange={handleStateChange}
             onGameComplete={handleGameComplete}
             contained
             format={format}
-            initialSession={initialData.session}
-            initialColors={initialData.colors}
+            initialSession={resetKey > 0 ? undefined : initialData.session}
+            initialColors={resetKey > 0 ? undefined : initialData.colors}
           />
         )}
       </div>
 
       {/* Bottom area - matches Phone layout */}
       <div className="keep-score-bottom">
+        {/* Reset button */}
+        {initialData.loaded && !isGameComplete && (
+          <button className="reset-btn" onClick={() => setResetKey(k => k + 1)}>
+            Reset
+          </button>
+        )}
+
         {/* Player name labels */}
         <div className="player-names-row">
           <span
