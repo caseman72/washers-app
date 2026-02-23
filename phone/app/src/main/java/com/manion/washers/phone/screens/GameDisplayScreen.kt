@@ -44,8 +44,7 @@ fun GameDisplayScreen(
     mode: AppMode,
     onBackClick: () -> Unit = {}
 ) {
-    // For Mirror mode: observe state from watch via WearableRepository
-    // For Keep Score mode: use local state
+    // Observe watch state (used when watch is connected)
     val watchGameState by WearableRepository.gameState.collectAsState()
     val isConnected by WearableRepository.isConnected.collectAsState()
 
@@ -97,11 +96,11 @@ fun GameDisplayScreen(
         }
     }
 
-    // Read player names from Firebase when entering Mirror mode or when namespace changes
+    // Read player names from Firebase when entering Keep Score or when namespace changes
     // Debounce to avoid firing on every keystroke
     LaunchedEffect(mode, fullNamespace) {
-        if (mode == AppMode.MIRROR && fullNamespace.isNotBlank()) {
-            kotlinx.coroutines.delay(500) // Wait 500ms after typing stops
+        if (mode == AppMode.KEEP_SCORE && fullNamespace.isNotBlank()) {
+            kotlinx.coroutines.delay(500)
             FirebaseRepository.readAndSyncNames()
         }
     }
@@ -158,12 +157,12 @@ fun GameDisplayScreen(
         }
     }
 
-    // Track previous rounds to detect series wins in Mirror mode (for auto-advance)
+    // Track previous rounds to detect series wins when Watch connected (for auto-advance)
     var prevRounds by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
-    // Auto-advance game number when tournament game is won in Mirror mode
+    // Auto-advance game number when tournament game is won via Watch
     LaunchedEffect(watchGameState?.player1Rounds, watchGameState?.player2Rounds) {
-        if (mode != AppMode.MIRROR) return@LaunchedEffect
+        if (!isConnected) return@LaunchedEffect
         val state = watchGameState ?: return@LaunchedEffect
         val isTournament = SettingsRepository.isTournamentGame()
         if (!isTournament) return@LaunchedEffect
@@ -195,12 +194,8 @@ fun GameDisplayScreen(
 
     // Tournament check now happens on game number field blur (see below)
 
-    // Use watch state for Mirror, local state for Keep Score
-    val displayState = when (mode) {
-        AppMode.MIRROR -> watchGameState ?: GameState()
-        AppMode.KEEP_SCORE -> localGameState
-        AppMode.SETTINGS, AppMode.PLAYERS -> GameState() // Not used for these modes
-    }
+    // Use watch state when connected, local state otherwise
+    val displayState = if (isConnected) watchGameState ?: GameState() else localGameState
 
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -226,19 +221,9 @@ fun GameDisplayScreen(
                     .background(WatchColors.Background)
             ) {
                 when (mode) {
-                    AppMode.MIRROR -> MirrorDisplay(
-                        gameState = displayState,
-                        showTournamentWarning = showTournamentWarning,
-                        onDismissTournamentWarning = { showTournamentWarning = false },
-                        onFixTournamentWarning = {
-                            // Set game number to 0 (regular play, not tournament)
-                            SettingsRepository.setGameNumber(0)
-                            showTournamentWarning = false
-                        }
-                    )
                     AppMode.KEEP_SCORE -> {
-                        if (!initialDataLoaded) {
-                            // Show loading while reading from Firebase
+                        if (!initialDataLoaded && !isConnected) {
+                            // Show loading while reading from Firebase (not needed when Watch connected)
                             Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
@@ -250,7 +235,7 @@ fun GameDisplayScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-                        } else if (isGameComplete) {
+                        } else if (isGameComplete && !isConnected) {
                             // Show "Game Complete" message instead of scoreboard
                             Box(
                                 modifier = Modifier.fillMaxSize(),
@@ -275,6 +260,17 @@ fun GameDisplayScreen(
                                     )
                                 }
                             }
+                        } else if (isConnected) {
+                            // Watch connected — show read-only scoreboard (like Mirror)
+                            KeepScoreWatchDisplay(
+                                gameState = displayState,
+                                showTournamentWarning = showTournamentWarning,
+                                onDismissTournamentWarning = { showTournamentWarning = false },
+                                onFixTournamentWarning = {
+                                    SettingsRepository.setGameNumber(0)
+                                    showTournamentWarning = false
+                                }
+                            )
                         } else {
                             KeepScorePager(
                                 gameState = localGameState,
@@ -308,8 +304,8 @@ fun GameDisplayScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Reset button for Keep Score mode
-                if (mode == AppMode.KEEP_SCORE && initialDataLoaded && !isGameComplete) {
+                // Reset button for Keep Score mode (hidden when Watch connected)
+                if (mode == AppMode.KEEP_SCORE && initialDataLoaded && !isGameComplete && !isConnected) {
                     Box(
                         modifier = Modifier
                             .width(170.dp)
@@ -323,15 +319,16 @@ fun GameDisplayScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // Status text (Mirror mode) or Player names (Keep Score mode)
-                if (mode == AppMode.MIRROR) {
-                    val statusText = if (isConnected) "Connected to watch" else "Waiting for watch..."
+                // Connection status (only shown when connected)
+                if (isConnected) {
                     Text(
-                        text = statusText,
-                        color = if (isConnected) WatchColors.Secondary else WatchColors.OnSurfaceDisabled,
+                        text = "Connected to watch",
+                        color = WatchColors.Secondary,
                         fontSize = 16.sp
                     )
-                } else if (mode == AppMode.KEEP_SCORE) {
+                }
+                // Player name labels below scoreboard (hidden when Watch connected)
+                if (!isConnected) {
                     // Player name labels - clickable, side by side under score cards
                     val player1Name by SettingsRepository.player1Name.collectAsState()
                     val player2Name by SettingsRepository.player2Name.collectAsState()
@@ -368,8 +365,8 @@ fun GameDisplayScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
-                // Game number and Format fields (Mirror and Keep Score modes)
-                if (mode == AppMode.MIRROR || mode == AppMode.KEEP_SCORE) {
+                // Game number and Format fields
+                if (mode == AppMode.KEEP_SCORE) {
                     val format by SettingsRepository.format.collectAsState()
                     val isTournament = SettingsRepository.isTournamentGame()
 
@@ -454,9 +451,7 @@ fun GameDisplayScreen(
                             onFormatChange = { newFormat ->
                                 SettingsRepository.setFormat(newFormat)
                                 WearableSender.sendFormat(newFormat)
-                                // Only update Firebase for Keep Score mode
-                                // Mirror mode: format is metadata, not game state - watch handles state
-                                if (mode == AppMode.KEEP_SCORE) {
+                                if (!isConnected) {
                                     FirebaseRepository.writeCurrentState(localGameState)
                                 }
                             }
@@ -484,8 +479,8 @@ fun GameDisplayScreen(
             }
         }
 
-        // Player picker dialog for Keep Score mode
-        if (mode == AppMode.KEEP_SCORE) {
+        // Player picker dialog (when not connected — connected mode has its own picker)
+        if (!isConnected) {
             showPlayerPicker?.let { playerNum ->
                 val player1Name by SettingsRepository.player1Name.collectAsState()
                 val player2Name by SettingsRepository.player2Name.collectAsState()
@@ -499,8 +494,13 @@ fun GameDisplayScreen(
                         } else {
                             SettingsRepository.setPlayer2Name(player.name)
                         }
-                        // Update Firebase with new player name
-                        FirebaseRepository.writeCurrentState(localGameState)
+                        // Update Firebase with player name
+                        if (isConnected) {
+                            // Watch connected — write player names only (watch handles game state)
+                            FirebaseRepository.writePlayerNamesOnly()
+                        } else {
+                            FirebaseRepository.writeCurrentState(localGameState)
+                        }
                         showPlayerPicker = null
                     },
                     onDismiss = { showPlayerPicker = null }
@@ -511,10 +511,11 @@ fun GameDisplayScreen(
 }
 
 /**
- * Mirror mode - display only, matches watch layout exactly
+ * Keep Score mode when Watch is connected - read-only scores (no +/- buttons)
+ * Player names in the score panels are clickable to change via player picker
  */
 @Composable
-private fun MirrorDisplay(
+private fun KeepScoreWatchDisplay(
     gameState: GameState,
     showTournamentWarning: Boolean,
     onDismissTournamentWarning: () -> Unit,
@@ -524,32 +525,27 @@ private fun MirrorDisplay(
     val baseNamespace by SettingsRepository.baseNamespace.collectAsState()
     val player1Name by SettingsRepository.player1Name.collectAsState()
     val player2Name by SettingsRepository.player2Name.collectAsState()
-    // Derive showRounds reactively from format > 1 (tournament games 1-64 have format locked to 1)
     val isTournament = SettingsRepository.isTournamentGame()
     val showRounds = !isTournament && format > 1
 
-    // Player picker state - disabled for tournament games
+    // Player picker state
     var showPlayerPicker by remember { mutableStateOf<Int?>(null) }
     val players by FirebasePlayersRepository.players.collectAsState()
 
-    // Subscribe to players using base namespace (only for non-tournament)
     LaunchedEffect(baseNamespace) {
         if (baseNamespace.isNotBlank() && !isTournament) {
             FirebasePlayersRepository.subscribeToPlayers(baseNamespace)
         }
     }
 
-    // Filter to active players only
     val activePlayers = players.filter { !it.archived }
 
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top padding
         Spacer(modifier = Modifier.height(30.dp))
 
-        // Games counter with colored badges
         GamesCounterWithBadges(
             player1Games = gameState.player1Games,
             player2Games = gameState.player2Games,
@@ -562,8 +558,6 @@ private fun MirrorDisplay(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Score panels with player picker in the top area
-        // Player picker is disabled for tournament games (1-64)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -595,7 +589,6 @@ private fun MirrorDisplay(
         Spacer(modifier = Modifier.height(30.dp))
     }
 
-    // Tournament warning dialog - shown when entering tournament game without active tournament
     if (showTournamentWarning) {
         TournamentWarningDialog(
             onDismiss = onDismissTournamentWarning,
@@ -603,7 +596,7 @@ private fun MirrorDisplay(
         )
     }
 
-    // Player picker dialog overlay (only for non-tournament)
+    // Player picker dialog (only for non-tournament)
     if (!isTournament) {
         showPlayerPicker?.let { playerNum ->
             PlayerPickerDialog(
@@ -615,8 +608,6 @@ private fun MirrorDisplay(
                     } else {
                         SettingsRepository.setPlayer2Name(player.name)
                     }
-                    // Only write player names to Firebase (not game state)
-                    // This prevents stale phone cache from overwriting watch scores
                     FirebaseRepository.writePlayerNamesOnly()
                     showPlayerPicker = null
                 },
@@ -1376,7 +1367,7 @@ private fun FormatSelector(
 }
 
 /**
- * Score panel with tappable name for player picker (for Mirror mode)
+ * Score panel with tappable name for player picker
  * When enabled=false (tournament mode), the name area is not tappable
  */
 @Composable
@@ -1586,7 +1577,7 @@ private fun PlayerPickerItem(
 }
 
 /**
- * Warning dialog shown when user tries to mirror a tournament game (1-64)
+ * Warning dialog shown when user enters a tournament game number (1-64)
  * without an active tournament. Offers to fix by removing the game number.
  */
 @Composable
@@ -1617,7 +1608,7 @@ private fun TournamentWarningDialog(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Game numbers 1-64 are reserved for tournaments. You cannot mirror a tournament game without an active tournament.",
+                text = "Game numbers 1-64 are reserved for tournaments. There is no active tournament.",
                 color = WatchColors.OnSurface,
                 fontSize = 14.sp,
                 textAlign = TextAlign.Center,

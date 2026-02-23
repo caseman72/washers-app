@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import com.manion.washers.phone.ui.theme.WatchColors
 
 enum class AppMode {
-    MIRROR,
     KEEP_SCORE,
     PLAYERS,
     SETTINGS
@@ -55,17 +54,8 @@ fun ModePickerScreen(
 
             // Mode options - navigate directly on click
             ModeOption(
-                title = "Mirror",
-                description = "Display watch game",
-                selected = initialMode == AppMode.MIRROR,
-                onClick = { onModeSelected(AppMode.MIRROR) }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ModeOption(
                 title = "Keep Score",
-                description = "Standalone scoring",
+                description = "Score tracking",
                 selected = initialMode == AppMode.KEEP_SCORE,
                 onClick = { onModeSelected(AppMode.KEEP_SCORE) }
             )

@@ -83,7 +83,7 @@ fun NavGraph() {
                 navArgument("mode") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val modeString = backStackEntry.arguments?.getString("mode") ?: AppMode.MIRROR.name
+            val modeString = backStackEntry.arguments?.getString("mode") ?: AppMode.KEEP_SCORE.name
             val mode = AppMode.valueOf(modeString)
             GameDisplayScreen(
                 mode = mode,
