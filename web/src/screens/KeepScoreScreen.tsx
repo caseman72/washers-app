@@ -424,6 +424,9 @@ export function KeepScoreScreen() {
   // Track pending auto-advance (set when game completes, cleared after Firebase write)
   const pendingAdvanceRef = useRef(false)
 
+  // Suppress writes when processing incoming Firebase updates
+  const suppressWriteRef = useRef(false)
+
   // Initial data loaded from Firebase (used to initialize Scoreboard)
   const [initialData, setInitialData] = useState<InitialGameData>({
     session: { player1Score: 0, player2Score: 0, player1Games: 0, player2Games: 0, player1Rounds: 0, player2Rounds: 0 },
@@ -471,9 +474,12 @@ export function KeepScoreScreen() {
           setInitialData({ session, colors, loaded: true, loadedForGame: gameNumber })
           isFirstLoadRef.current = false
         } else {
-          // Subsequent updates — push live to Scoreboard
+          // Subsequent updates — push live to Scoreboard and suppress write-back
+          suppressWriteRef.current = true
           setLiveSession(session)
           setLiveColors(colors)
+          // Allow writes again after React processes the state updates
+          setTimeout(() => { suppressWriteRef.current = false }, 100)
         }
 
         // Always sync player names and format
@@ -575,6 +581,9 @@ export function KeepScoreScreen() {
   // Sync to Firebase when session or format changes
   useEffect(() => {
     if (!hasNamespace) return
+
+    // Don't write back changes that came from Firebase
+    if (suppressWriteRef.current) return
 
     // Don't write until Scoreboard reports actual state
     // This prevents overwriting existing data on mount
