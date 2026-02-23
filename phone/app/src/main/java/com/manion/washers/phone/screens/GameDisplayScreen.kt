@@ -304,6 +304,21 @@ fun GameDisplayScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
+                // Reset button for Keep Score mode
+                if (mode == AppMode.KEEP_SCORE && initialDataLoaded && !isGameComplete) {
+                    Box(
+                        modifier = Modifier
+                            .width(170.dp)
+                            .height(45.dp)
+                            .background(WatchColors.Surface, RoundedCornerShape(8.dp))
+                            .clickable { localGameState = localGameState.resetAll() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Reset", fontSize = 18.sp, color = WatchColors.OnSurfaceDisabled)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
                 // Status text (Mirror mode) or Player names (Keep Score mode)
                 if (mode == AppMode.MIRROR) {
                     val statusText = if (isConnected) "Connected to watch" else "Waiting for watch..."
@@ -999,19 +1014,6 @@ private fun KeepScoreGameScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
-            modifier = Modifier
-                .width(170.dp)
-                .height(45.dp)
-                .background(WatchColors.Surface, RoundedCornerShape(8.dp))
-                .clickable { onGameStateChange(gameState.resetAll()) },
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Reset", fontSize = 18.sp, color = WatchColors.OnSurfaceDisabled)
-        }
-
-        Spacer(modifier = Modifier.height(30.dp))
     }
 }
 
@@ -1073,19 +1075,6 @@ private fun KeepScoreColorsScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
-            modifier = Modifier
-                .width(170.dp)
-                .height(45.dp)
-                .background(WatchColors.Surface, RoundedCornerShape(8.dp))
-                .clickable { onResetColors() },
-            contentAlignment = Alignment.Center
-        ) {
-            Text("Reset", fontSize = 18.sp, color = WatchColors.OnSurfaceDisabled)
-        }
-
-        Spacer(modifier = Modifier.height(30.dp))
     }
 }
 
