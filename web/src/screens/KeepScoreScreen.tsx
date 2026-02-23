@@ -464,13 +464,12 @@ export function KeepScoreScreen() {
           loaded: true,
           loadedForGame: gameNumber,
         })
-        // Also set player names for tournament games
-        if (isTournamentGame) {
-          const name1 = state.player1Name
-          const name2 = state.player2Name
-          setPlayer1Name(name1 && name1 !== 'TBD' ? name1 : '')
-          setPlayer2Name(name2 && name2 !== 'TBD' ? name2 : '')
-        }
+        // Set player names and format from Firebase
+        const name1 = state.player1Name
+        const name2 = state.player2Name
+        setPlayer1Name(name1 && name1 !== 'TBD' ? name1 : '')
+        setPlayer2Name(name2 && name2 !== 'TBD' ? name2 : '')
+        if (state.format) setFormat(state.format)
       } else {
         // No data in Firebase - use defaults and write them
         const defaultSession = { player1Score: 0, player2Score: 0, player1Games: 0, player2Games: 0, player1Rounds: 0, player2Rounds: 0 }
@@ -494,10 +493,8 @@ export function KeepScoreScreen() {
           format: isTournamentGame ? 1 : format,
         }).catch(err => console.error('Failed to initialize game:', err))
         // Clear player names
-        if (isTournamentGame) {
-          setPlayer1Name('')
-          setPlayer2Name('')
-        }
+        setPlayer1Name('')
+        setPlayer2Name('')
       }
       // Unsubscribe after first read - we only need initial data
       unsubscribe()
@@ -585,11 +582,8 @@ export function KeepScoreScreen() {
       player2Color: lastColors.p2,
       format,
     }
-    // Only include names for non-tournament games (tournament names are set by bracket)
-    if (!isTournamentGame) {
-      if (player1Name) gameState.player1Name = player1Name
-      if (player2Name) gameState.player2Name = player2Name
-    }
+    if (player1Name) gameState.player1Name = player1Name
+    if (player2Name) gameState.player2Name = player2Name
 
     // Skip write if game is already complete (don't overwrite finished tournament games)
     if (isGameComplete) {
