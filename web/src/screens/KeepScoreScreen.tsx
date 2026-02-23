@@ -36,7 +36,7 @@ const styles = `
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 0.5rem 1rem 1rem;
+    padding: 0 1rem 1rem;
     background: #3a3a3a;
     width: 100%;
     max-width: 475px;
@@ -150,6 +150,7 @@ const styles = `
     border-radius: 0.5rem;
     cursor: pointer;
     align-self: center;
+    margin-top: 1rem;
     margin-bottom: 0.5rem;
   }
 
@@ -416,6 +417,10 @@ export function KeepScoreScreen() {
   const [lastSession, setLastSession] = useState<GameSession | null>(null)
   const [lastColors, setLastColors] = useState<{ p1: string; p2: string }>({ p1: 'ORANGE', p2: 'BLACK' })
 
+  // Live state from Firebase (pushed to Scoreboard on external changes)
+  const [liveSession, setLiveSession] = useState<GameSession | undefined>(undefined)
+  const [liveColors, setLiveColors] = useState<{ p1: ColorId; p2: ColorId } | undefined>(undefined)
+
   // Track pending auto-advance (set when game completes, cleared after Firebase write)
   const pendingAdvanceRef = useRef(false)
 
@@ -434,8 +439,8 @@ export function KeepScoreScreen() {
     return valid.includes(lower) ? lower : 'orange'
   }
 
-  // Load initial game data from Firebase when game number changes
-  // This ensures Scoreboard starts with the correct state
+  // Subscribe to Firebase game data — stays live for real-time updates
+  const isFirstLoadRef = useRef(true)
   useEffect(() => {
     if (!hasNamespace) {
       setInitialData(prev => ({ ...prev, loaded: true, loadedForGame: gameNumber }))
@@ -444,34 +449,41 @@ export function KeepScoreScreen() {
 
     // Reset loaded state when game number changes
     setInitialData(prev => ({ ...prev, loaded: false, loadedForGame: null }))
+    isFirstLoadRef.current = true
 
     const unsubscribe = subscribeToGame(baseNamespace, gameNumber, (state) => {
       if (state) {
-        // Firebase has data - use it for initial values
-        setInitialData({
-          session: {
-            player1Score: state.player1Score ?? 0,
-            player2Score: state.player2Score ?? 0,
-            player1Games: state.player1Games ?? 0,
-            player2Games: state.player2Games ?? 0,
-            player1Rounds: state.player1Rounds ?? 0,
-            player2Rounds: state.player2Rounds ?? 0,
-          },
-          colors: {
-            p1: toColorId(state.player1Color),
-            p2: toColorId(state.player2Color),
-          },
-          loaded: true,
-          loadedForGame: gameNumber,
-        })
-        // Set player names and format from Firebase
+        const session: GameSession = {
+          player1Score: state.player1Score ?? 0,
+          player2Score: state.player2Score ?? 0,
+          player1Games: state.player1Games ?? 0,
+          player2Games: state.player2Games ?? 0,
+          player1Rounds: state.player1Rounds ?? 0,
+          player2Rounds: state.player2Rounds ?? 0,
+        }
+        const colors = {
+          p1: toColorId(state.player1Color),
+          p2: toColorId(state.player2Color),
+        }
+
+        if (isFirstLoadRef.current) {
+          // First load — set initial data for Scoreboard mount
+          setInitialData({ session, colors, loaded: true, loadedForGame: gameNumber })
+          isFirstLoadRef.current = false
+        } else {
+          // Subsequent updates — push live to Scoreboard
+          setLiveSession(session)
+          setLiveColors(colors)
+        }
+
+        // Always sync player names and format
         const name1 = state.player1Name
         const name2 = state.player2Name
         setPlayer1Name(name1 && name1 !== 'TBD' ? name1 : '')
         setPlayer2Name(name2 && name2 !== 'TBD' ? name2 : '')
         if (state.format) setFormat(state.format)
-      } else {
-        // No data in Firebase - use defaults and write them
+      } else if (isFirstLoadRef.current) {
+        // No data in Firebase on first load - use defaults and write them
         const defaultSession = { player1Score: 0, player2Score: 0, player1Games: 0, player2Games: 0, player1Rounds: 0, player2Rounds: 0 }
         const defaultColors = { p1: 'orange' as ColorId, p2: 'black' as ColorId }
         setInitialData({
@@ -480,6 +492,7 @@ export function KeepScoreScreen() {
           loaded: true,
           loadedForGame: gameNumber,
         })
+        isFirstLoadRef.current = false
         // Write defaults to Firebase (initialize the table)
         writeGameState(baseNamespace, gameNumber, {
           player1Score: 0,
@@ -496,8 +509,6 @@ export function KeepScoreScreen() {
         setPlayer1Name('')
         setPlayer2Name('')
       }
-      // Unsubscribe after first read - we only need initial data
-      unsubscribe()
     })
 
     return unsubscribe
@@ -767,6 +778,8 @@ export function KeepScoreScreen() {
             format={format}
             initialSession={resetKey > 0 ? undefined : initialData.session}
             initialColors={resetKey > 0 ? undefined : initialData.colors}
+            liveSession={liveSession}
+            liveColors={liveColors}
           />
         )}
       </div>

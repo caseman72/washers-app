@@ -206,8 +206,11 @@ const mainStyles = `
 
   .contained .scores {
     flex: 1;
-    width: 100%;
+    width: calc(100% - 35px);
     margin-top: 10px;
+    gap: 15px;
+    margin-left: 15px;
+    margin-right: 15px;
   }
 
   .score-panel {
@@ -307,6 +310,7 @@ const mainStyles = `
 
   .contained .page-dots {
     margin-top: 0.75rem;
+    padding-bottom: 0.5rem;
   }
 
   .dot {
@@ -405,6 +409,8 @@ interface ScoreboardProps {
   initialColors?: { p1: ColorId; p2: ColorId }
   onScreenChange?: (screen: 'game' | 'colors') => void
   resetColorsKey?: number
+  liveSession?: GameSession
+  liveColors?: { p1: ColorId; p2: ColorId }
 }
 
 const defaultSession: GameSession = {
@@ -416,11 +422,23 @@ const defaultSession: GameSession = {
   player2Rounds: 0,
 }
 
-export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1, player1Name: _player1Name, player2Name: _player2Name, initialSession, initialColors, onScreenChange, resetColorsKey }: ScoreboardProps) {
+export function Scoreboard({ onGameComplete, onStateChange, contained = false, format = 1, player1Name: _player1Name, player2Name: _player2Name, initialSession, initialColors, onScreenChange, resetColorsKey, liveSession, liveColors }: ScoreboardProps) {
   const [session, setSession] = useState<GameSession>(initialSession ?? defaultSession)
   const [showDonePrompt, setShowDonePrompt] = useState<1 | 2 | null>(null)
   const [player1Color, setPlayer1Color] = useState<ColorId>(initialColors?.p1 ?? 'orange')
   const [player2Color, setPlayer2Color] = useState<ColorId>(initialColors?.p2 ?? 'black')
+
+  // Accept live updates from Firebase
+  useEffect(() => {
+    if (liveSession) setSession(liveSession)
+  }, [liveSession])
+
+  useEffect(() => {
+    if (liveColors) {
+      setPlayer1Color(liveColors.p1)
+      setPlayer2Color(liveColors.p2)
+    }
+  }, [liveColors])
   const [screen, setScreen] = useState<'game' | 'colors'>('game')
   const [colorPicker, setColorPicker] = useState<1 | 2 | null>(null)
 
