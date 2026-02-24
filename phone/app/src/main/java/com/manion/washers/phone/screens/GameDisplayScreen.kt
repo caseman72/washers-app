@@ -64,6 +64,9 @@ fun GameDisplayScreen(
     var initialDataLoaded by remember { mutableStateOf(false) }
     var loadedForGameNumber by remember { mutableStateOf<Int?>(null) }
 
+    // Track current pager page (0=game, 1=colors)
+    var currentPagerPage by remember { mutableStateOf(0) }
+
     // Track last state received from Firebase to suppress write-back loops
     var lastFirebaseSnapshot by remember { mutableStateOf("") }
 
@@ -296,6 +299,7 @@ fun GameDisplayScreen(
                             KeepScorePager(
                                 gameState = localGameState,
                                 onGameStateChange = { localGameState = it },
+                                onPageChange = { currentPagerPage = it },
                                 onSeriesWin = { newState, onAdvance ->
                                     // Write to Firebase first, then advance game number
                                     FirebaseRepository.writeCurrentState(newState) {
@@ -311,7 +315,7 @@ fun GameDisplayScreen(
                             )
                         }
                     }
-                    AppMode.SETTINGS, AppMode.PLAYERS -> { /* Not used */ }
+                    AppMode.PLAYERS -> { /* Not used */ }
                 }
             }
 
@@ -332,7 +336,13 @@ fun GameDisplayScreen(
                             .width(170.dp)
                             .height(45.dp)
                             .background(WatchColors.Surface, RoundedCornerShape(8.dp))
-                            .clickable { localGameState = localGameState.resetAll() },
+                            .clickable {
+                                if (currentPagerPage == 1) {
+                                    localGameState = localGameState.resetColors()
+                                } else {
+                                    localGameState = localGameState.resetAll()
+                                }
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Text("Reset", fontSize = 18.sp, color = WatchColors.OnSurfaceDisabled)
@@ -819,7 +829,8 @@ private fun GamesCounterWithBadges(
 private fun KeepScorePager(
     gameState: GameState,
     onGameStateChange: (GameState) -> Unit,
-    onSeriesWin: ((GameState, () -> Unit) -> Unit)? = null
+    onSeriesWin: ((GameState, () -> Unit) -> Unit)? = null,
+    onPageChange: ((Int) -> Unit)? = null
 ) {
     var colorPickerFor by remember { mutableStateOf<Int?>(null) }
     var winConfirmationFor by remember { mutableStateOf<Int?>(null) }
@@ -829,6 +840,10 @@ private fun KeepScorePager(
     val player1Name by SettingsRepository.player1Name.collectAsState()
     val player2Name by SettingsRepository.player2Name.collectAsState()
     val pagerState = rememberPagerState(pageCount = { 2 })
+
+    LaunchedEffect(pagerState.currentPage) {
+        onPageChange?.invoke(pagerState.currentPage)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         HorizontalPager(
@@ -947,9 +962,16 @@ private fun KeepScorePager(
         colorPickerFor?.let { player ->
             ColorPickerDialog(
                 currentColor = if (player == 1) gameState.player1Color else gameState.player2Color,
-                otherPlayerColor = if (player == 1) gameState.player2Color else gameState.player1Color,
                 onColorSelected = { color ->
-                    val newState = if (player == 1) gameState.setPlayer1Color(color) else gameState.setPlayer2Color(color)
+                    val otherColor = if (player == 1) gameState.player2Color else gameState.player1Color
+                    val currentColor = if (player == 1) gameState.player1Color else gameState.player2Color
+                    val newState = if (color == otherColor) {
+                        // Swap: picking player gets chosen color, other player gets picking player's old color
+                        gameState.setPlayer1Color(if (player == 1) color else currentColor)
+                            .setPlayer2Color(if (player == 1) currentColor else color)
+                    } else {
+                        if (player == 1) gameState.setPlayer1Color(color) else gameState.setPlayer2Color(color)
+                    }
                     onGameStateChange(newState)
                     colorPickerFor = null
                 }
@@ -1119,13 +1141,13 @@ private fun PageIndicator(
 @Composable
 private fun ColorPickerDialog(
     currentColor: PlayerColor,
-    otherPlayerColor: PlayerColor,
     onColorSelected: (PlayerColor) -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A1A)),
+            .background(Color(0xFF1A1A1A))
+            .statusBarsPadding(),
         contentAlignment = Alignment.Center
     ) {
         LazyColumn(
@@ -1136,18 +1158,12 @@ private fun ColorPickerDialog(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(PlayerColor.entries) { color ->
-                val isDisabled = color == otherPlayerColor
                 val isSelected = color == currentColor
 
                 ColorPickerItem(
                     color = color,
                     isSelected = isSelected,
-                    isDisabled = isDisabled,
-                    onClick = {
-                        if (!isDisabled) {
-                            onColorSelected(color)
-                        }
-                    }
+                    onClick = { onColorSelected(color) }
                 )
             }
         }
@@ -1158,11 +1174,8 @@ private fun ColorPickerDialog(
 private fun ColorPickerItem(
     color: PlayerColor,
     isSelected: Boolean,
-    isDisabled: Boolean,
     onClick: () -> Unit
 ) {
-    val alpha = if (isDisabled) 0.35f else 1f
-
     Row(
         modifier = Modifier
             .fillMaxWidth(0.85f)
@@ -1171,7 +1184,7 @@ private fun ColorPickerItem(
                 if (isSelected) Color(0xFF333333) else Color.Transparent,
                 RoundedCornerShape(8.dp)
             )
-            .clickable(enabled = !isDisabled, onClick = onClick)
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1179,7 +1192,7 @@ private fun ColorPickerItem(
             modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
-                .background(color.background.copy(alpha = alpha))
+                .background(color.background)
                 .then(
                     if (color == PlayerColor.WHITE)
                         Modifier.border(1.dp, Color(0xFFCCCCCC), CircleShape)
@@ -1191,7 +1204,7 @@ private fun ColorPickerItem(
 
         Text(
             text = color.displayName,
-            color = Color.White.copy(alpha = alpha),
+            color = Color.White,
             fontSize = 18.sp,
             modifier = Modifier.weight(1f)
         )
@@ -1465,7 +1478,8 @@ private fun PlayerPickerDialog(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1A1A1A)),
+            .background(Color(0xFF1A1A1A))
+            .statusBarsPadding(),
         contentAlignment = Alignment.Center
     ) {
         if (players.isEmpty()) {

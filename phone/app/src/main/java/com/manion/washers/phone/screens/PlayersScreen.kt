@@ -51,6 +51,7 @@ fun PlayersScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(WatchColors.Background)
+            .statusBarsPadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header

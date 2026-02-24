@@ -15,14 +15,12 @@ import com.manion.washers.phone.screens.GameDisplayScreen
 import com.manion.washers.phone.screens.LoadingScreen
 import com.manion.washers.phone.screens.ModePickerScreen
 import com.manion.washers.phone.screens.PlayersScreen
-import com.manion.washers.phone.screens.SettingsScreen
 
 object Routes {
     const val LOADING = "loading"
     const val MODE_PICKER = "mode_picker?initialMode={initialMode}"
     const val MODE_PICKER_BASE = "mode_picker"
     const val GAME_DISPLAY = "game_display/{mode}"
-    const val SETTINGS = "settings"
     const val PLAYERS = "players"
 
     fun gameDisplay(mode: AppMode) = "game_display/${mode.name}"
@@ -69,7 +67,6 @@ fun NavGraph() {
                 initialMode = initialMode,
                 onModeSelected = { mode ->
                     when (mode) {
-                        AppMode.SETTINGS -> navController.navigate(Routes.SETTINGS)
                         AppMode.PLAYERS -> navController.navigate(Routes.PLAYERS)
                         else -> navController.navigate(Routes.gameDisplay(mode))
                     }
@@ -89,16 +86,6 @@ fun NavGraph() {
                 mode = mode,
                 onBackClick = {
                     navController.navigate(Routes.modePicker(mode)) {
-                        popUpTo(Routes.MODE_PICKER_BASE) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable(route = Routes.SETTINGS) {
-            SettingsScreen(
-                onBackClick = {
-                    navController.navigate(Routes.modePicker(AppMode.SETTINGS)) {
                         popUpTo(Routes.MODE_PICKER_BASE) { inclusive = true }
                     }
                 }
