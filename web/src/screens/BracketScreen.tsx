@@ -380,21 +380,19 @@ export function BracketScreen() {
   // Game 2 is only needed if LB winner won Game 1
   const needsGame2 = finalsGame1?.winnerId && finalsGame1.winnerId === finalsGame1.player2Id
 
-  // Compute game numbers based on playability from INITIAL bracket structure
-  // Numbers are assigned once and never change as games complete
+  // Compute game numbers based on playability order using BFS
+  // Games are numbered in the order they become playable, so players
+  // don't have to play back-to-back and game N is always playable
+  // before game N+1
   const gameNumbers = useMemo(() => {
     if (!tournament) return new Map<string, number>()
+    const bracket = tournament.bracket
     const numbers = new Map<string, number>()
-    let gameNum = 1
 
-    // Helper: check if a match is structurally a BYE (only one player slot filled)
-    // This is based on bracket structure, not current game state
+    // Helper: check if a match is structurally a BYE
     const isStructuralBye = (match: BracketNode) => {
-      // Check original structure: one player and marked as bye, OR only one player slot
       if (match.isByeMatch) return true
-      // For R1 matches, check if only one player was assigned at creation
       if (match.round === 1 && match.bracket === 'winners') {
-        // Count how many player slots have IDs (from original seeding)
         const hasP1 = !!match.player1Id
         const hasP2 = !!match.player2Id
         return (hasP1 && !hasP2) || (!hasP1 && hasP2)
@@ -402,71 +400,131 @@ export function BracketScreen() {
       return false
     }
 
-    // Helper: check if match is immediately playable from tournament start
-    // (both feeder matches are BYEs, so players are known immediately)
-    const isImmediatelyPlayable = (match: BracketNode) => {
-      if (isStructuralBye(match)) return false
-      // Only WB R1 non-BYE matches are playable first (LB R1 needs WB losers)
-      if (match.round === 1 && match.bracket === 'winners') return true
-
-      // For later rounds, check if ALL feeder matches are structural BYEs
-      const feeders = tournament.bracket.filter(m => m.nextMatchId === match.id)
-      if (feeders.length === 0) return false
-      return feeders.every(f => isStructuralBye(f))
-    }
-
-    // Get all round numbers from both brackets
-    const wbRoundNums = Array.from(winnersRounds.keys()).sort((a, b) => a - b)
-    const lbRoundNums = Array.from(losersRounds.keys()).sort((a, b) => a - b)
-    const maxRound = Math.max(
-      wbRoundNums.length > 0 ? wbRoundNums[wbRoundNums.length - 1] : 0,
-      lbRoundNums.length > 0 ? lbRoundNums[lbRoundNums.length - 1] : 0
-    )
-
-    // Number games by round, prioritizing immediately-playable matches
-    for (let round = 1; round <= maxRound; round++) {
-      const wbMatches = winnersRounds.get(round) || []
-      const lbMatches = losersRounds.get(round) || []
-      const allMatches = [...wbMatches, ...lbMatches]
-
-      // Separate into immediately playable vs waiting, skip structural BYEs
-      const immediate: BracketNode[] = []
-      const waiting: BracketNode[] = []
-
-      allMatches.forEach((match: BracketNode) => {
-        if (isStructuralBye(match)) return
-        if (isImmediatelyPlayable(match)) {
-          immediate.push(match)
-        } else {
-          waiting.push(match)
-        }
-      })
-
-      // Sort each group by position for consistency
-      immediate.sort((a, b) => a.position - b.position)
-      waiting.sort((a, b) => a.position - b.position)
-
-      // Number immediate matches first, then waiting
-      immediate.forEach((match: BracketNode) => {
-        numbers.set(match.id, gameNum++)
-      })
-      waiting.forEach((match: BracketNode) => {
-        numbers.set(match.id, gameNum++)
-      })
-
-      // Grand Finals G1 comes after last round
-      if (round === maxRound && finalsGame1) {
-        numbers.set(finalsGame1.id, gameNum++)
+    // Build reverse feeder map: matchId → matches that feed into it
+    // (via nextMatchId for winners, loserNextMatchId for losers)
+    const feedersOf = new Map<string, BracketNode[]>()
+    for (const match of bracket) {
+      if (match.nextMatchId) {
+        const list = feedersOf.get(match.nextMatchId) || []
+        list.push(match)
+        feedersOf.set(match.nextMatchId, list)
+      }
+      if (match.loserNextMatchId) {
+        const list = feedersOf.get(match.loserNextMatchId) || []
+        list.push(match)
+        feedersOf.set(match.loserNextMatchId, list)
       }
     }
 
-    // Grand Finals G2 always gets a number (shown conditionally in UI)
-    if (finalsGame2) {
-      numbers.set(finalsGame2.id, gameNum++)
+    // BFS: compute playability waves
+    const resolved = new Set<string>()
+    const waveOf = new Map<string, number>()
+    const byeFeederSet = new Set<string>()
+
+    // Auto-resolve all structural BYEs whose feeders are resolved
+    const tryResolveByes = () => {
+      let changed = true
+      while (changed) {
+        changed = false
+        for (const match of bracket) {
+          if (resolved.has(match.id) || !isStructuralBye(match)) continue
+          const f = feedersOf.get(match.id) || []
+          if (f.length === 0 || f.every(m => resolved.has(m.id))) {
+            resolved.add(match.id)
+            changed = true
+          }
+        }
+      }
     }
 
+    // Initially resolve BYEs with no unresolved feeders
+    tryResolveByes()
+
+    // BFS: find playable matches in waves
+    let wave = 0
+    while (true) {
+      const waveMatches: BracketNode[] = []
+
+      for (const match of bracket) {
+        if (resolved.has(match.id) || isStructuralBye(match)) continue
+        if (match.id === 'grand-finals' || match.id === 'grand-finals-2') continue
+        const f = feedersOf.get(match.id) || []
+        if (f.length === 0 || f.every(m => resolved.has(m.id))) {
+          waveMatches.push(match)
+          if (f.some(m => isStructuralBye(m))) {
+            byeFeederSet.add(match.id)
+          }
+        }
+      }
+
+      if (waveMatches.length === 0) break
+
+      for (const match of waveMatches) {
+        waveOf.set(match.id, wave)
+        resolved.add(match.id)
+      }
+
+      // Auto-resolve BYEs that are now unblocked
+      tryResolveByes()
+      wave++
+    }
+
+    // Apply LB round-ordering constraint: LB round N must come after LB round N-1
+    const lbRealMatches = bracket.filter(m => m.bracket === 'losers' && !isStructuralBye(m) && waveOf.has(m.id))
+    const lbRounds = [...new Set(lbRealMatches.map(m => m.round))].sort((a, b) => a - b)
+    let minLbWave = 0
+    for (const round of lbRounds) {
+      let maxWaveInRound = 0
+      for (const match of lbRealMatches) {
+        if (match.round !== round) continue
+        const w = Math.max(waveOf.get(match.id)!, minLbWave)
+        waveOf.set(match.id, w)
+        maxWaveInRound = Math.max(maxWaveInRound, w)
+      }
+      minLbWave = maxWaveInRound + 1
+    }
+
+    // Collect and sort all real matches by wave, then within-wave criteria
+    const realMatches = bracket.filter(m =>
+      !isStructuralBye(m) && waveOf.has(m.id) &&
+      m.id !== 'grand-finals' && m.id !== 'grand-finals-2'
+    )
+
+    realMatches.sort((a, b) => {
+      const wA = waveOf.get(a.id)!
+      const wB = waveOf.get(b.id)!
+      if (wA !== wB) return wA - wB
+
+      // In later waves, prioritize matches with BYE feeders (fresh players)
+      // In wave 0, use round ordering instead (R1 before R2)
+      if (wA > 0) {
+        const byeA = byeFeederSet.has(a.id) ? 0 : 1
+        const byeB = byeFeederSet.has(b.id) ? 0 : 1
+        if (byeA !== byeB) return byeA - byeB
+      }
+
+      // Then by round number (lower first)
+      if (a.round !== b.round) return a.round - b.round
+
+      // Then WB before LB
+      const bracketOrd = (m: BracketNode) => m.bracket === 'winners' ? 0 : 1
+      if (bracketOrd(a) !== bracketOrd(b)) return bracketOrd(a) - bracketOrd(b)
+
+      // Then by position
+      return a.position - b.position
+    })
+
+    let gameNum = 1
+    for (const match of realMatches) {
+      numbers.set(match.id, gameNum++)
+    }
+
+    // Grand Finals
+    if (finalsGame1) numbers.set(finalsGame1.id, gameNum++)
+    if (finalsGame2) numbers.set(finalsGame2.id, gameNum++)
+
     return numbers
-  }, [tournament, winnersRounds, losersRounds, finalsGame1, finalsGame2])
+  }, [tournament, finalsGame1, finalsGame2])
 
   // Helper to get player IDs from a team ID
   const getTeamPlayerIds = (teamId: string): string[] => {

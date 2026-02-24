@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { loadSettings, updateNamespace } from './SettingsScreen'
 
 const styles = `
   .home-screen {
@@ -27,7 +29,7 @@ const styles = `
   .home-title {
     font-size: 2.5rem;
     font-weight: bold;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     color: #d35400;
   }
 
@@ -66,13 +68,72 @@ const styles = `
     background: #2ecc71;
   }
 
-  .mode-btn.settings {
-    background: #444;
-    color: #ccc;
+  .namespace-display {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 1.25rem;
+    cursor: pointer;
+    text-align: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: color 0.2s;
   }
 
-  .mode-btn.settings:hover {
-    background: #555;
+  .namespace-display:hover {
+    color: #aaa;
+  }
+
+  .namespace-input {
+    width: 100%;
+    max-width: 280px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 0.5rem;
+    color: white;
+    outline: none;
+    text-align: center;
+  }
+
+  .namespace-input:focus {
+    border-color: #d35400;
+  }
+
+  .namespace-buttons {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 280px;
+    margin-top: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .namespace-btn {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+
+  .namespace-btn.save {
+    background: #d35400;
+    color: white;
+  }
+
+  .namespace-btn.save:hover {
+    background: #e67e22;
+  }
+
+  .namespace-btn.cancel {
+    background: #333;
+    color: #aaa;
+  }
+
+  .namespace-btn.cancel:hover {
+    background: #444;
     color: white;
   }
 
@@ -143,11 +204,58 @@ const styles = `
 
 export function HomeScreen() {
   const navigate = useNavigate()
+  const [namespace, setNamespace] = useState('')
+  const [isEditing, setIsEditing] = useState(false)
+  const [editText, setEditText] = useState('')
+
+  useEffect(() => {
+    const settings = loadSettings()
+    setNamespace(settings.namespace)
+  }, [])
+
+  const handleStartEdit = () => {
+    setEditText(namespace)
+    setIsEditing(true)
+  }
+
+  const handleSave = () => {
+    const trimmed = editText.trim()
+    if (trimmed) {
+      const newSettings = updateNamespace(trimmed)
+      setNamespace(newSettings.namespace)
+    }
+    setIsEditing(false)
+  }
+
+  const handleCancel = () => {
+    setIsEditing(false)
+  }
 
   return (
     <div className="home-screen">
       <div className="home-card">
         <h1 className="home-title">Washers</h1>
+
+        {isEditing ? (
+          <>
+            <input
+              className="namespace-input"
+              type="text"
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSave() }}
+              autoFocus
+            />
+            <div className="namespace-buttons">
+              <button className="namespace-btn save" onClick={handleSave}>Save</button>
+              <button className="namespace-btn cancel" onClick={handleCancel}>Cancel</button>
+            </div>
+          </>
+        ) : (
+          <div className="namespace-display" onClick={handleStartEdit}>
+            {namespace}
+          </div>
+        )}
 
         <div className="mode-buttons">
           <button
@@ -156,14 +264,6 @@ export function HomeScreen() {
           >
             Keep Score
             <div className="mode-description">Score tracking</div>
-          </button>
-
-          <button
-            className="mode-btn settings"
-            onClick={() => navigate('/settings')}
-          >
-            Settings
-            <div className="mode-description">Namespace & game config</div>
           </button>
 
           <div className="section-divider" />

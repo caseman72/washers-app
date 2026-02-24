@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ModalProvider } from './contexts/ModalContext'
 import { HomeScreen } from './screens/HomeScreen'
 import { KeepScoreScreen } from './screens/KeepScoreScreen'
-import { SettingsScreen } from './screens/SettingsScreen'
 import { PlayersScreen } from './screens/PlayersScreen'
 import { TournamentScreen } from './screens/TournamentScreen'
 import { TournamentSetupScreen } from './screens/TournamentSetupScreen'
@@ -17,7 +16,6 @@ function App() {
       <Routes>
         <Route path="/" element={<HomeScreen />} />
         <Route path="/keep-score" element={<KeepScoreScreen />} />
-        <Route path="/settings" element={<SettingsScreen />} />
         <Route path="/players" element={<PlayersScreen />} />
         <Route path="/tournament" element={<TournamentScreen />} />
         <Route path="/tournament/new" element={<TournamentSetupScreen />} />

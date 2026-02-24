@@ -56,13 +56,8 @@ const colorPickerStyles = `
     transition: background 0.15s;
   }
 
-  .color-item:hover:not(:disabled) {
+  .color-item:hover {
     background: rgba(255, 255, 255, 0.1);
-  }
-
-  .color-item.disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
   }
 
   .color-item.selected {
@@ -517,14 +512,21 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
   }, [screen, onScreenChange])
 
   const selectColor = useCallback((player: 1 | 2, color: ColorId) => {
-    if (player === 1) {
-      setPlayer1Color(color)
+    const otherPlayerColor = player === 1 ? player2Color : player1Color
+    if (color === otherPlayerColor) {
+      // Swap colors
+      const currentColor = player === 1 ? player1Color : player2Color
+      setPlayer1Color(player === 1 ? color : currentColor)
+      setPlayer2Color(player === 2 ? color : currentColor)
     } else {
-      setPlayer2Color(color)
+      if (player === 1) {
+        setPlayer1Color(color)
+      } else {
+        setPlayer2Color(color)
+      }
     }
     setColorPicker(null)
-    // Stay on colors screen after selection so user can pick the other color too
-  }, [])
+  }, [player1Color, player2Color])
 
   const incrementScore = useCallback((player: 1 | 2) => {
     setSession(prev => {
@@ -611,7 +613,6 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
 
   const p1 = getColor(player1Color)
   const p2 = getColor(player2Color)
-  const otherColor = colorPicker === 1 ? player2Color : player1Color
   const baseClass = contained ? 'scoreboard contained' : 'scoreboard'
 
   // Color picker view (sub-screen of colors screen)
@@ -628,14 +629,12 @@ export function Scoreboard({ onGameComplete, onStateChange, contained = false, f
         </div>
         <div className="color-list">
           {COLORS.map((color, index) => {
-            const isDisabled = color.id === otherColor
             const isSelected = color.id === (colorPicker === 1 ? player1Color : player2Color)
             return (
               <button
                 key={color.id}
-                className={`color-item ${isDisabled ? 'disabled' : ''} ${isSelected ? 'selected' : ''}`}
-                onClick={() => !isDisabled && selectColor(colorPicker, color.id)}
-                disabled={isDisabled}
+                className={`color-item ${isSelected ? 'selected' : ''}`}
+                onClick={() => selectColor(colorPicker, color.id)}
                 style={{
                   '--item-index': index,
                 } as React.CSSProperties}
