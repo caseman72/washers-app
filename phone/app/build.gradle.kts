@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.manion.washers"
-        minSdk = 26  // Wider phone compatibility
+        minSdk = 26  // Firebase floor is 23 (Android 6); 26 = Android 8.0+
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
