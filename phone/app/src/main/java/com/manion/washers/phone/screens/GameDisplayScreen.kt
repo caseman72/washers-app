@@ -789,7 +789,7 @@ private fun GamesCounterWithBadges(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (showRounds) "$player1Rounds.$player1Games" else "$player1Games",
+                    text = if (showRounds) "$player1Rounds.$player1Games" else "$player1Rounds",
                     color = player1Color.text,
                     fontSize = fontSize,
                     fontWeight = FontWeight.Bold
@@ -810,7 +810,7 @@ private fun GamesCounterWithBadges(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (showRounds) "$player2Rounds.$player2Games" else "$player2Games",
+                    text = if (showRounds) "$player2Rounds.$player2Games" else "$player2Rounds",
                     color = player2Color.text,
                     fontSize = fontSize,
                     fontWeight = FontWeight.Bold

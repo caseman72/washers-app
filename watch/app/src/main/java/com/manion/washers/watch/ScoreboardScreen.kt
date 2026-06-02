@@ -217,7 +217,7 @@ fun GameScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (showRounds) "${gameState.player1Rounds}.${gameState.player1Games}" else "${gameState.player1Games}",
+                    text = if (showRounds) "${gameState.player1Rounds}.${gameState.player1Games}" else "${gameState.player1Rounds}",
                     color = gameState.player1Color.text,
                     fontSize = badgeFontSize,
                     fontWeight = FontWeight.Bold
@@ -238,7 +238,7 @@ fun GameScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (showRounds) "${gameState.player2Rounds}.${gameState.player2Games}" else "${gameState.player2Games}",
+                    text = if (showRounds) "${gameState.player2Rounds}.${gameState.player2Games}" else "${gameState.player2Rounds}",
                     color = gameState.player2Color.text,
                     fontSize = badgeFontSize,
                     fontWeight = FontWeight.Bold
