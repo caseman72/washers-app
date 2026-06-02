@@ -2,16 +2,15 @@
 ---
 
 ```
-      ╔═════════════╗    ╔═════════════╗     ╔═════════════╗      ╔═════════════╗
-      ║    Watch    ║ -> ║    Phone    ║ <-> ║     Web     ║  <-> ║   iPhone    ║
-      ╚═════════════╝    ╚═════════════╝     ╚═════════════╝      ╚═════════════╝
+      ╔═════════════╗    ╔═════════════╗     ╔═════════════╗
+      ║    Watch    ║ -> ║    Phone    ║ <-> ║     Web     ║
+      ╚═════════════╝    ╚═════════════╝     ╚═════════════╝
 ```
 
 ## Setup
 
 ### Prerequisites
 - Android Studio (for Watch/Phone apps)
-- Xcode (for iPhone app)
 - Node.js (for web app)
 - Firebase project
 
@@ -78,10 +77,6 @@
    VITE_FIREBASE_APP_ID=your-app-id
    ```
 
-10. For iPhone app: Firebase Console → Project Settings → Add App → iOS
-11. Bundle ID: `com.manion.washers.iphone`
-12. Download `GoogleService-Info.plist` and add to `iphone/washers/`
-
 ### Debug Keystore (Watch/Phone apps)
 
 The Watch and Phone apps require a debug keystore for signing. Generate one at the repo root:
@@ -101,9 +96,6 @@ cd watch && ./gradlew assembleDebug
 
 # Web app
 cd web && npm install && npm run dev
-
-# iPhone app (open in Xcode, build with Cmd+B)
-open iphone/iphone.xcodeproj
 ```
 
 ---
@@ -128,10 +120,9 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 ## Technology Stack
 - **Watch**: Kotlin + Jetpack Compose (Wear OS)
 - **Phone**: Kotlin + Jetpack Compose (Android)
-- **iPhone**: Swift + SwiftUI (iOS)
 - **Web**: React + TypeScript + Vite
 - **Watch ↔ Phone**: Wear OS Data Layer API (MessageClient + DataClient)
-- **Phone/iPhone ↔ Web**: Firebase Realtime Database
+- **Phone ↔ Web**: Firebase Realtime Database
 
 ## Development Roadmap
 
@@ -150,16 +141,8 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 - [x] Tournament play (Firebase sync)
 - [x] Player stats (wins/losses, tournament match stats, championship stats)
 
-### Phase 3: iPhone App ✅
-- [x] iPhone app (SwiftUI)
-- [x] Mirror mode with Firebase sync
-- [x] Keep Score mode with Firebase sync
-- [x] Player management
-- [x] Settings (namespace, format, game selector)
-
-### Phase 4: Future
-- [ ] iPad app (tournament bracket display)
-- (No other pending features)
+### Phase 3: Future
+- [ ] iPad/GalaxyTab app (tournament bracket display)
 
 ---
 
@@ -168,18 +151,11 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 **✅ Rules Link & Cleanup - Complete**
 
 - Added Official Rules link to web home page (`/rules.html`)
-- iPhone UI polish (scoreboard spacing, corner radius, game picker placement)
 - Dockerfile lint warning fix (skip SecretsUsedInArgOrEnv)
 
 Ready for next feature.
 
-### Breadcrumbs (iPhone App)
-
-Next session TODO:
-- Add player names to Mirror view (like Android phone app)
-- Compare current state vs initial commit `31e1e38` to see UI changes
-- Files: `iphone/washers/Views/MirrorView.swift`, `iphone/washers/Views/Components/ScoreboardView.swift`
-- Layout tweaks in progress (2 Spacers to push mirror up)
+> **Note:** The iPhone app (SwiftUI) was abandoned and archived to the `iphone` branch. Active platforms are Watch, Phone, and Web.
 
 ---
 
@@ -264,18 +240,6 @@ Next session TODO:
 - [x] Keep Score game switching fix (prevents stale data writes)
 - [x] Game Complete detection uses computed game numbers from bracket
 
-### iPhone App (Swift/SwiftUI)
-- [x] Project setup with Firebase SDK
-- [x] Home screen (mode picker - Mirror / Keep Score / Players / Settings)
-- [x] Settings screen (namespace, format, mirror game selector 0-99)
-- [x] Mirror mode - Firebase real-time game display
-- [x] Keep Score mode - standalone scoring with Firebase sync
-- [x] Game # picker (0-99) and format picker (Bo1/3/5/7)
-- [x] Color picker (10 colors)
-- [x] Win/bust logic (21 to win, >21 resets to 15)
-- [x] Player management (add/delete with Firebase sync)
-- [x] Anonymous Firebase authentication
-
 ---
 
 ## Component Details
@@ -349,24 +313,4 @@ Next session TODO:
 - Full Firebase sync for tournaments
 - Archive completed tournaments
 - Light/dark theme toggle for TV display (persists in localStorage)
-
-### iPhone App
-
-**Layout**:
-- Home screen with mode picker buttons
-- Square game display (matches Watch/Phone feel)
-- Dark theme matching other apps
-
-**Screens**:
-1. Home (mode picker - Mirror / Keep Score / Players / Settings)
-2. Mirror - read-only game display from Firebase
-3. Keep Score - standalone scoring with game #/format pickers
-4. Players - add/delete player roster
-5. Settings - namespace (email), format, mirror game selector
-
-**Firebase Integration**:
-- Anonymous authentication (auto sign-in)
-- Reads/writes to `/games/{namespace}/{table}/current`
-- Reads/writes to `/players/{namespace}`
-- Real-time updates via Firebase listeners
 
