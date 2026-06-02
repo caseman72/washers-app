@@ -98,6 +98,13 @@ cd watch && ./gradlew assembleDebug
 cd web && npm install && npm run dev
 ```
 
+### Test
+
+```bash
+# Web app unit tests (Vitest)
+cd web && npm test
+```
+
 ---
 
 ## Development Workflow
@@ -239,6 +246,7 @@ Ready for next feature.
 - [x] Keep Score loads game state from Firebase on mount (persists between sessions)
 - [x] Keep Score game switching fix (prevents stale data writes)
 - [x] Game Complete detection uses computed game numbers from bracket
+- [x] Unit tests (Vitest) for bracket logic: generation, winner advancement, BFS game numbering
 
 ---
 

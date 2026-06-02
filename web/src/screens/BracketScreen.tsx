@@ -6,7 +6,7 @@ import { useTournament } from '../hooks/useTournaments'
 import { useConfirm } from '../contexts/ModalContext'
 import { loadSettings } from './SettingsScreen'
 import { MatchCard } from '../components/MatchCard'
-import { getMatchesByRound, advanceWinner } from '../lib/bracket'
+import { getMatchesByRound, advanceWinner, computeGameNumbers } from '../lib/bracket'
 
 const styles = `
   .bracket-screen {
@@ -386,145 +386,8 @@ export function BracketScreen() {
   // before game N+1
   const gameNumbers = useMemo(() => {
     if (!tournament) return new Map<string, number>()
-    const bracket = tournament.bracket
-    const numbers = new Map<string, number>()
-
-    // Helper: check if a match is structurally a BYE
-    const isStructuralBye = (match: BracketNode) => {
-      if (match.isByeMatch) return true
-      if (match.round === 1 && match.bracket === 'winners') {
-        const hasP1 = !!match.player1Id
-        const hasP2 = !!match.player2Id
-        return (hasP1 && !hasP2) || (!hasP1 && hasP2)
-      }
-      return false
-    }
-
-    // Build reverse feeder map: matchId → matches that feed into it
-    // (via nextMatchId for winners, loserNextMatchId for losers)
-    const feedersOf = new Map<string, BracketNode[]>()
-    for (const match of bracket) {
-      if (match.nextMatchId) {
-        const list = feedersOf.get(match.nextMatchId) || []
-        list.push(match)
-        feedersOf.set(match.nextMatchId, list)
-      }
-      if (match.loserNextMatchId) {
-        const list = feedersOf.get(match.loserNextMatchId) || []
-        list.push(match)
-        feedersOf.set(match.loserNextMatchId, list)
-      }
-    }
-
-    // BFS: compute playability waves
-    const resolved = new Set<string>()
-    const waveOf = new Map<string, number>()
-    const byeFeederSet = new Set<string>()
-
-    // Auto-resolve all structural BYEs whose feeders are resolved
-    const tryResolveByes = () => {
-      let changed = true
-      while (changed) {
-        changed = false
-        for (const match of bracket) {
-          if (resolved.has(match.id) || !isStructuralBye(match)) continue
-          const f = feedersOf.get(match.id) || []
-          if (f.length === 0 || f.every(m => resolved.has(m.id))) {
-            resolved.add(match.id)
-            changed = true
-          }
-        }
-      }
-    }
-
-    // Initially resolve BYEs with no unresolved feeders
-    tryResolveByes()
-
-    // BFS: find playable matches in waves
-    let wave = 0
-    while (true) {
-      const waveMatches: BracketNode[] = []
-
-      for (const match of bracket) {
-        if (resolved.has(match.id) || isStructuralBye(match)) continue
-        if (match.id === 'grand-finals' || match.id === 'grand-finals-2') continue
-        const f = feedersOf.get(match.id) || []
-        if (f.length === 0 || f.every(m => resolved.has(m.id))) {
-          waveMatches.push(match)
-          if (f.some(m => isStructuralBye(m))) {
-            byeFeederSet.add(match.id)
-          }
-        }
-      }
-
-      if (waveMatches.length === 0) break
-
-      for (const match of waveMatches) {
-        waveOf.set(match.id, wave)
-        resolved.add(match.id)
-      }
-
-      // Auto-resolve BYEs that are now unblocked
-      tryResolveByes()
-      wave++
-    }
-
-    // Apply LB round-ordering constraint: LB round N must come after LB round N-1
-    const lbRealMatches = bracket.filter(m => m.bracket === 'losers' && !isStructuralBye(m) && waveOf.has(m.id))
-    const lbRounds = [...new Set(lbRealMatches.map(m => m.round))].sort((a, b) => a - b)
-    let minLbWave = 0
-    for (const round of lbRounds) {
-      let maxWaveInRound = 0
-      for (const match of lbRealMatches) {
-        if (match.round !== round) continue
-        const w = Math.max(waveOf.get(match.id)!, minLbWave)
-        waveOf.set(match.id, w)
-        maxWaveInRound = Math.max(maxWaveInRound, w)
-      }
-      minLbWave = maxWaveInRound + 1
-    }
-
-    // Collect and sort all real matches by wave, then within-wave criteria
-    const realMatches = bracket.filter(m =>
-      !isStructuralBye(m) && waveOf.has(m.id) &&
-      m.id !== 'grand-finals' && m.id !== 'grand-finals-2'
-    )
-
-    realMatches.sort((a, b) => {
-      const wA = waveOf.get(a.id)!
-      const wB = waveOf.get(b.id)!
-      if (wA !== wB) return wA - wB
-
-      // In later waves, prioritize matches with BYE feeders (fresh players)
-      // In wave 0, use round ordering instead (R1 before R2)
-      if (wA > 0) {
-        const byeA = byeFeederSet.has(a.id) ? 0 : 1
-        const byeB = byeFeederSet.has(b.id) ? 0 : 1
-        if (byeA !== byeB) return byeA - byeB
-      }
-
-      // Then by round number (lower first)
-      if (a.round !== b.round) return a.round - b.round
-
-      // Then WB before LB
-      const bracketOrd = (m: BracketNode) => m.bracket === 'winners' ? 0 : 1
-      if (bracketOrd(a) !== bracketOrd(b)) return bracketOrd(a) - bracketOrd(b)
-
-      // Then by position
-      return a.position - b.position
-    })
-
-    let gameNum = 1
-    for (const match of realMatches) {
-      numbers.set(match.id, gameNum++)
-    }
-
-    // Grand Finals
-    if (finalsGame1) numbers.set(finalsGame1.id, gameNum++)
-    if (finalsGame2) numbers.set(finalsGame2.id, gameNum++)
-
-    return numbers
-  }, [tournament, finalsGame1, finalsGame2])
+    return computeGameNumbers(tournament)
+  }, [tournament])
 
   // Helper to get player IDs from a team ID
   const getTeamPlayerIds = (teamId: string): string[] => {
