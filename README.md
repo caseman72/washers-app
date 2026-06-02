@@ -131,6 +131,19 @@ When context reaches ~10% remaining, STOP and update README.md before compaction
 - **Watch ↔ Phone**: Wear OS Data Layer API (MessageClient + DataClient)
 - **Phone ↔ Web**: Firebase Realtime Database
 
+## Conventions
+
+### Game numbering
+Game tables are addressed by number under `/games/{namespace}/{table}` (think computer ports):
+- **0** and **65–99** — casual one-on-one games; format is selectable and results count toward overall `wins`/`losses`.
+- **1–64** — reserved for tournament matches; format is locked to best-of-1 and rounds are hidden.
+
+### Rounds vs. games display
+`showRounds` is inferred from `format` rather than stored separately: when `format > 1` (best-of-3/5/7) the score shows rounds as `{games}.{rounds}`; when `format === 1` only games are shown. For game 0, an existing format value in the DB seeds the selector.
+
+### Player identity & stats
+The games table stores `player1Id`/`player2Id` (not names) so results map back to the players roster. Per-player stats (`wins`/`losses`, `tournamentWins`/`Losses`, `teamWins`/`Losses`, `finalsWins`/`Losses`, `teamFinalsWins`/`Losses`) are detailed under the Web App → Tournament Features section below.
+
 ## Development Roadmap
 
 ### Phase 1: Core Apps ✅

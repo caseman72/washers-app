@@ -94,8 +94,8 @@ Once a player reaches exactly 21, the back-and-forth begins:
 
 | Variant | Rule | Example |
 |---------|------|---------|
-| **CWS (Can't Win Scoring)** | Score advances, but you must cancel before winning | Player 2 at 16 hits a 5 → now at 21, but must still cancel Player 1. Both players now need to cancel each other. |
-| **Strict Cancel** | Score does NOT advance until you successfully cancel | Player 2 at 16 hits a 5 → still at 16 (doesn't count). They keep throwing to cancel Player 1's 3. |
+| **CWS** — Mickey's rules | Score advances, but you must cancel before winning | Player 2 at 16 hits a 5 → now at 21, but must still cancel Player 1. Both players now need to cancel each other. |
+| **Strict Cancel** — Manion's rules | Score does NOT advance until you successfully cancel | Player 2 at 16 hits a 5 → still at 16 (doesn't count). They keep throwing to cancel Player 1's 3. |
 
 *Agree on which variant you're playing before the game starts.*
 
@@ -108,7 +108,7 @@ Order doesn't matter — 1-3-5, 5-3-1, 3-1-5, etc. all count.
 
 **YaKaPoo overrides everything.** It doesn't matter if you bust, if washers were cancelled, or what order you threw them — if you end the round with one washer in each hole, you win.
 
-**Example:**
+**Example 1:**
 - Opponent has 18, you have 20
 - They hit a 3 → now at 21
 - You hit a 3 → cancels theirs (no points)
@@ -117,9 +117,34 @@ Order doesn't matter — 1-3-5, 5-3-1, 3-1-5, etc. all count.
 - You hit a 5 → bust (25)!
 - BUT: you have a washer in the 3, 1, and 5 → **YaKaPoo. You win.**
 
+**Example 2:**
+- Opponent has 20, you have 19
+- They hit a 1 → now at 21
+- You hit a 1 → cancels theirs (no points)
+- They miss 2 throws → still at 20
+- You hit a 3 → bust (22) back to 15
+- You hit a 5 → now at (20)
+- BUT: even though you busted you have a washer in the 1, 3, and 5 → **YaKaPoo. You win.**
+
 **Exceptions:**
 - If both players YaKaPoo in the same round, they cancel out and the game continues.
 - **YaKaPoo does not override an uncancelled 21.** If your opponent hits 21 and you get a YaKaPoo but fail to cancel their winning washer, you lose. You must cancel first — YaKaPoo can't save you from ignoring defense.
+
+**Example 3:**
+- Opponent has 20, you have 10
+- They hit a 1 → now at 21 - (win + 2 washers in hand)
+- You hit a 1 → cancels theirs (no points, 2 washers in hand)
+- They hit another 1 → now at 21 (win + 1 washer)
+- You hit a 5 - 3 → YaKaPoo! - Game Over!!
+- **Opponent wins** because the original win wasn't cancelled.
+
+**Example 4:**
+- Opponent has 20, you have 10
+- They hit a 1 → now at 21 - (win + 2 washers in hand)
+- You hit a 5 - 3 - 1 → cancels theirs (no points) & YakaPoo!
+- They have 2 more washers but only can win by blocking your YaKaPoo: 5 & 3 holes
+- REASON: You had the win but Opponent YaKaPoo'd **and** cancelled the win. You now have the win status
+- They don't hit 5 & 3 → **You win via YaKaPoo.**
 
 ---
 
