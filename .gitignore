@@ -2,7 +2,7 @@
 **/google-services.json
 secrets.properties
 buildDockerImage.sh
-updateDockerImage.sh
+rebuildDockerWashers.sh
 web/nohup.out
 
 # Keystores
