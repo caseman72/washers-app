@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -7,7 +8,7 @@ plugins {
 }
 
 // Load secrets from secrets.properties
-val secretsFile = rootProject.file("secrets.properties")
+val secretsFile: File = rootProject.file("secrets.properties")
 val secrets = Properties().apply {
     if (secretsFile.exists()) {
         load(secretsFile.inputStream())
@@ -21,7 +22,7 @@ android {
     defaultConfig {
         applicationId = "com.manion.washers"
         minSdk = 26  // Wider phone compatibility
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -74,29 +75,29 @@ kotlin {
 
 dependencies {
     // Core Compose
-    implementation("androidx.compose.ui:ui:1.10.2")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.10.2")
-    implementation("androidx.compose.foundation:foundation:1.10.2")
-    implementation("androidx.activity:activity-compose:1.12.3")
+    implementation("androidx.compose.ui:ui:1.11.2")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.11.2")
+    implementation("androidx.compose.foundation:foundation:1.11.2")
+    implementation("androidx.activity:activity-compose:1.13.0")
 
     // Material 3
-    implementation("androidx.compose.material3:material3:1.3.1")
+    implementation("androidx.compose.material3:material3:1.4.0")
 
     // Navigation
-    implementation("androidx.navigation:navigation-compose:2.9.7")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
 
     // Lifecycle
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
 
     // Data Layer API (Watch ↔ Phone communication)
-    implementation("com.google.android.gms:play-services-wearable:19.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    implementation("com.google.android.gms:play-services-wearable:20.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
 
     // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.14.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database")
 
-    debugImplementation("androidx.compose.ui:ui-tooling:1.10.2")
+    debugImplementation("androidx.compose.ui:ui-tooling:1.11.2")
 }
